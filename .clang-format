@@ -37,13 +37,13 @@ BraceWrapping:
   AfterFunction: false
   AfterNamespace: false
   AfterExternBlock: false
-  AfterEnum: true
-  AfterClass: true
-  AfterStruct: true
-  AfterUnion: true
-  SplitEmptyRecord: true
-  BeforeCatch: true
-  BeforeElse: true
+  AfterEnum: false
+  AfterClass: false
+  AfterStruct: false
+  AfterUnion: false
+  SplitEmptyRecord: false
+  BeforeCatch: false
+  BeforeElse: false
 
 BreakBeforeBinaryOperators: None
 BreakBeforeTernaryOperators: true
