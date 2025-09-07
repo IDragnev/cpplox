@@ -31,4 +31,5 @@ endif()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # CPPLOX targets
+add_subdirectory(src/debug)
 add_subdirectory(interpreter)
