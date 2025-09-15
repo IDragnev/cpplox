@@ -16,6 +16,11 @@ if(CMAKE_BUILD_TYPE MATCHES RELEASE)
 endif()
 
 option(CPPLOX_TREAT_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
+option(CPPLOX_DEBUG_TRACE_EXECUTION "Trace the interpreter execution" ON)
+
+if(CPPLOX_DEBUG_TRACE_EXECUTION)
+  add_compile_definitions(CPPLOX_DEBUG_TRACE_EXECUTION)
+endif()
 
 if(MSVC)
   set(CPPLOX_TARGET_WARNING_FLAGS
@@ -31,5 +36,6 @@ endif()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # CPPLOX targets
+add_subdirectory(src/core)
 add_subdirectory(src/debug)
 add_subdirectory(interpreter)

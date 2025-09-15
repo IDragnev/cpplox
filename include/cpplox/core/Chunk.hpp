@@ -3,13 +3,18 @@
 #include <stdint.h>
 #include <vector>
 
+#include "cpplox/core/Value.hpp"
+
 namespace cpplox {
     enum class OpCode {
         RETURN,
         CONSTANT,
+        NEGATE,
+        ADD,
+        SUBTRACT,
+        MULTIPLY,
+        DIVIDE,
     };
-
-    using Value = double;
 
     struct Chunk {
         std::vector<std::uint8_t> code;

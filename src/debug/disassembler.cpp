@@ -1,4 +1,4 @@
-#include "cpplox/debug/disassembler.hpp"
+#include "cpplox/debug/Disassembler.hpp"
 #include <cassert>
 
 namespace cpplox::debug {
@@ -26,6 +26,21 @@ namespace cpplox::debug {
 
         const std::uint8_t opCode = chunk.code[offset];
         switch (static_cast<OpCode>(opCode)) {
+            case OpCode::ADD: {
+                return simpleInstruction("ADD", offset);
+            } break;
+            case OpCode::SUBTRACT: {
+                return simpleInstruction("SUBTRACT", offset);
+            } break;
+            case OpCode::DIVIDE: {
+                return simpleInstruction("DIVIDE", offset);
+            } break;
+            case OpCode::MULTIPLY: {
+                return simpleInstruction("MULTIPLY", offset);
+            } break;
+            case OpCode::NEGATE: {
+                return simpleInstruction("NEGATE", offset);
+            } break;
             case OpCode::RETURN: {
                 return simpleInstruction("RETURN", offset);
             } break;
@@ -55,9 +70,5 @@ namespace cpplox::debug {
         printf("'\n");
 
         return offset + 2;
-    }
-
-    void Disassembler::printValue(const Value& v) const {
-        printf("%g", v);
     }
 } // namespace cpplox::debug
