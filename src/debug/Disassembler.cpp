@@ -1,5 +1,5 @@
 #include "cpplox/debug/Disassembler.hpp"
-#include <cassert>
+#include <stdio.h>
 
 namespace cpplox::debug {
     void Disassembler::disassembleChunk(const Chunk& chunk,

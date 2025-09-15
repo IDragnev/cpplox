@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 
 #include "cpplox/core/Value.hpp"

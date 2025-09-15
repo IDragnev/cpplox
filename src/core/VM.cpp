@@ -1,5 +1,6 @@
 #include "cpplox/core/VM.hpp"
 #include "cpplox/debug/Disassembler.hpp"
+#include <stdio.h>
 
 namespace cpplox {
     InterpretResult VM::interpret(const Chunk& c) {
