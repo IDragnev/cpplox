@@ -1,37 +1,74 @@
 #include "cpplox/core/VM.hpp"
-#include "cpplox/debug/Disassembler.hpp"
 
-using cpplox::Chunk;
-using cpplox::OpCode;
-using cpplox::debug::Disassembler;
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
-int main() {
-    Chunk chunk;
-    
-    auto offset = cpplox::addConstant(chunk, 2.2);
-    cpplox::addCode(chunk, static_cast<std::uint8_t>(OpCode::CONSTANT), 123u);
-    cpplox::addCode(chunk, static_cast<std::uint8_t>(offset), 123u);
+using cpplox::VM;
+using cpplox::InterpretResult;
 
-    offset = cpplox::addConstant(chunk, 3.4);
-    cpplox::addCode(chunk, static_cast<std::uint8_t>(OpCode::CONSTANT), 123u);
-    cpplox::addCode(chunk, static_cast<std::uint8_t>(offset), 123u);
+InterpretResult interpret(const std::string_view& source, VM& vm) {
+    (void)vm;
+    printf("input = %s\n", source.data());
 
-    cpplox::addCode(chunk, static_cast<std::uint8_t>(OpCode::ADD), 123u);
+    return InterpretResult::OK;
+}
 
-    offset = cpplox::addConstant(chunk, 5.6);
-    cpplox::addCode(chunk, static_cast<std::uint8_t>(OpCode::CONSTANT), 123u);
-    cpplox::addCode(chunk, static_cast<std::uint8_t>(offset), 123u);
+void repl(VM& vm) {
+    std::string line = "";
 
-    cpplox::addCode(chunk, static_cast<std::uint8_t>(OpCode::DIVIDE), 123u);
-    cpplox::addCode(chunk, static_cast<std::uint8_t>(OpCode::NEGATE), 123u);
-    cpplox::addCode(chunk, static_cast<std::uint8_t>(OpCode::RETURN), 123u);
+    for (;;) {
+        printf("> ");
 
-    cpplox::VM vm;
-    auto res = vm.interpret(chunk);
-    (void)res;
+        std::getline(std::cin, line);
+        if (std::cin.fail() == false) {
+            if (line == ":q") {
+                break;
+            }
 
-    Disassembler disassembler;
-    disassembler.disassembleChunk(chunk, "test chunk");
+            interpret(line, vm);
+        } else {
+            printf("Input error. Please try again.\n");
+        }
+    }
+}
+
+// Reads a file in a single step.
+// We assume source files are not very big.
+bool readFile(const char* filename, std::string& result) {
+    std::ifstream file(filename);
+    if (!file) {
+        return false;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+
+    result = buffer.str();
+
+    file.close();
+    return true;
+}
+
+int main(int argc, const char* argv[]) {
+    VM vm;
+
+    if (argc == 1) {
+        repl(vm);
+    } else if (argc == 2) {
+        std::string source = "";
+        bool bFileOk = readFile(argv[1], source);
+        if (bFileOk == false) {
+            fprintf(stderr, "Error reading %s\n", argv[1]);
+            return 74;
+        }
+
+        auto result = interpret(source, vm);
+        (void)result;
+    } else {
+        return 64;
+    }
 
     return 0;
 }
