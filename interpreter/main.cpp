@@ -8,6 +8,16 @@
 using cpplox::VM;
 using cpplox::InterpretResult;
 
+bool isASCII(const std::string& str) {
+    for (char c : str) {
+        if (static_cast<unsigned char>(c) > 127) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 InterpretResult interpret(const std::string_view& source, VM& vm) {
     (void)vm;
     printf("input = %s\n", source.data());
@@ -27,7 +37,11 @@ void repl(VM& vm) {
                 break;
             }
 
-            interpret(line, vm);
+            if (isASCII(line)) {
+                interpret(line, vm);
+            } else {
+                printf("Input error. Non-ascii charater found.\n");
+            }
         } else {
             printf("Input error. Please try again.\n");
         }
@@ -52,6 +66,8 @@ bool readFile(const char* filename, std::string& result) {
 }
 
 int main(int argc, const char* argv[]) {
+    std::locale::global(std::locale("en_US.UTF-8"));
+
     VM vm;
 
     if (argc == 1) {
@@ -60,8 +76,12 @@ int main(int argc, const char* argv[]) {
         std::string source = "";
         bool bFileOk = readFile(argv[1], source);
         if (bFileOk == false) {
-            fprintf(stderr, "Error reading %s\n", argv[1]);
+            fprintf(stderr, "Error reading '%s'\n", argv[1]);
             return 74;
+        }
+        if (isASCII(source) == false) {
+            fprintf(stderr, "Invalid input - '%s' - non-ascii characters found\n", argv[1]);
+            return 1;
         }
 
         auto result = interpret(source, vm);
