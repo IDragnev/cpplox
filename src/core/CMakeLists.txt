@@ -5,10 +5,12 @@ set(CPPLOX_CORE_SOURCE
   ${CORE_HEADERS_DIR}/Chunk.hpp
   ${CORE_HEADERS_DIR}/ValueStack.hpp
   ${CORE_HEADERS_DIR}/VM.hpp
+  ${CORE_HEADERS_DIR}/Scanner.hpp
 
   Value.cpp
   ValueStack.cpp
   VM.cpp
+  Scanner.cpp
 )
 
 add_library(
