@@ -78,6 +78,8 @@ namespace cpplox {
         ScanResult scanToken();
 
     private:
+        void toTokenStart();
+
         char peek() const;
         char peekNext() const;
         char advance();
@@ -86,10 +88,17 @@ namespace cpplox {
 
         void string(ScanResult& result);
         void number(ScanResult& result);
+        void ident(ScanResult& result);
         void scanError(ScanError e, ScanResult& r) const;
         Token makeToken(TokenType t) const;
 
+        TokenType identifierType() const;
+        TokenType checkKeyword(unsigned matchedLen,
+                               std::string_view rest,
+                               TokenType expectedType) const;
+
         bool isDigit(char c) const;
+        bool isAlpha(char c) const;
 
     private:
         std::string_view source;
