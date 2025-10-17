@@ -4,6 +4,8 @@ project(cpplox
   LANGUAGES CXX
 )
 
+include(FetchContent)
+
 if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   message(STATUS "Setting build type to 'Release' as none was specified.")
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
@@ -35,7 +37,15 @@ endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# DEPENDENCIES
+FetchContent_Declare(doctest
+  GIT_REPOSITORY https://github.com/onqtam/doctest.git
+  GIT_TAG        v2.4.12
+)
+FetchContent_MakeAvailable(doctest)
+
 # CPPLOX targets
 add_subdirectory(src/core)
 add_subdirectory(src/debug)
 add_subdirectory(interpreter)
+add_subdirectory(tests/core)
