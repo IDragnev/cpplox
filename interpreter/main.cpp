@@ -5,6 +5,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "cpplox/core/Compiler.hpp"
+
 using cpplox::VM;
 using cpplox::InterpretResult;
 
@@ -18,10 +20,20 @@ bool isASCII(const std::string& str) {
     return true;
 }
 
-InterpretResult interpret(const std::string_view& source, VM& vm) {
-    (void)vm;
+InterpretResult interpret(std::string source, VM& vm) {
     printf("input = %s\n", source.data());
 
+    cpplox::Compiler compiler;
+    cpplox::Chunk chunk;
+
+    cpplox::CompileResult r = compiler.compile(std::move(source), chunk);
+    if (r.hasError) {
+        // log message based on error type
+        return InterpretResult::COMPILE_ERROR;
+    }
+
+    (void)vm;
+    //return vm.interpret(chunk);
     return InterpretResult::OK;
 }
 
@@ -84,7 +96,7 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-        auto result = interpret(source, vm);
+        auto result = interpret(std::move(source), vm);
         (void)result;
     } else {
         return 64;
