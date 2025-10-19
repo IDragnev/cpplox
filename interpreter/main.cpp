@@ -13,68 +13,11 @@ using cpplox::InterpretResult;
 void logCompileErrors(const cpplox::CompileResult& r);
 void logCompileError(const cpplox::CompileError& r);
 
-bool isASCII(const std::string& str) {
-    for (char c : str) {
-        if (static_cast<unsigned char>(c) > 127) {
-            return false;
-        }
-    }
+bool isASCII(const std::string& str);
 
-    return true;
-}
-
-InterpretResult interpret(std::string source, VM& vm) {
-    cpplox::Compiler compiler;
-    cpplox::Chunk chunk;
-
-    cpplox::CompileResult r = compiler.compile(std::move(source), chunk);
-    if (r.hasError) {
-        logCompileErrors(r);
-        return InterpretResult::COMPILE_ERROR;
-    }
-
-    return vm.interpret(chunk);
-}
-
-void repl(VM& vm) {
-    std::string line = "";
-
-    for (;;) {
-        printf("> ");
-
-        std::getline(std::cin, line);
-        if (std::cin.fail() == false) {
-            if (line == ":q") {
-                break;
-            }
-
-            if (isASCII(line)) {
-                interpret(line, vm);
-            } else {
-                printf("Input error. Non-ascii charater found.\n");
-            }
-        } else {
-            printf("Input error. Please try again.\n");
-        }
-    }
-}
-
-// Reads a file in a single step.
-// We assume source files are not very big.
-bool readFile(const char* filename, std::string& result) {
-    std::ifstream file(filename);
-    if (!file) {
-        return false;
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-
-    result = buffer.str();
-
-    file.close();
-    return true;
-}
+InterpretResult interpret(std::string source, VM& vm);
+void repl(VM& vm);
+bool readFile(const char* filename, std::string& result);
 
 int main(int argc, const char* argv[]) {
     std::locale::global(std::locale("en_US.UTF-8"));
@@ -104,6 +47,69 @@ int main(int argc, const char* argv[]) {
     }
 
     return 0;
+}
+
+void repl(VM& vm) {
+    std::string line = "";
+
+    for (;;) {
+        printf("> ");
+
+        std::getline(std::cin, line);
+        if (std::cin.fail() == false) {
+            if (line == ":q") {
+                break;
+            }
+
+            if (isASCII(line)) {
+                interpret(line, vm);
+            } else {
+                printf("Input error. Non-ascii charater found.\n");
+            }
+        } else {
+            printf("Input error. Please try again.\n");
+        }
+    }
+}
+
+InterpretResult interpret(std::string source, VM& vm) {
+    cpplox::Compiler compiler;
+    cpplox::Chunk chunk;
+
+    cpplox::CompileResult r = compiler.compile(std::move(source), chunk);
+    if (r.hasError) {
+        logCompileErrors(r);
+        return InterpretResult::COMPILE_ERROR;
+    }
+
+    return vm.interpret(chunk);
+}
+
+// Reads a file in a single step.
+// We assume source files are not very big.
+bool readFile(const char* filename, std::string& result) {
+    std::ifstream file(filename);
+    if (!file) {
+        return false;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+
+    result = buffer.str();
+
+    file.close();
+    return true;
+}
+
+bool isASCII(const std::string& str) {
+    for (char c : str) {
+        if (static_cast<unsigned char>(c) > 127) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void logCompileErrors(const cpplox::CompileResult& r) {
