@@ -10,6 +10,9 @@
 using cpplox::VM;
 using cpplox::InterpretResult;
 
+void logCompileErrors(const cpplox::CompileResult& r);
+void logCompileError(const cpplox::CompileError& r);
+
 bool isASCII(const std::string& str) {
     for (char c : str) {
         if (static_cast<unsigned char>(c) > 127) {
@@ -21,20 +24,16 @@ bool isASCII(const std::string& str) {
 }
 
 InterpretResult interpret(std::string source, VM& vm) {
-    printf("input = %s\n", source.data());
-
     cpplox::Compiler compiler;
     cpplox::Chunk chunk;
 
     cpplox::CompileResult r = compiler.compile(std::move(source), chunk);
     if (r.hasError) {
-        // log message based on error type
+        logCompileErrors(r);
         return InterpretResult::COMPILE_ERROR;
     }
 
-    (void)vm;
-    //return vm.interpret(chunk);
-    return InterpretResult::OK;
+    return vm.interpret(chunk);
 }
 
 void repl(VM& vm) {
@@ -96,11 +95,55 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-        auto result = interpret(std::move(source), vm);
-        (void)result;
+        auto r = interpret(std::move(source), vm);
+        if (r != InterpretResult::OK) {
+            return 1;
+        }
     } else {
         return 64;
     }
 
     return 0;
+}
+
+void logCompileErrors(const cpplox::CompileResult& r) {
+    printf("Compile error.\n");
+
+    for (const auto& e : r.errors) {
+        logCompileError(e);
+    }
+}
+
+void logCompileError(const cpplox::CompileError& e) {
+    using cpplox::CompileErrorType;
+    using cpplox::ScanError;
+
+    printf("Error at line %u: ", e.token.line);
+
+    switch (e.type) {
+        case CompileErrorType::SCAN_ERROR: {
+            switch (e.scanError) {
+                case ScanError::UNKNOWN_CHARACTER: {
+                    printf("Unknown character found.");
+                } break;
+                case ScanError::UNTERMINATED_STRING: {
+                    printf("Unterminated string.");
+                } break;
+            }
+        } break;
+        case CompileErrorType::EXPECTED_TOKEN: {
+            printf("Expected token %d.", static_cast<int>(e.expectedToken));
+            if (e.token.type != cpplox::TokenType::ERROR) {
+                printf("Found %d.", static_cast<int>(e.token.type));
+            }
+        } break;
+        case CompileErrorType::EXPECTED_EXPRESSION: {
+            printf("Expected expression.");
+        } break;
+        case CompileErrorType::EXPECTED_STATEMENT: {
+            printf("Expected statement.");
+        } break;
+    }
+
+    printf("\n");
 }
