@@ -4,11 +4,20 @@
 
 namespace cpplox {
     InterpretResult VM::interpret(const Chunk& c) {
-        stack.clear();
+        if (c.code.empty()) {
+            return InterpretResult::OK;
+        }
+
         chunk = &c;
         ip = chunk->code.data();
 
-        return run();
+        auto r = run();
+
+        stack.clear();
+        chunk = nullptr;
+        ip = nullptr;
+
+        return r;
     }
 
     InterpretResult VM::run() {
