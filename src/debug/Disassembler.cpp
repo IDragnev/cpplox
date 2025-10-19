@@ -47,6 +47,9 @@ namespace cpplox::debug {
             case OpCode::CONSTANT: {
                 return constantInstruction("CONSTANT", chunk, offset);
             } break;
+            case OpCode::CONSTANT_16: {
+                return constant16Instruction("CONSTANT_16", chunk, offset);
+            } break;
             default: {
                 printf("Unknown opcode %d\n", opCode);
                 return offset + 1;
@@ -65,10 +68,24 @@ namespace cpplox::debug {
                                                   std::size_t offset) const {
         auto constant = chunk.code[offset + 1];
 
-        printf("%-16s %4d '", name, constant);
+        printf("%-16s %4u '", name, constant);
         printValue(chunk.constants[constant]);
         printf("'\n");
 
         return offset + 2;
+    }
+
+    std::size_t Disassembler::constant16Instruction(const char* name,
+                                                    const Chunk& chunk,
+                                                    std::size_t offset) const {
+        auto a = chunk.code[offset + 1];
+        auto b = chunk.code[offset + 2];
+        auto constant = static_cast<unsigned>(parseConstant16Index(a, b));
+
+        printf("%-16s %4u '", name, constant);
+        printValue(chunk.constants[constant]);
+        printf("'\n");
+
+        return offset + 3;
     }
 } // namespace cpplox::debug

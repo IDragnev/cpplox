@@ -17,5 +17,8 @@ namespace cpplox::debug {
         std::size_t constantInstruction(const char* name,
                                         const Chunk& chunk,
                                         std::size_t offset) const;
+        std::size_t constant16Instruction(const char* name,
+                                          const Chunk& chunk,
+                                          std::size_t offset) const;
     };
 } // namespace cpplox::debug

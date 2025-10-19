@@ -66,6 +66,12 @@ namespace cpplox {
                 case OpCode::CONSTANT: {
                     stack.push(readConstant());
                 } break;
+                case OpCode::CONSTANT_16: {
+                    auto a = readByte();
+                    auto b = readByte();
+                    const auto i = parseConstant16Index(a, b);
+                    stack.push(chunk->constants[i]);
+                } break;
                 case OpCode::RETURN: {
                     printValue(stack.pop());
                     printf("\n");
