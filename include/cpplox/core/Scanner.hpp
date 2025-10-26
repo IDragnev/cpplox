@@ -50,6 +50,8 @@ namespace cpplox {
 
         ERROR,
         EOF_TOKEN,
+        // used for parse table size
+        MAX_VALUE,
     };
 
     struct Token {

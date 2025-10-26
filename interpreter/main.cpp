@@ -134,6 +134,7 @@ void logCompileError(const cpplox::CompileError& e) {
                 case ScanError::UNTERMINATED_STRING: {
                     fprintf(stderr, "Unterminated string.");
                 } break;
+                default: break;
             }
         } break;
         case CompileErrorType::EXPECTED_TOKEN: {
@@ -150,6 +151,10 @@ void logCompileError(const cpplox::CompileError& e) {
         case CompileErrorType::EXPECTED_STATEMENT: {
             fprintf(stderr, "Expected statement.");
         } break;
+        case CompileErrorType::CONSTANTS_LIMIT_REACHED: {
+            fprintf(stderr, "Constants limit reached!");
+        } break;
+        default: break;
     }
 
     fprintf(stderr, "\n");

@@ -12,6 +12,7 @@ namespace cpplox {
         EXPECTED_TOKEN,
         EXPECTED_EXPRESSION,
         EXPECTED_STATEMENT,
+        CONSTANTS_LIMIT_REACHED,
     };
 
     struct CompileError {
@@ -27,6 +28,10 @@ namespace cpplox {
     };
 
     class Compiler {
+    private:
+        struct ParseRule;
+        enum class OpPrecedence;
+
     public:
         Compiler();
         ~Compiler() = default;
@@ -37,14 +42,26 @@ namespace cpplox {
         CompileResult compile(std::string source, Chunk& chunk);
 
     private:
-        void init(std::string source, Chunk& chunk);
+        void init(std::string&& source, Chunk& chunk);
         void cleanUp();
 
         void advance();
         void addError(const CompileError& e);
-
-        void expression();
         bool consumeToken(TokenType token);
+
+        void emitConstant(Value value);
+        void emitOpCode(OpCode op);
+        void emitByte(std::uint8_t byte);
+        void emitBytes(std::uint8_t a, std::uint8_t b);
+
+        // expression parsers
+        static ParseRule getParseRule(TokenType t);
+        void parsePrecedence(OpPrecedence p);
+        void expression();
+        void number();
+        void grouping();
+        void unary();
+        void binary();
 
     private:
         std::string source = "";
