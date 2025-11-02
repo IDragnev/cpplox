@@ -38,30 +38,60 @@ namespace cpplox {
                                                 ip - chunk->code.data());
 #endif
 
+#define BINARY_OP(op, asValue) \
+            bool bOk = numBinaryOp([](double a, double b) { return (asValue)(a op b); }); \
+            if (bOk == false) { \
+               return InterpretResult::RUNTIME_ERROR; \
+            }
+
             const auto instruction = readByte();
             switch (static_cast<OpCode>(instruction)) {
                 case OpCode::ADD: {
-                    binaryOp([](const Value& a, const Value& b) {
-                        return a + b;
-                    });
+                    BINARY_OP(+, value::number);
                 } break;
                 case OpCode::SUBTRACT: {
-                    binaryOp([](const Value& a, const Value& b) {
-                        return a - b;
-                    });
+                    BINARY_OP(-, value::number);
                 } break;
                 case OpCode::DIVIDE: {
-                    binaryOp([](const Value& a, const Value& b) {
-                        return a / b;
-                    });
+                    BINARY_OP(/, value::number);
                 } break;
                 case OpCode::MULTIPLY: {
-                    binaryOp([](const Value& a, const Value& b) {
-                        return a * b;
-                    });
+                    BINARY_OP(*, value::number);
+                } break;
+                case OpCode::LESS: {
+                    BINARY_OP(<, value::boolean);
+                } break;
+                case OpCode::LESS_EQUAL: {
+                    BINARY_OP(<=, value::boolean);
+                } break;
+                case OpCode::GREATER: {
+                    BINARY_OP(>, value::boolean);
+                } break;
+                case OpCode::GREATER_EQUAL: {
+                    BINARY_OP(>=, value::boolean);
+                } break;
+                case OpCode::EQUAL: {
+                    Value b = stack.pop();
+                    Value a = stack.pop();
+                    stack.push(value::boolean(a == b));
+                } break;
+                case OpCode::NOT_EQUAL: {
+                    Value b = stack.pop();
+                    Value a = stack.pop();
+                    stack.push(value::boolean(a != b));
                 } break;
                 case OpCode::NEGATE: {
-                    stack.peek() *= -1;
+                    if (value::isNumber(stack.peek())) {
+                        double x = value::asNumber(stack.pop());
+                        stack.push(value::number(-x));
+                    } else {
+                        // report runtime error
+                        return InterpretResult::RUNTIME_ERROR;
+                    }
+                } break;
+                case OpCode::NOT: {
+                    const bool v = value::isFalsey(stack.pop());
+                    stack.push(value::boolean(v));
                 } break;
                 case OpCode::CONSTANT: {
                     stack.push(readConstant());
@@ -72,8 +102,17 @@ namespace cpplox {
                     const auto i = parseConstant16Index(a, b);
                     stack.push(chunk->constants[i]);
                 } break;
+                case OpCode::TRUE: {
+                    stack.push(value::TRUE);
+                } break;
+                case OpCode::FALSE: {
+                    stack.push(value::FALSE);
+                } break;
+                case OpCode::NIL: {
+                    stack.push(value::NIL);
+                } break;
                 case OpCode::RETURN: {
-                    printValue(stack.pop());
+                    value::print(stack.pop());
                     printf("\n");
                     return InterpretResult::OK;
                 } break;
@@ -81,6 +120,8 @@ namespace cpplox {
                     return InterpretResult::OK;
                 } break;
             }
+
+#undef BINARY_OP
         }
     }
 }

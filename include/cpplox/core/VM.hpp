@@ -10,6 +10,10 @@ namespace cpplox {
         RUNTIME_ERROR,
     };
 
+    template <typename Op>
+    concept NumberBinaryOp =
+        requires(Op op, double a, double b, Value c) { c = op(a, b); };
+
     class VM {
     public:
         VM() = default;
@@ -23,16 +27,29 @@ namespace cpplox {
     private:
         InterpretResult run();
 
-        template <ValueBinaryOp F>
-        void binaryOp(const F& f) {
-            Value b = stack.pop();
-            const Value& a = stack.peek();
-            stack.peek() = f(a, b);
-        }
+        template <NumberBinaryOp Op>
+        bool numBinaryOp(const Op& op);
 
     private:
         const std::uint8_t* ip = nullptr;
         const Chunk* chunk = nullptr;
         ValueStack stack;
     };
+
+    template <NumberBinaryOp Op>
+    bool VM::numBinaryOp(const Op& op) {
+        using value::isNumber;
+        using value::asNumber;
+
+        if (isNumber(stack.peek()) && isNumber(stack.peekN(1))) {
+            const double b = asNumber(stack.pop());
+            const double a = asNumber(stack.pop());
+            stack.push(op(a, b));
+
+            return true;
+        }
+
+        // report runtime error
+        return false;
+    }
 } // namespace cpplox

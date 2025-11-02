@@ -8,6 +8,7 @@ namespace cpplox {
     public:
         ValueStack();
 
+        const Value& peekN(std::size_t n);
         const Value& peek() const { return stack.back(); }
         Value& peek() { return stack.back(); }
 

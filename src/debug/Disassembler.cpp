@@ -41,6 +41,27 @@ namespace cpplox::debug {
             case OpCode::NEGATE: {
                 return simpleInstruction("NEGATE", offset);
             } break;
+            case OpCode::NOT: {
+                return simpleInstruction("NOT", offset);
+            } break;
+            case OpCode::EQUAL: {
+                return simpleInstruction("EQUAL", offset);
+            } break;
+            case OpCode::NOT_EQUAL: {
+                return simpleInstruction("NOT_EQUAL", offset);
+            } break;
+            case OpCode::LESS: {
+                return simpleInstruction("LESS", offset);
+            } break;
+            case OpCode::LESS_EQUAL: {
+                return simpleInstruction("LESS_EQUAL", offset);
+            } break;
+            case OpCode::GREATER: {
+                return simpleInstruction("GREATER", offset);
+            } break;
+            case OpCode::GREATER_EQUAL: {
+                return simpleInstruction("GREATER_EQUAL", offset);
+            } break;
             case OpCode::RETURN: {
                 return simpleInstruction("RETURN", offset);
             } break;
@@ -49,6 +70,15 @@ namespace cpplox::debug {
             } break;
             case OpCode::CONSTANT_16: {
                 return constant16Instruction("CONSTANT_16", chunk, offset);
+            } break;
+            case OpCode::TRUE: {
+                return simpleInstruction("TRUE", offset);
+            } break;
+            case OpCode::FALSE: {
+                return simpleInstruction("FALSE", offset);
+            } break;
+            case OpCode::NIL: {
+                return simpleInstruction("NIL", offset);
             } break;
             default: {
                 printf("Unknown opcode %d\n", opCode);
@@ -69,7 +99,7 @@ namespace cpplox::debug {
         auto constant = chunk.code[offset + 1];
 
         printf("%-16s %4u '", name, constant);
-        printValue(chunk.constants[constant]);
+        value::print(chunk.constants[constant]);
         printf("'\n");
 
         return offset + 2;
@@ -83,7 +113,7 @@ namespace cpplox::debug {
         auto constant = static_cast<unsigned>(parseConstant16Index(a, b));
 
         printf("%-16s %4u '", name, constant);
-        printValue(chunk.constants[constant]);
+        value::print(chunk.constants[constant]);
         printf("'\n");
 
         return offset + 3;

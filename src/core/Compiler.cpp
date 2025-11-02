@@ -33,12 +33,22 @@ namespace cpplox {
             const auto size = as_index(TokenType::MAX_VALUE);
             std::vector<ParseRule> rules(size);
             // clang-format off
-            rules[as_index(TokenType::LEFT_PAREN)] = ParseRule{ .prefix = &Compiler::grouping, };
-            rules[as_index(TokenType::MINUS)]      = ParseRule{ .prefix = &Compiler::unary,   .infix = &Compiler::binary, .infixPrec = OpPrecedence::TERM, };
-            rules[as_index(TokenType::PLUS)]       = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::TERM, };
-            rules[as_index(TokenType::SLASH)]      = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::FACTOR, };
-            rules[as_index(TokenType::STAR)]       = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::FACTOR, };
-            rules[as_index(TokenType::NUMBER)]     = ParseRule{ .prefix = &Compiler::number, };
+            rules[as_index(TokenType::LEFT_PAREN)]    = ParseRule{ .prefix = &Compiler::grouping, };
+            rules[as_index(TokenType::MINUS)]         = ParseRule{ .prefix = &Compiler::unary,   .infix = &Compiler::binary, .infixPrec = OpPrecedence::TERM, };
+            rules[as_index(TokenType::PLUS)]          = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::TERM, };
+            rules[as_index(TokenType::SLASH)]         = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::FACTOR, };
+            rules[as_index(TokenType::STAR)]          = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::FACTOR, };
+            rules[as_index(TokenType::EQUAL_EQUAL)]   = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::EQUALITY, };
+            rules[as_index(TokenType::BANG_EQUAL)]    = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::EQUALITY, };
+            rules[as_index(TokenType::GREATER_EQUAL)] = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::COMPARISON, };
+            rules[as_index(TokenType::GREATER)]       = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::COMPARISON, };
+            rules[as_index(TokenType::LESS_EQUAL)]    = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::COMPARISON, };
+            rules[as_index(TokenType::LESS)]          = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::COMPARISON, };
+            rules[as_index(TokenType::NUMBER)]        = ParseRule{ .prefix = &Compiler::number, };
+            rules[as_index(TokenType::TRUE)]          = ParseRule{ .prefix = &Compiler::literal, };
+            rules[as_index(TokenType::FALSE)]         = ParseRule{ .prefix = &Compiler::literal, };
+            rules[as_index(TokenType::NIL)]           = ParseRule{ .prefix = &Compiler::literal, };
+            rules[as_index(TokenType::BANG)]          = ParseRule{ .prefix = &Compiler::unary, };
             // clang-format on
             return rules;
         }();
@@ -162,6 +172,41 @@ namespace cpplox {
             case TokenType::SLASH: {
                 emitOpCode(OpCode::DIVIDE);
             } break;
+            case TokenType::EQUAL_EQUAL: {
+                emitOpCode(OpCode::EQUAL);
+            } break;
+            case TokenType::BANG_EQUAL: {
+                emitOpCode(OpCode::NOT_EQUAL);
+            } break;
+            case TokenType::GREATER: {
+                emitOpCode(OpCode::GREATER);
+            } break;
+            case TokenType::GREATER_EQUAL: {
+                emitOpCode(OpCode::GREATER_EQUAL);
+            } break;
+            case TokenType::LESS: {
+                emitOpCode(OpCode::LESS);
+            } break;
+            case TokenType::LESS_EQUAL: {
+                emitOpCode(OpCode::LESS_EQUAL);
+            } break;
+            default: {
+                // unreachable
+            } break;
+        }
+    }
+
+    void Compiler::literal() {
+        switch (parser.previous.type) {
+            case TokenType::TRUE: {
+                emitOpCode(OpCode::TRUE);
+            } break;
+            case TokenType::FALSE: {
+                emitOpCode(OpCode::FALSE);
+            } break;
+            case TokenType::NIL: {
+                emitOpCode(OpCode::NIL);
+            } break;
             default: {
                 // unreachable
             } break;
@@ -176,6 +221,9 @@ namespace cpplox {
             case TokenType::MINUS: {
                 emitOpCode(OpCode::NEGATE);
             } break;
+            case TokenType::BANG: {
+                emitOpCode(OpCode::NOT);
+            } break;
             default: {
                 // unreachable
             } break;
@@ -183,8 +231,8 @@ namespace cpplox {
     }
 
     void Compiler::number() {
-        Value v = std::strtod(parser.previous.lexeme.data(), nullptr);
-        emitConstant(v);
+        double v = std::strtod(parser.previous.lexeme.data(), nullptr);
+        emitConstant(value::number(v));
     }
 
     bool Compiler::consumeToken(TokenType tokenType) {
