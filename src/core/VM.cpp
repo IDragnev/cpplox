@@ -124,4 +124,14 @@ namespace cpplox {
 #undef BINARY_OP
         }
     }
+
+    void VM::runtimeError(const char* msg) {
+        fprintf(stderr, "Runtime error: %s\n", msg);
+
+        std::size_t instruction = this->ip - this->chunk->code.data() - 1;
+        if (instruction <= this->chunk->lines.size()) {
+            unsigned line = this->chunk->lines[instruction];
+            fprintf(stderr, "[line %u] in script\n", line);
+        }
+    }
 }

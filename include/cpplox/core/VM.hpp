@@ -32,8 +32,9 @@ namespace cpplox {
         template <NumberBinaryOp Op>
         bool numBinaryOp(const Op& op);
 
-        template <typename... Args>
-        void runtimeError(Args&&... args);
+        /*template <typename... Args>
+        void runtimeError(Args&&... args);*/
+        void runtimeError(const char* msg);
 
     private:
         const std::uint8_t* ip = nullptr;
@@ -58,10 +59,23 @@ namespace cpplox {
         return false;
     }
 
+    /*
     template <typename... Args>
     void VM::runtimeError(Args&&... args) {
         fprintf(stderr, "Runtime error: ");
+#if defined(__GNUC__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wformat-security"
         fprintf(stderr, std::forward<Args>(args)...);
+    #pragma GCC diagnostic pop
+#elif defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wformat-security"
+        fprintf(stderr, std::forward<Args>(args)...);
+    #pragma clang diagnostic pop
+#elif defined(_MSC_VER)
+        fprintf(stderr, std::forward<Args>(args)...);
+#endif
         fputs("\n", stderr);
 
         std::size_t instruction = this->ip - this->chunk->code.data() - 1;
@@ -70,4 +84,5 @@ namespace cpplox {
             fprintf(stderr, "[line %u] in script\n", line);
         }
     }
+    */
 } // namespace cpplox
