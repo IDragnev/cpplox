@@ -85,7 +85,7 @@ namespace cpplox {
                         double x = value::asNumber(stack.pop());
                         stack.push(value::number(-x));
                     } else {
-                        // report runtime error
+                        runtimeError("Operand must be a number.");
                         return InterpretResult::RUNTIME_ERROR;
                     }
                 } break;

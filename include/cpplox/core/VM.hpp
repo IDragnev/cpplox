@@ -3,6 +3,8 @@
 #include "cpplox/core/Chunk.hpp"
 #include "cpplox/core/ValueStack.hpp"
 
+#include <stdio.h>
+
 namespace cpplox {
     enum class InterpretResult {
         OK,
@@ -30,6 +32,9 @@ namespace cpplox {
         template <NumberBinaryOp Op>
         bool numBinaryOp(const Op& op);
 
+        template <typename... Args>
+        void runtimeError(Args&&... args);
+
     private:
         const std::uint8_t* ip = nullptr;
         const Chunk* chunk = nullptr;
@@ -49,7 +54,20 @@ namespace cpplox {
             return true;
         }
 
-        // report runtime error
+        runtimeError("Operands must be numbers.");
         return false;
+    }
+
+    template <typename... Args>
+    void VM::runtimeError(Args&&... args) {
+        fprintf(stderr, "Runtime error: ");
+        fprintf(stderr, std::forward<Args>(args)...);
+        fputs("\n", stderr);
+
+        std::size_t instruction = this->ip - this->chunk->code.data() - 1;
+        if (instruction <= this->chunk->lines.size()) {
+            unsigned line = this->chunk->lines[instruction];
+            fprintf(stderr, "[line %u] in script\n", line);
+        }
     }
 } // namespace cpplox
