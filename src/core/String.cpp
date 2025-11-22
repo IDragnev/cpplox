@@ -35,6 +35,7 @@ namespace cpplox {
     String& String::operator=(const String& rhs) {
         if (this != &rhs) {
             String copy(rhs);
+            std::swap(copy.len, this->len);
             std::swap(copy.content, this->content);
         }
 
@@ -44,6 +45,7 @@ namespace cpplox {
     String& String::operator=(String&& rhs) noexcept {
         if (this != &rhs) {
             String temp = std::move(rhs);
+            std::swap(len, temp.len);
             std::swap(content, temp.content);
         }
 
@@ -68,6 +70,7 @@ namespace cpplox {
 
             delete[] this->content;
             this->content = buffer;
+            this->len = sourceLen + currentLen;
         }
     }
 
