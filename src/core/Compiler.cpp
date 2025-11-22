@@ -49,6 +49,7 @@ namespace cpplox {
             rules[as_index(TokenType::FALSE)]         = ParseRule{ .prefix = &Compiler::literal, };
             rules[as_index(TokenType::NIL)]           = ParseRule{ .prefix = &Compiler::literal, };
             rules[as_index(TokenType::BANG)]          = ParseRule{ .prefix = &Compiler::unary, };
+            rules[as_index(TokenType::STRING)]        = ParseRule{ .prefix = &Compiler::string, };
             // clang-format on
             return rules;
         }();
@@ -232,7 +233,16 @@ namespace cpplox {
 
     void Compiler::number() {
         double v = std::strtod(parser.previous.lexeme.data(), nullptr);
-        emitConstant(value::number(v));
+        emitConstant(Value(v));
+    }
+
+    void Compiler::string() {
+        std::string_view v = parser.previous.lexeme;
+        // trim quotes
+         v.remove_prefix(1);
+         v.remove_suffix(1);
+
+        emitConstant(Value(v));
     }
 
     bool Compiler::consumeToken(TokenType tokenType) {

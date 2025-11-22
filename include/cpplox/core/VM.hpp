@@ -44,12 +44,9 @@ namespace cpplox {
 
     template <NumberBinaryOp Op>
     bool VM::numBinaryOp(const Op& op) {
-        using value::isNumber;
-        using value::asNumber;
-
-        if (isNumber(stack.peek()) && isNumber(stack.peekN(1))) {
-            const double b = asNumber(stack.pop());
-            const double a = asNumber(stack.pop());
+        if (stack.peek().isNumber() && stack.peekN(1).isNumber()) {
+            const double b = stack.pop().asNumber();
+            const double a = stack.pop().asNumber();
             stack.push(op(a, b));
 
             return true;

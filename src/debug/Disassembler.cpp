@@ -99,7 +99,7 @@ namespace cpplox::debug {
         auto constant = chunk.code[offset + 1];
 
         printf("%-16s %4u '", name, constant);
-        value::print(chunk.constants[constant]);
+        chunk.constants[constant].print();
         printf("'\n");
 
         return offset + 2;
@@ -113,7 +113,7 @@ namespace cpplox::debug {
         auto constant = static_cast<unsigned>(parseConstant16Index(a, b));
 
         printf("%-16s %4u '", name, constant);
-        value::print(chunk.constants[constant]);
+        chunk.constants[constant].print();
         printf("'\n");
 
         return offset + 3;

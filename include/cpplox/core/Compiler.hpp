@@ -63,6 +63,7 @@ namespace cpplox {
         void unary();
         void binary();
         void literal();
+        void string();
 
     private:
         std::string source = "";

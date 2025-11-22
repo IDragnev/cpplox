@@ -2,44 +2,79 @@
 #include <stdio.h>
 
 namespace cpplox {
-    bool operator==(const Value& a, const Value& b) {
-        if (a.type != b.type) {
-            return false;
+    Value& Value::operator=(const Value& other) {
+        if (this != &other) {
+            destroy();
+            copy(other);
         }
 
-        switch (a.type) {
+        return *this;
+    }
+
+    void Value::copy(const Value& other) {
+        type = other.type;
+        switch (other.type) {
+            case ValueType::NIL: {
+            } break;
             case ValueType::BOOL: {
-                return value::asBool(a) == value::asBool(b);
+                this->as.boolean = other.as.boolean;
             } break;
             case ValueType::NUMBER: {
-                return value::asNumber(a) == value::asNumber(b);
+                this->as.number = other.as.number;
             } break;
-            case ValueType::NIL: {
-                return true;
-            } break;
-            default: {
-                return false;
+            case ValueType::STRING: {
+                this->as.string = new String(*other.as.string);
             } break;
         }
     }
 
-    namespace value {
-        bool isFalsey(const Value& v) {
-            return isNil(v) || (v == value::FALSE);
+    void Value::destroy() {
+        if (type == ValueType::STRING) {
+            delete (this->as.string);
+        }
+    }
+
+    bool Value::operator==(const Value& rhs) const {
+        if (type != rhs.type) {
+            return false;
         }
 
-        void print(const Value& v) {
-            switch (v.type) {
-                case ValueType::BOOL: {
-                    printf(asBool(v) ? "true" : "false");
-                } break;
-                case ValueType::NUMBER: {
-                    printf("%g", asNumber(v));
-                } break;
-                case ValueType::NIL: {
-                    printf("nil");
-                } break;
-            }
+        switch (type) {
+            case ValueType::BOOL: {
+                return asBoolean() == rhs.asBoolean();
+            } break;
+            case ValueType::NUMBER: {
+                return asNumber() == rhs.asNumber();
+            } break;
+            case ValueType::STRING: {
+                return asString() == rhs.asString();
+            } break;
+            case ValueType::NIL: {
+                return true;
+            } break;
         }
-    } // namespace value
+
+        return false;
+    }
+
+    bool Value::isFalsey() const {
+        return isNil() || (isBoolean() && (asBoolean() == false));
+    }
+
+    void Value::print() const {
+        switch (type) {
+            case ValueType::BOOL: {
+                printf(asBoolean() ? "true" : "false");
+            } break;
+            case ValueType::NUMBER: {
+                printf("%g", asNumber());
+            } break;
+            case ValueType::NIL: {
+                printf("nil");
+            } break;
+            case ValueType::STRING: {
+                printf("%s", asString().c_str());
+            } break;
+        }
+    }
 } // namespace cpplox
