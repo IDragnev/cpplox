@@ -1,6 +1,8 @@
 #include "doctest/doctest.h"
 #include "cpplox/core/String.hpp"
 
+#include <cstring>
+
 using cpplox::String;
 
 bool areEqual(const char* a, const char* b) {
