@@ -33,9 +33,11 @@ namespace cpplox {
         {}
 
         Value(const Value& other) { copy(other); }
+        Value(Value&& other) noexcept { move(std::move(other)); }
         ~Value() { destroy(); }
 
         Value& operator=(const Value& other);
+        Value& operator=(Value&& other) noexcept;
 
         static Value nil() { return Value(); }
 
@@ -48,6 +50,7 @@ namespace cpplox {
         bool asBoolean() const { return as.boolean; }
         double asNumber() const { return as.number; }
         const String& asString() const { return *(as.string); }
+        String& asString() { return *(as.string); }
 
         bool isFalsey() const;
         void print() const;
@@ -59,6 +62,7 @@ namespace cpplox {
 
     private:
         void copy(const Value& other);
+        void move(Value&& other);
         void destroy();
 
     private:

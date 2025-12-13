@@ -239,8 +239,8 @@ namespace cpplox {
     void Compiler::string() {
         std::string_view v = parser.previous.lexeme;
         // trim quotes
-         v.remove_prefix(1);
-         v.remove_suffix(1);
+        v.remove_prefix(1);
+        v.remove_suffix(1);
 
         emitConstant(Value(v));
     }
@@ -276,7 +276,7 @@ namespace cpplox {
         constexpr auto C16MAX =
             static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max());
 
-        const std::size_t i = addConstant(*currentChunk, value);
+        const std::size_t i = addConstant(*currentChunk, std::move(value));
         if (i <= CMAX) {
             emitOpCode(OpCode::CONSTANT);
             emitByte(static_cast<std::uint8_t>(i));

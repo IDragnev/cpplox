@@ -50,8 +50,8 @@ namespace cpplox {
         chunk.lines.push_back(l);
     }
 
-    inline std::size_t addConstant(Chunk& chunk, const Value& v) {
-        chunk.constants.push_back(v);
+    inline std::size_t addConstant(Chunk& chunk, Value&& v) {
+        chunk.constants.push_back(std::move(v));
         return chunk.constants.size() - 1;
     }
 } // namespace cpplox

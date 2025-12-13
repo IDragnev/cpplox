@@ -2,6 +2,7 @@ add_executable(core_test
   main.cpp
   Scanner.cpp
   String.cpp
+  Value.cpp
 )
 target_link_libraries(core_test corelib doctest)
 target_compile_options(core_test

@@ -49,8 +49,8 @@ namespace cpplox {
                 case OpCode::ADD: {
                     if (stack.peek().isString() && stack.peekN(1).isString()) {
                         Value b = stack.pop();
-                        Value a = stack.pop();
-                        stack.push(Value(a.asString() + b.asString()));
+                        Value& a = stack.peek();
+                        a.asString() += b.asString();
                     }
                     else if (stack.peek().isNumber() && stack.peekN(1).isNumber()) {
                         double b = stack.pop().asNumber();

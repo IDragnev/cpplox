@@ -11,6 +11,35 @@ namespace cpplox {
         return *this;
     }
 
+    Value& Value::operator=(Value&& other) noexcept {
+        if (this != &other) {
+            destroy();
+            move(std::move(other));
+        }
+
+        return *this;
+    }
+
+    void Value::move(Value&& other) {
+        type = other.type;
+        switch (other.type) {
+            case ValueType::NIL: {
+            } break;
+            case ValueType::BOOL: {
+                this->as.boolean = other.as.boolean;
+            } break;
+            case ValueType::NUMBER: {
+                this->as.number = other.as.number;
+            } break;
+            case ValueType::STRING: {
+                this->as.string = other.as.string;
+            } break;
+        }
+
+        other.type = ValueType::NIL;
+        other.as.boolean = false;
+    }
+
     void Value::copy(const Value& other) {
         type = other.type;
         switch (other.type) {
