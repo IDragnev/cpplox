@@ -60,6 +60,7 @@ TEST_CASE("Copy ctor from non-empty") {
 
     CHECK(a.size() == b.size());
     CHECK(areEqual(a.c_str(), b.c_str()));
+    CHECK(a.hashValue() == b.hashValue());
 }
 
 TEST_CASE("Copy ctor from empty") {
@@ -68,6 +69,7 @@ TEST_CASE("Copy ctor from empty") {
 
     CHECK(a.size() == b.size());
     CHECK(areEqual(a.c_str(), b.c_str()));
+    CHECK(a.hashValue() == b.hashValue());
 }
 
 TEST_CASE("Move ctor from non-empty") {
@@ -140,6 +142,7 @@ TEST_CASE("Copy assignment non-empty to non-empty") {
 
     CHECK(a.size() == b.size());
     CHECK(areEqual(a.c_str(), b.c_str()));
+    CHECK(a.hashValue() == b.hashValue());
 }
 
 TEST_CASE("Copy assignment empty to non-empty") {
@@ -149,6 +152,7 @@ TEST_CASE("Copy assignment empty to non-empty") {
 
     CHECK(a.size() == b.size());
     CHECK(areEqual(a.c_str(), b.c_str()));
+    CHECK(a.hashValue() == b.hashValue());
 }
 
 TEST_CASE("Copy assignment non-empty to empty") {
@@ -158,6 +162,7 @@ TEST_CASE("Copy assignment non-empty to empty") {
 
     CHECK(a.size() == b.size());
     CHECK(areEqual(a.c_str(), b.c_str()));
+    CHECK(a.hashValue() == b.hashValue());
 }
 
 TEST_CASE("Copy assignment empty to empty") {
@@ -167,6 +172,7 @@ TEST_CASE("Copy assignment empty to empty") {
 
     CHECK(a.size() == b.size());
     CHECK(areEqual(a.c_str(), b.c_str()));
+    CHECK(a.hashValue() == b.hashValue());
 }
 
 TEST_CASE("Append") {
@@ -183,4 +189,22 @@ TEST_CASE("Append") {
     str += "";
     CHECK(str.size() == 3);
     CHECK(areEqual(str.c_str(), "123"));
+}
+
+TEST_CASE("Empty strings have equal hash values") {
+    String a;
+    String b("");
+    String c{nullptr};
+    String d(std::string_view(""));
+
+    CHECK(a.hashValue() == b.hashValue());
+    CHECK(b.hashValue() == c.hashValue());
+    CHECK(c.hashValue() == d.hashValue());
+}
+
+TEST_CASE("Non-empty equal strings have equal hash values") {
+    String a("abcdefg");
+    String b(std::string_view("abcdefg"));
+
+    CHECK(a.hashValue() == b.hashValue());
 }

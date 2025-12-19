@@ -4,16 +4,25 @@
 #include <algorithm>
 
 namespace cpplox {
-    String::String(char c) : content{new char[2]{c, '\0'}}, len(1) {}
+    String::String() { updateHash(); }
+
+    String::String(char c)
+        : content{new char[2]{c, '\0'}}
+        , len(1)
+    {
+        updateHash();
+    }
 
     String::String(const String& other) : String(other.content) {}
 
     String::String(String&& source) noexcept
         : content{source.content}
         , len(source.len)
+        , hash(source.hash)
     {
         source.content = nullptr;
         source.len = 0;
+        source.updateHash();
     }
 
     String::String(const char* string) {
@@ -22,6 +31,7 @@ namespace cpplox {
             content = new char[len + 1] {};
             std::copy_n(string, len, content);
         }
+        updateHash();
     }
 
     String::String(std::string_view string) {
@@ -30,6 +40,7 @@ namespace cpplox {
             content = new char[len + 1]{};
             std::copy_n(string.data(), len, content);
         }
+        updateHash();
     }
 
     String& String::operator=(const String& rhs) {
@@ -37,6 +48,7 @@ namespace cpplox {
             String copy(rhs);
             std::swap(copy.len, this->len);
             std::swap(copy.content, this->content);
+            std::swap(copy.hash, this->hash);
         }
 
         return *this;
@@ -47,6 +59,7 @@ namespace cpplox {
             String temp = std::move(rhs);
             std::swap(len, temp.len);
             std::swap(content, temp.content);
+            std::swap(hash, temp.hash);
         }
 
         return *this;
@@ -71,6 +84,17 @@ namespace cpplox {
             delete[] this->content;
             this->content = buffer;
             this->len = sourceLen + currentLen;
+
+            updateHash();
+        }
+    }
+
+    void String::updateHash() {
+        // FNV-1a
+        hash = 2166136261u;
+        for (std::size_t i = 0; i < len; i++) {
+            hash ^= static_cast<std::uint8_t>(content[i]);
+            hash *= 16777619;
         }
     }
 
@@ -80,6 +104,10 @@ namespace cpplox {
 
     std::size_t String::size() const {
         return len;
+    }
+
+    std::uint32_t String::hashValue() const {
+        return hash;
     }
 
     String& String::operator+=(const String& string) {

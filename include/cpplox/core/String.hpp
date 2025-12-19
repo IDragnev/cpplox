@@ -6,7 +6,7 @@
 namespace cpplox {
     class String {
     public:
-        String() = default;
+        String();
         String(char symbol);
         String(const char* string);
         String(std::string_view string);
@@ -19,6 +19,7 @@ namespace cpplox {
 
         const char* c_str() const;
         std::size_t size() const;
+        std::uint32_t hashValue() const;
 
         String& operator+=(const String& rhs);
         String& operator+=(const char* rhs);
@@ -26,10 +27,12 @@ namespace cpplox {
 
     private:
         void append(const char* string);
+        void updateHash();
 
     private:
         char* content = nullptr;
         std::size_t len = 0;
+        std::uint32_t hash = 0;
     };
 
     String operator+(const String& lhs, char rhs);
