@@ -1,3 +1,5 @@
+#include <utility>
+
 namespace cpplox {
     template <typename T>
     Vector<T>::Vector(std::size_t count)
@@ -187,5 +189,21 @@ namespace cpplox {
     template <typename T>
     inline std::size_t Vector<T>::getSize() const noexcept {
         return size;
+    }
+
+    template <typename T>
+    bool operator==(const Vector<T>& lhs, const Vector<T>& rhs) {
+        if (lhs.getCount() != rhs.getCount()) {
+            return false;
+        }
+
+        const auto end = lhs.getCount();
+        for (std::size_t i = 0; i < end; ++i) {
+            if (lhs[i] != rhs[i]) {
+                return false;
+            }
+        }
+
+        return true;
     }
 } // namespace cpplox

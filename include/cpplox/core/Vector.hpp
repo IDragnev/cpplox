@@ -54,6 +54,13 @@ namespace cpplox {
         std::size_t count = 0;
         T* items = nullptr;
     };
+
+    template <typename T>
+    bool operator==(const Vector<T>& lhs, const Vector<T>& rhs);
+    template <typename T>
+    inline bool operator!=(const Vector<T>& lhs, const Vector<T>& rhs) {
+        return !(lhs == rhs);
+    }
 } // namespace cpplox
 
 #include "VectorImpl.hpp"
