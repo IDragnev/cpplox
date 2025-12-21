@@ -4,6 +4,7 @@ add_executable(core_test
   String.cpp
   Value.cpp
   Vector.cpp
+  ValueStack.cpp
 )
 target_link_libraries(core_test corelib doctest)
 target_compile_options(core_test
