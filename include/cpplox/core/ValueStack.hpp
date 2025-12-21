@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include "cpplox/core/Value.hpp"
+#include "cpplox/core/Vector.hpp"
 
 namespace cpplox {
     class ValueStack {
@@ -13,16 +13,16 @@ namespace cpplox {
         Value& peek() { return stack.back(); }
 
         Value pop();
-        void push(Value&& v) { stack.push_back(std::move(v)); }
-        void push(const Value& v) { stack.push_back(v); }
+        void push(Value&& v) { stack.insertBack(std::move(v)); }
+        void push(const Value& v) { stack.insertBack(v); }
         void clear();
 
-        bool isEmpty() const { return stack.empty(); }
-        std::size_t size() const { return stack.size(); }
+        bool isEmpty() const { return stack.isEmpty(); }
+        std::size_t size() const { return stack.getCount(); }
 
         const Value* data() const { return stack.data(); }
 
     private:
-        std::vector<Value> stack;
+        Vector<Value> stack;
     };
 } // namespace cpplox

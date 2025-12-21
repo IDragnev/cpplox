@@ -7,12 +7,12 @@ namespace cpplox {
 
     Value ValueStack::pop() {
         Value v = std::move(stack.back());
-        stack.pop_back();
+        stack.removeBack();
         return v;
     }
 
     const Value& ValueStack::peekN(std::size_t n) {
-        const std::size_t i = stack.size() - 1 - n;
+        const std::size_t i = stack.getCount() - 1 - n;
         return stack[i];
     }
 
