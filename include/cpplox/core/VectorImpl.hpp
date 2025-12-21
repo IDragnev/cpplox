@@ -167,6 +167,11 @@ namespace cpplox {
     }
 
     template <typename T>
+    inline void Vector<T>::removeBack() {
+        removeAt(count - 1);
+    }
+
+    template <typename T>
     inline T& Vector<T>::operator[](std::size_t position) {
         return items[position];
     }
@@ -174,6 +179,26 @@ namespace cpplox {
     template <typename T>
     inline const T& Vector<T>::operator[](std::size_t position) const {
         return items[position];
+    }
+
+    template <typename T>
+    inline T& Vector<T>::back() {
+        return items[count - 1];
+    }
+
+    template <typename T>
+    inline const T& Vector<T>::back() const {
+        return items[count - 1];
+    }
+
+    template <typename T>
+    inline const T* Vector<T>::data() const {
+        return items;
+    }
+
+    template <typename T>
+    inline T* Vector<T>::data() {
+        return items;
     }
 
     template <typename T>
