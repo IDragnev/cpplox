@@ -27,7 +27,7 @@ TEST_CASE("InsertBack adds elements and increases count") {
     Vector<int> v;
 
     for (std::size_t i = 0; i < size; ++i) {
-        v.insertBack(i);
+        v.insertBack(static_cast<int>(i));
     }
 
     CHECK(v.getCount() == size);
