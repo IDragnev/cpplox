@@ -2,8 +2,7 @@
 
 #include "cpplox/core/Scanner.hpp"
 #include "cpplox/core/Chunk.hpp"
-
-#include <vector>
+#include "cpplox/core/Vector.hpp"
 
 namespace cpplox {
     enum class CompileErrorType {
@@ -24,7 +23,7 @@ namespace cpplox {
 
     struct CompileResult {
         bool hasError = false;
-        std::vector<CompileError> errors;
+        Vector<CompileError> errors;
     };
 
     class Compiler {
@@ -74,7 +73,7 @@ namespace cpplox {
             bool hadError = false;
             bool panicMode = false;
         } parser;
-        std::vector<CompileError> errors;
+        Vector<CompileError> errors;
         Chunk* currentChunk = nullptr;
     };
 } // namespace cpplox

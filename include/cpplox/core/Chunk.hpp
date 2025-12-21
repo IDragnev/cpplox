@@ -1,9 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <vector>
 
 #include "cpplox/core/Value.hpp"
+#include "cpplox/core/Vector.hpp"
 
 namespace cpplox {
     enum class OpCode {
@@ -28,9 +28,9 @@ namespace cpplox {
     };
 
     struct Chunk {
-        std::vector<std::uint8_t> code;
-        std::vector<unsigned> lines;
-        std::vector<Value> constants;
+        Vector<std::uint8_t> code;
+        Vector<unsigned> lines;
+        Vector<Value> constants;
     };
 
     inline void
@@ -46,12 +46,12 @@ namespace cpplox {
     }
 
     inline void addCode(Chunk& chunk, std::uint8_t c, unsigned l) {
-        chunk.code.push_back(c);
-        chunk.lines.push_back(l);
+        chunk.code.insertBack(c);
+        chunk.lines.insertBack(l);
     }
 
     inline std::size_t addConstant(Chunk& chunk, Value&& v) {
-        chunk.constants.push_back(std::move(v));
-        return chunk.constants.size() - 1;
+        chunk.constants.insertBack(std::move(v));
+        return chunk.constants.getCount() - 1;
     }
 } // namespace cpplox

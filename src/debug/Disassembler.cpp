@@ -6,14 +6,14 @@ namespace cpplox::debug {
                                         const std::string_view& name) const {
         printf("=== %s ===\n", name.data());
 
-        for (std::size_t offset = 0; offset < chunk.code.size();) {
+        for (std::size_t offset = 0; offset < chunk.code.getCount();) {
             offset = disassembleInstruction(chunk, offset);
         }
     }
 
     std::size_t Disassembler::disassembleInstruction(const Chunk& chunk,
                                                      std::size_t offset) const {
-        if (offset >= chunk.code.size()) {
+        if (offset >= chunk.code.getCount()) {
             return offset;
         }
 

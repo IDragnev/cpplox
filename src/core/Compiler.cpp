@@ -1,5 +1,5 @@
 #include "cpplox/core/Compiler.hpp"
-#include <vector>
+#include "cpplox/core/Vector.hpp"
 
 namespace cpplox {
     enum class Compiler::OpPrecedence {
@@ -29,9 +29,9 @@ namespace cpplox {
             return static_cast<std::size_t>(t);
         };
 
-        static const std::vector<ParseRule> table = [&as_index] {
+        static const Vector<ParseRule> table = [&as_index] {
             const auto size = as_index(TokenType::MAX_VALUE);
-            std::vector<ParseRule> rules(size);
+            Vector<ParseRule> rules(size);
             // clang-format off
             rules[as_index(TokenType::LEFT_PAREN)]    = ParseRule{ .prefix = &Compiler::grouping, };
             rules[as_index(TokenType::MINUS)]         = ParseRule{ .prefix = &Compiler::unary,   .infix = &Compiler::binary, .infixPrec = OpPrecedence::TERM, };
@@ -56,7 +56,7 @@ namespace cpplox {
 
         ParseRule r;
         const std::size_t i = as_index(t);
-        if (i < table.size()) {
+        if (i < table.getCount()) {
             r = table[i];
         }
 
@@ -97,7 +97,7 @@ namespace cpplox {
         source = "";
         scanner = Scanner(source);
         parser = Parser{};
-        errors = std::vector<CompileError>{};
+        errors = Vector<CompileError>{};
         currentChunk = nullptr;
     }
 
@@ -267,7 +267,7 @@ namespace cpplox {
 
         parser.panicMode = true;
         parser.hadError = true;
-        errors.push_back(e);
+        errors.insertBack(e);
     }
 
     void Compiler::emitConstant(Value value) {

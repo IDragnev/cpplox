@@ -4,7 +4,7 @@
 
 namespace cpplox {
     InterpretResult VM::interpret(const Chunk& c) {
-        if (c.code.empty()) {
+        if (c.code.isEmpty()) {
             return InterpretResult::OK;
         }
 
@@ -142,7 +142,7 @@ namespace cpplox {
         fprintf(stderr, "Runtime error: %s\n", msg);
 
         std::size_t instruction = this->ip - this->chunk->code.data() - 1;
-        if (instruction <= this->chunk->lines.size()) {
+        if (instruction <= this->chunk->lines.getCount()) {
             unsigned line = this->chunk->lines[instruction];
             fprintf(stderr, "[line %u] in script\n", line);
         }

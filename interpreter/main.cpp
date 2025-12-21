@@ -114,8 +114,9 @@ bool isASCII(const std::string& str) {
 void logCompileErrors(const cpplox::CompileResult& r) {
     fprintf(stderr, "Compile error.\n");
 
-    for (const auto& e : r.errors) {
-        logCompileError(e);
+    std::size_t count = r.errors.getCount();
+    for (std::size_t i = 0; i < count; ++i) {
+        logCompileError(r.errors[i]);
     }
 }
 
