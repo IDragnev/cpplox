@@ -95,19 +95,28 @@ namespace cpplox {
         if (count == size) {
             const std::size_t newSize = size > 0 ? (GROWTH_FACTOR * size) 
                                                  : DEFAULT_SIZE;
-
-            Vector temp(newSize);
-            temp.count = count;
-            for (std::size_t i = 0; i < count; ++i) {
-                if constexpr (std::is_nothrow_move_assignable_v<T>) {
-                    temp.items[i] = std::move(items[i]);
-                } else {
-                    temp.items[i] = items[i];
-                }
-            }
-
-            swapContentsWith(std::move(temp));
+            reserve(newSize);
         }
+    }
+
+    template <typename T>
+    void Vector<T>::reserve(std::size_t capacity) {
+        if (capacity <= size) {
+            return;
+        }
+
+        Vector temp(capacity);
+        temp.count = count;
+
+        for (std::size_t i = 0; i < count; ++i) {
+            if constexpr (std::is_nothrow_move_assignable_v<T>) {
+                temp.items[i] = std::move(items[i]);
+            } else {
+                temp.items[i] = items[i];
+            }
+        }
+
+        swapContentsWith(std::move(temp));
     }
 
     template <typename T>

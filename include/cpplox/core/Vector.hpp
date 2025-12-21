@@ -33,6 +33,7 @@ namespace cpplox {
 
         bool isEmpty() const noexcept;
         void clear() noexcept;
+        void reserve(std::size_t size);
 
         std::size_t getSize() const noexcept;
         std::size_t getCount() const noexcept;
