@@ -37,7 +37,8 @@ namespace cpplox {
     template <typename T>
     Vector<T>& Vector<T>::operator=(const Vector& rhs) {
         if (this != &rhs) {
-            swapContentsWith(rhs);
+            Vector temp(rhs);
+            swap(temp);
         }
 
         return *this;
@@ -46,17 +47,18 @@ namespace cpplox {
     template <typename T>
     Vector<T>& Vector<T>::operator=(Vector&& rhs) noexcept {
         if (this != &rhs) {
-            swapContentsWith(std::move(rhs));
+            Vector temp(std::move(rhs));
+            swap(temp);
         }
 
         return *this;
     }
 
     template <typename T>
-    void Vector<T>::swapContentsWith(Vector temporary) noexcept {
-        std::swap(size, temporary.size);
-        std::swap(count, temporary.count);
-        std::swap(items, temporary.items);
+    void Vector<T>::swap(Vector<T>& other) noexcept {
+        std::swap(size, other.size);
+        std::swap(count, other.count);
+        std::swap(items, other.items);
     }
 
     template <typename T>
@@ -118,7 +120,7 @@ namespace cpplox {
             }
         }
 
-        swapContentsWith(std::move(temp));
+        swap(temp);
     }
 
     template <typename T>

@@ -42,12 +42,13 @@ namespace cpplox {
         void clear() noexcept;
         void reserve(std::size_t size);
 
+        void swap(Vector<T>& other) noexcept;
+
         std::size_t getSize() const noexcept;
         std::size_t getCount() const noexcept;
 
     private:
         void growIfFull();
-        void swapContentsWith(Vector temp) noexcept;
 
         template <typename F>
         void doInsertBack(F&& item);
@@ -67,6 +68,11 @@ namespace cpplox {
     template <typename T>
     inline bool operator!=(const Vector<T>& lhs, const Vector<T>& rhs) {
         return !(lhs == rhs);
+    }
+
+    template <typename T>
+    inline void swap(Vector<T>& lhs, Vector<T>& rhs) noexcept {
+        lhs.swap(rhs);
     }
 } // namespace cpplox
 
