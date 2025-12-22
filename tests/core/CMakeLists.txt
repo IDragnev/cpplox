@@ -5,6 +5,7 @@ add_executable(core_test
   Value.cpp
   Vector.cpp
   ValueStack.cpp
+  ValueMap.cpp
 )
 target_link_libraries(core_test corelib doctest)
 target_compile_options(core_test

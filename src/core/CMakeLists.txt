@@ -7,6 +7,7 @@ set(CPPLOX_CORE_SOURCE
   ${CORE_HEADERS_DIR}/Vector.hpp
   ${CORE_HEADERS_DIR}/VectorImpl.hpp
   ${CORE_HEADERS_DIR}/ValueStack.hpp
+  ${CORE_HEADERS_DIR}/ValueMap.hpp
   ${CORE_HEADERS_DIR}/VM.hpp
   ${CORE_HEADERS_DIR}/Scanner.hpp
   ${CORE_HEADERS_DIR}/Compiler.hpp
@@ -14,6 +15,7 @@ set(CPPLOX_CORE_SOURCE
   String.cpp
   Value.cpp
   ValueStack.cpp
+  ValueMap.cpp
   VM.cpp
   Scanner.cpp
   Compiler.cpp
