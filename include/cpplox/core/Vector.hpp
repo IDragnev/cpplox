@@ -6,8 +6,6 @@ namespace cpplox {
     template <typename T>
     class Vector {
     private:
-        static_assert(std::is_default_constructible_v<T>,
-                      "Vector<T> requires T to be default constructible");
         static_assert(std::is_copy_assignable_v<T>,
                       "Vector<T> requires T to be copy assignable");
 
