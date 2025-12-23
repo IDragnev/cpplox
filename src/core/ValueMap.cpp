@@ -3,11 +3,11 @@
 #include <cmath>
 
 namespace cpplox {
-    static inline const std::size_t DEFAULT_SIZE = 16;
-    static inline const std::size_t GROWTH_FACTOR = 2;
+    static inline const std::size_t MAP_DEFAULT_SIZE = 16;
+    static inline const std::size_t MAP_GROWTH_FACTOR = 2;
     static inline const double MAX_LOAD_FACTOR = 0.75;
 
-    ValueMap::ValueMap() : ValueMap(DEFAULT_SIZE) {}
+    ValueMap::ValueMap() : ValueMap(MAP_DEFAULT_SIZE) {}
 
     ValueMap::ValueMap(std::size_t tableSize) : table(tableSize) {}
 
@@ -18,9 +18,9 @@ namespace cpplox {
 
         std::size_t tableSize = table.getCount();
         for (std::size_t slot = 0; slot < tableSize; ++slot) {
-            const Entry& e = src.table[slot];
-            if (e.isEmpty == false) {
-                table[slot] = src.table[slot];
+            const Entry& entry = src.table[slot];
+            if (entry.isEmpty == false) {
+                table[slot] = entry;
             }
         }
     }
@@ -29,7 +29,7 @@ namespace cpplox {
         : table(std::move(src.table))
         , count(src.count)
     {
-        src.table = Vector<Entry>(DEFAULT_SIZE);
+        src.table = Vector<Entry>(MAP_DEFAULT_SIZE);
         src.count = 0;
     }
 
@@ -98,10 +98,37 @@ namespace cpplox {
     }
 
     bool ValueMap::remove(const String& key, Value& v) {
-        // todo
-        (void)key;
-        (void)v;
-        return false;
+        if (isEmpty()) {
+            return false;
+        }
+
+        std::size_t slot = findSlot(key);
+        Entry& entry = table[slot];
+        if (entry.isEmpty) {
+            return false;
+        }
+
+        entry.isEmpty = true;
+        entry.key = String{};
+        v = std::move(entry.value);
+
+        Vector<Entry> entries;
+        std::size_t tableSize = table.getCount();
+        slot = slot + 1 % tableSize;
+        for (;;) {
+            Entry& e = table[slot];
+            if (e.isEmpty) {
+                break;
+            }
+
+            entries.insertBack(std::move(e));
+            e.isEmpty = true;
+
+            slot = slot + 1 % tableSize;
+        }
+        insertEntries(entries, *this);
+
+        return true;
     }
 
     std::size_t ValueMap::findSlot(const String& key) const {
@@ -122,7 +149,7 @@ namespace cpplox {
         const auto max = static_cast<std::size_t>(
             std::floor(table.getCount() * MAX_LOAD_FACTOR));
         if (count + 1 > max) {
-            std::size_t newSize = table.getCount() * GROWTH_FACTOR;
+            std::size_t newSize = table.getCount() * MAP_GROWTH_FACTOR;
             ValueMap temp(newSize);
             insertEntries(table, temp);
             swap(temp);
@@ -144,4 +171,4 @@ namespace cpplox {
         swap(table, other.table);
         swap(count, other.count);
     }
-}
+} // namespace cpplox
