@@ -130,7 +130,9 @@ namespace cpplox {
     }
 
     bool operator==(const String& lhs, const String& rhs) {
-        return std::strcmp(lhs.c_str(), rhs.c_str()) == 0;
+        return lhs.size() == rhs.size() &&
+               lhs.hashValue() == rhs.hashValue() &&
+               std::strcmp(lhs.c_str(), rhs.c_str()) == 0;
     }
 
     bool operator!=(const String& lhs, const String& rhs) {
