@@ -1,10 +1,21 @@
 #include "doctest/doctest.h"
 #include "cpplox/core/ValueMap.hpp"
 #include <string>
+#include <random>
+#include <unordered_map>
 
 using cpplox::ValueMap;
 using cpplox::Value;
 using cpplox::String;
+
+namespace std {
+    template <>
+    struct hash<String> {
+        std::size_t operator()(const String& s) const noexcept {
+            return static_cast<std::size_t>(s.hashValue());
+        }
+    };
+} // namespace std
 
 static bool isBool(const Value& v, bool expected) {
     return v.isBoolean() && v.asBoolean() == expected;
@@ -86,7 +97,7 @@ TEST_CASE("Clear empties the map") {
     CHECK_FALSE(m.contains("b"));
 }
 
-TEST_CASE("Swap exchanges contents of two maps (contains + find)") {
+TEST_CASE("Swap exchanges contents of two maps") {
     ValueMap a;
     a.insert("x", Value(10.0));
 
@@ -169,7 +180,7 @@ TEST_CASE("Copy assignment - empty to non-empty") {
     CHECK_FALSE(b.contains("k"));
 }
 
-TEST_CASE("Copy assignment: non-empty to empty") {
+TEST_CASE("Copy assignment - non-empty to empty") {
     ValueMap a;
     a.insert("x", Value(1.0));
 
@@ -262,19 +273,114 @@ TEST_CASE("Move assignment - non-empty to non-empty") {
     CHECK(isBool(v, false));
 }
 
-TEST_CASE("Map can handle a big set of keys") {
-    const auto toKey = [](std::size_t i) -> String {
-        return String(std::to_string(i).c_str());
-    };
+TEST_CASE("ValueMap handles many random keys correctly") {
+    std::mt19937 rng(12345);
+    std::uniform_int_distribution<int> dist(0, 1000000);
+
+    const std::size_t N = 500;
+    std::vector<String> keys;
+    keys.reserve(N);
 
     ValueMap m;
-    for (std::size_t i = 0; i < 200; ++i) {
-        m.insert(toKey(i), Value(double(i)));
+    for (std::size_t i = 0; i < N; ++i) {
+        String key = "k";
+        key += std::to_string(dist(rng)).c_str();
+        keys.push_back(key);
+
+        m.insert(std::move(key), Value(double(i)));
     }
 
-    for (std::size_t i = 0; i < 200; ++i) {
+    for (std::size_t i = 0; i < N; ++i) {
         Value v;
-        CHECK(m.find(toKey(i), v));
+        CHECK(m.find(keys[i], v));
         CHECK(isNumber(v, double(i)));
+    }
+}
+
+TEST_CASE("Random mixed operations under load behave correctly") {
+    const auto makeBaseKey = [](int i) {
+        String key = "base";
+        key += std::to_string(i).c_str();
+        return key;
+    };
+    enum class Op { INSERT, REMOVE, FIND };
+    const int minOp = static_cast<int>(Op::INSERT);
+    const int maxOp = static_cast<int>(Op::FIND);
+    class Random {
+    public:
+        Random() : rng(98765), keyDist(0, 1000000), opDist(minOp, maxOp) {}
+        String key() {
+            String key = "k";
+            key += std::to_string(keyDist(rng)).c_str();
+            return key;
+        }
+        Op op() {
+            return static_cast<Op>(opDist(rng));
+        }
+    private:
+        std::mt19937 rng;
+        std::uniform_int_distribution<int> keyDist;
+        std::uniform_int_distribution<int> opDist;
+    } random;
+
+    ValueMap map;
+    std::unordered_map<String, Value> refMap;
+
+    const int PREFILL = 300;
+    for (int i = 0; i < PREFILL; ++i) {
+        String key = makeBaseKey(i);
+        auto val = Value{double(i)};
+        refMap[key] = val;
+        map.insert(std::move(key), val);
+    }
+
+    const int OPS = 2000;
+    for (int i = 0; i < OPS; ++i) {
+        String key = random.key();
+        switch (random.op()) {
+            case Op::INSERT: {
+                auto val = Value{double(i)};
+                map.insert(key, val);
+                refMap[key] = val;
+            } break;
+            case Op::REMOVE: {
+                Value removed;
+                bool found = map.remove(key, removed);
+
+                auto it = refMap.find(key);
+                if (it != refMap.end()) {
+                    CHECK(found);
+                    CHECK(removed == it->second);
+                    refMap.erase(it);
+                } else {
+                    CHECK_FALSE(found);
+                    CHECK(removed.isNil());
+                }
+            } break;
+            case Op::FIND: {
+                Value v;
+                bool found = map.find(key, v);
+
+                auto it = refMap.find(key);
+                if (it != refMap.end()) {
+                    CHECK(found);
+                    CHECK(v == it->second);
+                } else {
+                    CHECK_FALSE(found);
+                }
+            } break;
+        }
+
+        if (i % 200 == 0) {
+            for (int j = 0; j < PREFILL; ++j) {
+                CHECK(map.contains(makeBaseKey(j)));
+            }
+        }
+    }
+
+    for (const auto& [key, val] : refMap) {
+        Value v;
+        CHECK(map.find(key, v));
+        CHECK(v == val);
     }
 }
