@@ -50,13 +50,21 @@ namespace cpplox {
         bool consumeToken(TokenType token);
         bool match(TokenType type);
 
+        bool makeConstant(Value value, std::size_t& idx, bool& largeIdx);
         void emitConstant(Value value);
+        void emitConstantInstruction(OpCode small,
+                                     OpCode big,
+                                     std::size_t idx,
+                                     bool const16);
         void emitOpCode(OpCode op);
         void emitByte(std::uint8_t byte);
         void emitBytes(std::uint8_t a, std::uint8_t b);
 
         // statement parsers
         void declaration();
+        void varDeclaration();
+        void parseVariable(std::size_t& idx, bool& largeIdx);
+        void defineVariable(std::size_t idx, bool largeIdx);
         void statement();
         void printStatement();
         void expressionStatement();
@@ -65,6 +73,8 @@ namespace cpplox {
         static ParseRule getParseRule(TokenType t);
         void parsePrecedence(OpPrecedence p);
         void expression();
+        void variable();
+        void namedVariable(const Token& t);
         void number();
         void grouping();
         void unary();

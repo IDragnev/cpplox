@@ -2,8 +2,7 @@
 
 #include "cpplox/core/Chunk.hpp"
 #include "cpplox/core/ValueStack.hpp"
-
-#include <stdio.h>
+#include "cpplox/core/ValueMap.hpp"
 
 namespace cpplox {
     enum class InterpretResult {
@@ -40,6 +39,7 @@ namespace cpplox {
         const std::uint8_t* ip = nullptr;
         const Chunk* chunk = nullptr;
         ValueStack stack;
+        ValueMap globals;
     };
 
     template <NumberBinaryOp Op>

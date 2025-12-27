@@ -71,6 +71,18 @@ namespace cpplox::debug {
             case OpCode::CONSTANT_16: {
                 return constant16Instruction("CONSTANT_16", chunk, offset);
             } break;
+            case OpCode::DEFINE_GLOBAL: {
+                return constantInstruction("DEFINE_GLOBAL", chunk, offset);
+            } break;
+            case OpCode::DEFINE_GLOBAL_16: {
+                return constant16Instruction("DEFINE_GLOBAL_16", chunk, offset);
+            } break;
+            case OpCode::READ_GLOBAL: {
+                return constantInstruction("READ_GLOBAL", chunk, offset);
+            } break;
+            case OpCode::READ_GLOBAL_16: {
+                return constant16Instruction("READ_GLOBAL_16", chunk, offset);
+            } break;
             case OpCode::TRUE: {
                 return simpleInstruction("TRUE", offset);
             } break;

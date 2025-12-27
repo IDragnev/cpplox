@@ -50,6 +50,7 @@ namespace cpplox {
             rules[as_index(TokenType::NIL)]           = ParseRule{ .prefix = &Compiler::literal, };
             rules[as_index(TokenType::BANG)]          = ParseRule{ .prefix = &Compiler::unary, };
             rules[as_index(TokenType::STRING)]        = ParseRule{ .prefix = &Compiler::string, };
+            rules[as_index(TokenType::IDENTIFIER)]    = ParseRule{ .prefix = &Compiler::variable, };
             // clang-format on
             return rules;
         }();
@@ -80,6 +81,7 @@ namespace cpplox {
                 synchronize();
             }
         }
+        emitOpCode(OpCode::RETURN);
 
         CompileResult result;
         result.errors = std::move(this->errors);
@@ -150,7 +152,39 @@ namespace cpplox {
     }
 
     void Compiler::declaration() {
-        statement();
+        if (match(TokenType::VAR)) {
+            varDeclaration();
+        } else {
+            statement();
+        }
+    }
+
+    void Compiler::varDeclaration() {
+        std::size_t idx = 0;
+        bool largeIdx = false;
+        parseVariable(idx, largeIdx);
+
+        if (match(TokenType::EQUAL)) {
+            expression();
+        }
+        else {
+            emitOpCode(OpCode::NIL);
+        }
+        consumeToken(TokenType::SEMICOLON);
+
+        defineVariable(idx, largeIdx);
+    }
+
+    void Compiler::parseVariable(std::size_t& idx, bool& largeIdx) {
+        consumeToken(TokenType::IDENTIFIER);
+        makeConstant(Value(String(parser.previous.lexeme)), idx, largeIdx);
+    }
+
+    void Compiler::defineVariable(std::size_t idx, bool largeIdx) {
+        emitConstantInstruction(OpCode::DEFINE_GLOBAL,
+                                OpCode::DEFINE_GLOBAL_16,
+                                idx,
+                                largeIdx);
     }
 
     void Compiler::statement() {
@@ -283,6 +317,21 @@ namespace cpplox {
         }
     }
 
+    void Compiler::variable() {
+        namedVariable(parser.previous);
+    }
+
+    void Compiler::namedVariable(const Token& t) {
+        std::size_t idx = 0;
+        bool largeIdx = false;
+        makeConstant(Value(String(t.lexeme)), idx, largeIdx);
+
+        emitConstantInstruction(OpCode::READ_GLOBAL,
+                                OpCode::READ_GLOBAL_16,
+                                idx,
+                                largeIdx);
+    }
+
     void Compiler::number() {
         double v = std::strtod(parser.previous.lexeme.data(), nullptr);
         emitConstant(Value(v));
@@ -331,28 +380,55 @@ namespace cpplox {
         errors.insertBack(e);
     }
 
-    void Compiler::emitConstant(Value value) {
+    bool Compiler::makeConstant(Value value, std::size_t& idx, bool& largeIdx) {
         constexpr auto CMAX =
             static_cast<std::size_t>(std::numeric_limits<std::uint8_t>::max());
         constexpr auto C16MAX =
             static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max());
 
-        const std::size_t i = addConstant(*currentChunk, std::move(value));
-        if (i <= CMAX) {
-            emitOpCode(OpCode::CONSTANT);
-            emitByte(static_cast<std::uint8_t>(i));
-        } else if (i <= C16MAX) {
-            std::uint8_t a = 0;
-            std::uint8_t b = 0;
-            serializeConstant16Index(i, a, b);
-
-            emitOpCode(OpCode::CONSTANT_16);
-            emitBytes(a, b);
+        idx = addConstant(*currentChunk, std::move(value));
+        bool success = true;
+        if (idx <= CMAX) {
+            largeIdx = false;
+        } else if (idx <= C16MAX) {
+            largeIdx = true;
         } else {
             addError(CompileError{
                 .type = CompileErrorType::CONSTANTS_LIMIT_REACHED,
                 .token = parser.previous,
             });
+            success = false;
+        }
+
+        return success;
+    }
+
+    void Compiler::emitConstant(Value value) {
+        std::size_t i = 0;
+        bool const16 = false;
+        bool ok = makeConstant(std::move(value), i, const16);
+        if (ok) {
+            emitConstantInstruction(OpCode::CONSTANT,
+                                    OpCode::CONSTANT_16,
+                                    i,
+                                    const16);
+        }
+    }
+
+    void Compiler::emitConstantInstruction(OpCode small,
+                                           OpCode big,
+                                           std::size_t idx,
+                                           bool const16) {
+        if (const16 == false) {
+            emitOpCode(small);
+            emitByte(static_cast<std::uint8_t>(idx));
+        } else {
+            std::uint8_t a = 0;
+            std::uint8_t b = 0;
+            serializeConstant16Index(idx, a, b);
+
+            emitOpCode(big);
+            emitBytes(a, b);
         }
     }
 

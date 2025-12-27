@@ -27,6 +27,10 @@ namespace cpplox {
         DIVIDE,
         PRINT,
         POP,
+        DEFINE_GLOBAL,
+        DEFINE_GLOBAL_16,
+        READ_GLOBAL,
+        READ_GLOBAL_16,
     };
 
     struct Chunk {

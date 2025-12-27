@@ -27,6 +27,12 @@ namespace cpplox {
         const auto readConstant = [this, &readByte] {
             return chunk->constants[readByte()];
         };
+        const auto readConstant16 = [this, &readByte] {
+            auto a = readByte();
+            auto b = readByte();
+            const auto i = parseConstant16Index(a, b);
+            return chunk->constants[i];
+        };
 
 #ifdef CPPLOX_DEBUG_TRACE_EXECUTION
         debug::Disassembler disassembler;
@@ -44,8 +50,8 @@ namespace cpplox {
                return InterpretResult::RUNTIME_ERROR; \
             }
 
-            const auto instruction = readByte();
-            switch (static_cast<OpCode>(instruction)) {
+            const auto opCode = static_cast<OpCode>(readByte());
+            switch (opCode) {
                 case OpCode::ADD: {
                     if (stack.peek().isString() && stack.peekN(1).isString()) {
                         Value b = stack.pop();
@@ -109,10 +115,7 @@ namespace cpplox {
                     stack.push(readConstant());
                 } break;
                 case OpCode::CONSTANT_16: {
-                    auto a = readByte();
-                    auto b = readByte();
-                    const auto i = parseConstant16Index(a, b);
-                    stack.push(chunk->constants[i]);
+                    stack.push(readConstant16());
                 } break;
                 case OpCode::TRUE: {
                     stack.push(Value(true));
@@ -130,6 +133,42 @@ namespace cpplox {
                 } break;
                 case OpCode::POP: {
                     stack.pop();
+                } break;
+                case OpCode::DEFINE_GLOBAL:
+                case OpCode::DEFINE_GLOBAL_16: {
+                    Value name = opCode == OpCode::DEFINE_GLOBAL
+                                     ? readConstant()
+                                     : readConstant16();
+                    if (name.isString()) {
+                        globals.insert(name.asString(), stack.peek());
+                        stack.pop();
+                    } else {
+                        runtimeError("Internal compiler error.");
+                        return InterpretResult::RUNTIME_ERROR;
+                    }
+                } break;
+                case OpCode::READ_GLOBAL:
+                case OpCode::READ_GLOBAL_16: {
+                    Value name = opCode == OpCode::READ_GLOBAL
+                                     ? readConstant()
+                                     : readConstant16();
+                    if (name.isString()) {
+                        Value value;
+                        bool exists = globals.find(name.asString(), value);
+                        if (exists) {
+                            stack.push(value);
+                        } else {
+                            String error = "Undefined variable '";
+                            error += name.asString();
+                            error += "'";
+                            runtimeError(error.c_str());
+
+                            return InterpretResult::RUNTIME_ERROR;
+                        }
+                    } else {
+                        runtimeError("Internal compiler error.");
+                        return InterpretResult::RUNTIME_ERROR;
+                    }
                 } break;
                 default: {
                     return InterpretResult::OK;
