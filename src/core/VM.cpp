@@ -123,11 +123,13 @@ namespace cpplox {
                 case OpCode::NIL: {
                     stack.push(Value::nil());
                 } break;
-                case OpCode::RETURN: {
+                case OpCode::PRINT: {
                     Value v = stack.pop();
                     v.print();
                     printf("\n");
-                    return InterpretResult::OK;
+                } break;
+                case OpCode::POP: {
+                    stack.pop();
                 } break;
                 default: {
                     return InterpretResult::OK;

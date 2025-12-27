@@ -72,11 +72,14 @@ namespace cpplox {
     CompileResult Compiler::compile(std::string compileSource, Chunk& chunk) {
         init(std::move(compileSource), chunk);
 
-        // temp start
         advance();
-        expression();
-        emitOpCode(OpCode::RETURN);
-        // temp end
+        while (scanner.isDone() == false) {
+            declaration();
+
+            if (parser.panicMode) {
+                synchronize();
+            }
+        }
 
         CompileResult result;
         result.errors = std::move(this->errors);
@@ -101,6 +104,31 @@ namespace cpplox {
         currentChunk = nullptr;
     }
 
+    void Compiler::synchronize() {
+        parser.panicMode = false;
+
+        while (scanner.isDone() == false) {
+            if (parser.previous.type == TokenType::SEMICOLON) {
+                return;
+            }
+            switch (parser.current.type) {
+                case TokenType::CLASS:
+                case TokenType::FUN:
+                case TokenType::VAR:
+                case TokenType::FOR:
+                case TokenType::IF:
+                case TokenType::WHILE:
+                case TokenType::PRINT:
+                case TokenType::RETURN: {
+                    return;
+                } break;
+                default: { }
+            }
+
+            advance();
+        }
+    }
+
     void Compiler::advance() {
         parser.previous = parser.current;
 
@@ -119,6 +147,30 @@ namespace cpplox {
                 });
             }
         }
+    }
+
+    void Compiler::declaration() {
+        statement();
+    }
+
+    void Compiler::statement() {
+        if (match(TokenType::PRINT)) {
+            printStatement();
+        } else {
+            expressionStatement();
+        }
+    }
+
+    void Compiler::printStatement() {
+        expression();
+        consumeToken(TokenType::SEMICOLON);
+        emitOpCode(OpCode::PRINT);
+    }
+
+    void Compiler::expressionStatement() {
+        expression();
+        consumeToken(TokenType::SEMICOLON);
+        emitOpCode(OpCode::POP);
     }
 
     void Compiler::expression() {
@@ -243,6 +295,15 @@ namespace cpplox {
         v.remove_suffix(1);
 
         emitConstant(Value(v));
+    }
+
+    bool Compiler::match(TokenType type) {
+        if (parser.current.type == type) {
+            advance();
+            return true;
+        }
+
+        return false;
     }
 
     bool Compiler::consumeToken(TokenType tokenType) {

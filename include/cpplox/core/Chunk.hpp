@@ -25,6 +25,8 @@ namespace cpplox {
         SUBTRACT,
         MULTIPLY,
         DIVIDE,
+        PRINT,
+        POP,
     };
 
     struct Chunk {

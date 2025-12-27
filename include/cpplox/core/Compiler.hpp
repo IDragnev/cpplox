@@ -44,14 +44,22 @@ namespace cpplox {
         void init(std::string&& source, Chunk& chunk);
         void cleanUp();
 
+        void synchronize();
         void advance();
         void addError(const CompileError& e);
         bool consumeToken(TokenType token);
+        bool match(TokenType type);
 
         void emitConstant(Value value);
         void emitOpCode(OpCode op);
         void emitByte(std::uint8_t byte);
         void emitBytes(std::uint8_t a, std::uint8_t b);
+
+        // statement parsers
+        void declaration();
+        void statement();
+        void printStatement();
+        void expressionStatement();
 
         // expression parsers
         static ParseRule getParseRule(TokenType t);
