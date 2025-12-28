@@ -31,6 +31,8 @@ namespace cpplox {
         DEFINE_GLOBAL_16,
         READ_GLOBAL,
         READ_GLOBAL_16,
+        SET_GLOBAL,
+        SET_GLOBAL_16,
     };
 
     struct Chunk {

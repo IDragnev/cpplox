@@ -12,6 +12,7 @@ namespace cpplox {
         EXPECTED_EXPRESSION,
         EXPECTED_STATEMENT,
         CONSTANTS_LIMIT_REACHED,
+        INVALID_ASSIGNMENT_TARGET,
     };
 
     struct CompileError {
@@ -50,7 +51,10 @@ namespace cpplox {
         bool consumeToken(TokenType token);
         bool match(TokenType type);
 
-        bool makeConstant(Value value, std::size_t& idx, bool& largeIdx);
+        bool makeConstant(Value value,
+                          bool searchExisting,
+                          std::size_t& idx,
+                          bool& largeIdx);
         void emitConstant(Value value);
         void emitConstantInstruction(OpCode small,
                                      OpCode big,
@@ -73,14 +77,14 @@ namespace cpplox {
         static ParseRule getParseRule(TokenType t);
         void parsePrecedence(OpPrecedence p);
         void expression();
-        void variable();
-        void namedVariable(const Token& t);
-        void number();
-        void grouping();
-        void unary();
-        void binary();
-        void literal();
-        void string();
+        void variable(bool canAssign);
+        void namedVariable(const Token& t, bool canAssign);
+        void number(bool canAssign);
+        void grouping(bool canAssign);
+        void unary(bool canAssign);
+        void binary(bool canAssign);
+        void literal(bool canAssign);
+        void string(bool canAssign);
 
     private:
         std::string source = "";

@@ -83,6 +83,12 @@ namespace cpplox::debug {
             case OpCode::READ_GLOBAL_16: {
                 return constant16Instruction("READ_GLOBAL_16", chunk, offset);
             } break;
+            case OpCode::SET_GLOBAL: {
+                return constantInstruction("SET_GLOBAL", chunk, offset);
+            } break;
+            case OpCode::SET_GLOBAL_16: {
+                return constant16Instruction("SET_GLOBAL_16", chunk, offset);
+            } break;
             case OpCode::TRUE: {
                 return simpleInstruction("TRUE", offset);
             } break;

@@ -155,6 +155,9 @@ void logCompileError(const cpplox::CompileError& e) {
         case CompileErrorType::CONSTANTS_LIMIT_REACHED: {
             fprintf(stderr, "Constants limit reached!");
         } break;
+        case CompileErrorType::INVALID_ASSIGNMENT_TARGET: {
+            fprintf(stderr, "Invalid assignment target.");
+        } break;
         default: break;
     }
 

@@ -160,7 +160,29 @@ namespace cpplox {
                         } else {
                             String error = "Undefined variable '";
                             error += name.asString();
-                            error += "'";
+                            error += "'.";
+                            runtimeError(error.c_str());
+
+                            return InterpretResult::RUNTIME_ERROR;
+                        }
+                    } else {
+                        runtimeError("Internal compiler error.");
+                        return InterpretResult::RUNTIME_ERROR;
+                    }
+                } break;
+                case OpCode::SET_GLOBAL:
+                case OpCode::SET_GLOBAL_16: {
+                    Value name = opCode == OpCode::SET_GLOBAL
+                                     ? readConstant()
+                                     : readConstant16();
+                    if (name.isString()) {
+                        bool exists = globals.contains(name.asString());
+                        if (exists) {
+                            globals.insert(name.asString(), stack.peek());
+                        } else {
+                            String error = "Undefined variable '";
+                            error += name.asString();
+                            error += "'.";
                             runtimeError(error.c_str());
 
                             return InterpretResult::RUNTIME_ERROR;

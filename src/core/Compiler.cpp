@@ -16,7 +16,7 @@ namespace cpplox {
         PRIMARY
     };
 
-    using ParseFn = void (Compiler::*)();
+    using ParseFn = void (Compiler::*)(bool);
 
     struct Compiler::ParseRule {
         ParseFn prefix = nullptr;
@@ -177,7 +177,10 @@ namespace cpplox {
 
     void Compiler::parseVariable(std::size_t& idx, bool& largeIdx) {
         consumeToken(TokenType::IDENTIFIER);
-        makeConstant(Value(String(parser.previous.lexeme)), idx, largeIdx);
+        makeConstant(Value(String(parser.previous.lexeme)),
+                     true,
+                     idx,
+                     largeIdx);
     }
 
     void Compiler::defineVariable(std::size_t idx, bool largeIdx) {
@@ -214,6 +217,8 @@ namespace cpplox {
     void Compiler::parsePrecedence(OpPrecedence precedence) {
         advance();
 
+        const bool canAssign = precedence <= OpPrecedence::ASSIGNMENT;
+
         ParseRule rule = getParseRule(parser.previous.type);
         ParseFn prefixRule = rule.prefix;
         if (prefixRule == nullptr) {
@@ -224,24 +229,31 @@ namespace cpplox {
             return;
         }
 
-        (this->*prefixRule)();
+        (this->*prefixRule)(canAssign);
 
         while (precedence <= getParseRule(parser.current.type).infixPrec) {
             advance();
             ParseRule r = getParseRule(parser.previous.type);
             ParseFn infixRule = r.infix;
             if (infixRule != nullptr) {
-                (this->*infixRule)();
+                (this->*infixRule)(canAssign);
             }
+        }
+
+        if (canAssign && match(TokenType::EQUAL)) {
+            addError(CompileError{
+                .type = CompileErrorType::INVALID_ASSIGNMENT_TARGET,
+                .token = parser.previous,
+            });
         }
     }
 
-    void Compiler::grouping() {
+    void Compiler::grouping(bool) {
         expression();
         consumeToken(TokenType::RIGHT_PAREN);
     }
 
-    void Compiler::binary() {
+    void Compiler::binary(bool) {
         TokenType op = parser.previous.type;
         ParseRule rule = getParseRule(op);
         parsePrecedence(static_cast<OpPrecedence>(static_cast<int>(rule.infixPrec) + 1));
@@ -283,7 +295,7 @@ namespace cpplox {
         }
     }
 
-    void Compiler::literal() {
+    void Compiler::literal(bool) {
         switch (parser.previous.type) {
             case TokenType::TRUE: {
                 emitOpCode(OpCode::TRUE);
@@ -300,7 +312,7 @@ namespace cpplox {
         }
     }
 
-    void Compiler::unary() {
+    void Compiler::unary(bool) {
         TokenType type = parser.previous.type;
         parsePrecedence(OpPrecedence::UNARY);
 
@@ -317,27 +329,35 @@ namespace cpplox {
         }
     }
 
-    void Compiler::variable() {
-        namedVariable(parser.previous);
+    void Compiler::variable(bool canAssign) {
+        namedVariable(parser.previous, canAssign);
     }
 
-    void Compiler::namedVariable(const Token& t) {
+    void Compiler::namedVariable(const Token& t, bool canAssign) {
         std::size_t idx = 0;
         bool largeIdx = false;
-        makeConstant(Value(String(t.lexeme)), idx, largeIdx);
+        makeConstant(Value(String(t.lexeme)), true, idx, largeIdx);
 
-        emitConstantInstruction(OpCode::READ_GLOBAL,
-                                OpCode::READ_GLOBAL_16,
-                                idx,
-                                largeIdx);
+        if (canAssign && match(TokenType::EQUAL)) {
+            expression();
+            emitConstantInstruction(OpCode::SET_GLOBAL,
+                                    OpCode::SET_GLOBAL_16,
+                                    idx,
+                                    largeIdx);
+        } else {
+            emitConstantInstruction(OpCode::READ_GLOBAL,
+                                    OpCode::READ_GLOBAL_16,
+                                    idx,
+                                    largeIdx);
+        }
     }
 
-    void Compiler::number() {
+    void Compiler::number(bool) {
         double v = std::strtod(parser.previous.lexeme.data(), nullptr);
         emitConstant(Value(v));
     }
 
-    void Compiler::string() {
+    void Compiler::string(bool) {
         std::string_view v = parser.previous.lexeme;
         // trim quotes
         v.remove_prefix(1);
@@ -380,13 +400,31 @@ namespace cpplox {
         errors.insertBack(e);
     }
 
-    bool Compiler::makeConstant(Value value, std::size_t& idx, bool& largeIdx) {
+    bool Compiler::makeConstant(Value value,
+                                bool searchExisting,
+                                std::size_t& idx,
+                                bool& largeIdx) {
         constexpr auto CMAX =
             static_cast<std::size_t>(std::numeric_limits<std::uint8_t>::max());
         constexpr auto C16MAX =
             static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max());
 
-        idx = addConstant(*currentChunk, std::move(value));
+        bool found = false;
+        if (searchExisting) {
+            const Vector<Value>& constants = currentChunk->constants;
+            const std::size_t size = constants.getCount();
+            for (std::size_t i = 0; i < size; ++i) {
+                if (constants[i] == value) {
+                    idx = i;
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (found == false) {
+            idx = addConstant(*currentChunk, std::move(value));
+        }
+
         bool success = true;
         if (idx <= CMAX) {
             largeIdx = false;
@@ -406,7 +444,7 @@ namespace cpplox {
     void Compiler::emitConstant(Value value) {
         std::size_t i = 0;
         bool const16 = false;
-        bool ok = makeConstant(std::move(value), i, const16);
+        bool ok = makeConstant(std::move(value), false, i, const16);
         if (ok) {
             emitConstantInstruction(OpCode::CONSTANT,
                                     OpCode::CONSTANT_16,
