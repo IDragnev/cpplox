@@ -1,8 +1,8 @@
 #pragma once
 
-#include "cpplox/core/Scanner.hpp"
-#include "cpplox/core/Chunk.hpp"
 #include "cpplox/core/Vector.hpp"
+#include "cpplox/compiler/Scanner.hpp"
+#include "cpplox/compiler/Chunk.hpp"
 
 namespace cpplox {
     enum class CompileErrorType {

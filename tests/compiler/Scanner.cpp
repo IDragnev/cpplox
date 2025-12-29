@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "cpplox/core/Scanner.hpp"
+#include "cpplox/compiler/Scanner.hpp"
 
 #include <vector>
 

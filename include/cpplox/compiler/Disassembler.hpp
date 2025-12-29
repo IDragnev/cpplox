@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string_view>
-#include "cpplox/core/Chunk.hpp"
+#include "cpplox/compiler/Chunk.hpp"
 
-namespace cpplox::debug {
+namespace cpplox {
     class Disassembler {
     public:
         void disassembleChunk(const Chunk& chunk,
@@ -21,4 +21,4 @@ namespace cpplox::debug {
                                           const Chunk& chunk,
                                           std::size_t offset) const;
     };
-} // namespace cpplox::debug
+} // namespace cpplox

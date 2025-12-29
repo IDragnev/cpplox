@@ -46,6 +46,7 @@ FetchContent_MakeAvailable(doctest)
 
 # CPPLOX targets
 add_subdirectory(src/core)
-add_subdirectory(src/debug)
+add_subdirectory(src/compiler)
 add_subdirectory(interpreter)
 add_subdirectory(tests/core)
+add_subdirectory(tests/compiler)

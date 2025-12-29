@@ -1,5 +1,5 @@
-#include "cpplox/core/VM.hpp"
-#include "cpplox/debug/Disassembler.hpp"
+#include "cpplox/compiler/VM.hpp"
+#include "cpplox/compiler/Disassembler.hpp"
 #include <stdio.h>
 
 namespace cpplox {
@@ -35,7 +35,7 @@ namespace cpplox {
         };
 
 #ifdef CPPLOX_DEBUG_TRACE_EXECUTION
-        debug::Disassembler disassembler;
+        Disassembler disassembler;
 #endif
 
         for (;;) {

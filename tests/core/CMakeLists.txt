@@ -1,6 +1,5 @@
 add_executable(core_test
   main.cpp
-  Scanner.cpp
   String.cpp
   Value.cpp
   Vector.cpp

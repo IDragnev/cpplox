@@ -2,8 +2,7 @@ add_executable(cpplox_exe main.cpp)
 set_target_properties(cpplox_exe PROPERTIES OUTPUT_NAME cpplox)
 target_compile_features(cpplox_exe PRIVATE cxx_std_20)
 target_link_libraries(cpplox_exe
-  corelib
-  debuglib
+  compiler
 )
 
 target_compile_options(cpplox_exe

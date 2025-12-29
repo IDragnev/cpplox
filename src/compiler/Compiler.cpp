@@ -1,5 +1,4 @@
-#include "cpplox/core/Compiler.hpp"
-#include "cpplox/core/Vector.hpp"
+#include "cpplox/compiler/Compiler.hpp"
 
 namespace cpplox {
     enum class Compiler::OpPrecedence {

@@ -1,7 +1,7 @@
-#include "cpplox/debug/Disassembler.hpp"
+#include "cpplox/compiler/Disassembler.hpp"
 #include <stdio.h>
 
-namespace cpplox::debug {
+namespace cpplox {
     void Disassembler::disassembleChunk(const Chunk& chunk,
                                         const std::string_view& name) const {
         printf("=== %s ===\n", name.data());
@@ -142,4 +142,4 @@ namespace cpplox::debug {
 
         return offset + 3;
     }
-} // namespace cpplox::debug
+} // namespace cpplox

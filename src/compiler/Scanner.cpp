@@ -1,4 +1,4 @@
-#include "cpplox/core/Scanner.hpp"
+#include "cpplox/compiler/Scanner.hpp"
 
 namespace cpplox {
     Scanner::Scanner(std::string_view source)

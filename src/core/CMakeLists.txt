@@ -3,22 +3,15 @@ set(CORE_HEADERS_DIR ${PROJECT_SOURCE_DIR}/include/cpplox/core)
 set(CPPLOX_CORE_SOURCE
   ${CORE_HEADERS_DIR}/String.hpp
   ${CORE_HEADERS_DIR}/Value.hpp
-  ${CORE_HEADERS_DIR}/Chunk.hpp
   ${CORE_HEADERS_DIR}/Vector.hpp
   ${CORE_HEADERS_DIR}/VectorImpl.hpp
   ${CORE_HEADERS_DIR}/ValueStack.hpp
   ${CORE_HEADERS_DIR}/ValueMap.hpp
-  ${CORE_HEADERS_DIR}/VM.hpp
-  ${CORE_HEADERS_DIR}/Scanner.hpp
-  ${CORE_HEADERS_DIR}/Compiler.hpp
 
   String.cpp
   Value.cpp
   ValueStack.cpp
   ValueMap.cpp
-  VM.cpp
-  Scanner.cpp
-  Compiler.cpp
 )
 
 add_library(
