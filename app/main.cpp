@@ -1,5 +1,5 @@
-#include "cpplox/Compiler/VM.hpp"
-#include "cpplox/Compiler/Compiler.hpp"
+#include "cpplox/compiler/VM.hpp"
+#include "cpplox/compiler/Compiler.hpp"
 
 #include <string>
 #include <iostream>
