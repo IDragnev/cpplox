@@ -201,6 +201,20 @@ namespace cpplox {
         }
     }
 
+    template <NumberBinaryOp Op>
+    bool VM::numBinaryOp(const Op& op) {
+        if (stack.peek().isNumber() && stack.peekN(1).isNumber()) {
+            const double b = stack.pop().asNumber();
+            const double a = stack.pop().asNumber();
+            stack.push(op(a, b));
+
+            return true;
+        }
+
+        runtimeError("Operands must be numbers.");
+        return false;
+    }
+
     void VM::runtimeError(const char* msg) {
         fprintf(stderr, "Runtime error: %s\n", msg);
 
