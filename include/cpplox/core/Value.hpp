@@ -41,6 +41,7 @@ namespace cpplox {
 
         static Value nil() { return Value(); }
 
+        ValueType internalType() const { return type; }
         bool holdsType(ValueType t) const { return type == t; }
         bool isNil() const { return holdsType(ValueType::NIL); }
         bool isBoolean() const { return holdsType(ValueType::BOOL); }
@@ -53,7 +54,6 @@ namespace cpplox {
         String& asString() { return *(as.string); }
 
         bool isFalsey() const;
-        void print() const;
 
         bool operator==(const Value& rhs) const;
         bool operator!=(const Value& rhs) const {

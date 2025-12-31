@@ -1,5 +1,4 @@
 #include "cpplox/core/Value.hpp"
-#include <stdio.h>
 
 namespace cpplox {
     Value& Value::operator=(const Value& other) {
@@ -88,22 +87,5 @@ namespace cpplox {
 
     bool Value::isFalsey() const {
         return isNil() || (isBoolean() && (asBoolean() == false));
-    }
-
-    void Value::print() const {
-        switch (type) {
-            case ValueType::BOOL: {
-                printf(asBoolean() ? "true" : "false");
-            } break;
-            case ValueType::NUMBER: {
-                printf("%g", asNumber());
-            } break;
-            case ValueType::NIL: {
-                printf("nil");
-            } break;
-            case ValueType::STRING: {
-                printf("%s", asString().c_str());
-            } break;
-        }
     }
 } // namespace cpplox

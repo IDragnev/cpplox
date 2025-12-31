@@ -1,6 +1,9 @@
 #include "cpplox/compiler/VM.hpp"
 #include "cpplox/compiler/Disassembler.hpp"
+#include "cpplox/log/Log.hpp"
 #include <stdio.h>
+
+#include "cpplox/core/Format.hpp"
 
 namespace cpplox {
     InterpretResult VM::interpret(const Chunk& c) {
@@ -128,8 +131,7 @@ namespace cpplox {
                 } break;
                 case OpCode::PRINT: {
                     Value v = stack.pop();
-                    v.print();
-                    printf("\n");
+                    println("{}", v);
                 } break;
                 case OpCode::POP: {
                     stack.pop();

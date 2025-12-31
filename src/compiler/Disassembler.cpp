@@ -1,10 +1,12 @@
 #include "cpplox/compiler/Disassembler.hpp"
-#include <stdio.h>
+#include "cpplox/compiler/Chunk.hpp"
+#include "cpplox/core/ValueFormatter.hpp"
+#include "cpplox/log/Log.hpp"
 
 namespace cpplox {
     void Disassembler::disassembleChunk(const Chunk& chunk,
                                         const std::string_view& name) const {
-        printf("=== %s ===\n", name.data());
+        println("=== {} ===", name);
 
         for (std::size_t offset = 0; offset < chunk.code.getCount();) {
             offset = disassembleInstruction(chunk, offset);
@@ -17,11 +19,14 @@ namespace cpplox {
             return offset;
         }
 
-        printf("%04zu ", offset);
+        constexpr auto printPrefix = [] (auto offset, auto line) {
+            constexpr int OFFSET_WIDTH = 4;
+            print("{:0{}}    {:>2} ", offset, OFFSET_WIDTH, line);
+        };
         if (offset > 0 && chunk.lines[offset] == chunk.lines[offset - 1]) {
-            printf("   | ");
+            printPrefix(offset, "|");
         } else {
-            printf("%4u ", chunk.lines[offset]);
+            printPrefix(offset, chunk.lines[offset]);
         }
 
         const std::uint8_t opCode = chunk.code[offset];
@@ -105,7 +110,7 @@ namespace cpplox {
                 return simpleInstruction("POP", offset);
             } break;
             default: {
-                printf("Unknown opcode %d\n", opCode);
+                println("Unknown opcode {}", opCode);
                 return offset + 1;
             } break;
         }
@@ -113,7 +118,7 @@ namespace cpplox {
 
     std::size_t Disassembler::simpleInstruction(const char* name,
                                                 std::size_t offset) const {
-        printf("%s\n", name);
+        println("{}", name);
         return offset + 1;
     }
 
@@ -121,10 +126,7 @@ namespace cpplox {
                                                   const Chunk& chunk,
                                                   std::size_t offset) const {
         auto constant = chunk.code[offset + 1];
-
-        printf("%-16s %4u '", name, constant);
-        chunk.constants[constant].print();
-        printf("'\n");
+        printConstantInstruction(name, chunk, constant);
 
         return offset + 2;
     }
@@ -134,12 +136,16 @@ namespace cpplox {
                                                     std::size_t offset) const {
         auto a = chunk.code[offset + 1];
         auto b = chunk.code[offset + 2];
-        auto constant = static_cast<unsigned>(parseConstant16Index(a, b));
-
-        printf("%-16s %4u '", name, constant);
-        chunk.constants[constant].print();
-        printf("'\n");
+        auto constant = parseConstant16Index(a, b);
+        printConstantInstruction(name, chunk, constant);
 
         return offset + 3;
+    }
+
+    void Disassembler::printConstantInstruction(const char* name,
+                                                const Chunk& chunk,
+                                                std::size_t constIndex) const {
+        const Value& v = chunk.constants[constIndex];
+        println("{:<16} {:>4} '{}'", name, constIndex, v);
     }
 } // namespace cpplox
