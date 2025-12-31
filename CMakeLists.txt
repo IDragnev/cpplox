@@ -44,6 +44,13 @@ FetchContent_Declare(doctest
 )
 FetchContent_MakeAvailable(doctest)
 
+FetchContent_Declare(
+    fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG 11.0.2
+)
+FetchContent_MakeAvailable(fmt)
+
 # CPPLOX targets
 add_subdirectory(src/core)
 add_subdirectory(src/compiler)
