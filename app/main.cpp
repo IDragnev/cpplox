@@ -1,3 +1,4 @@
+#include "cpplox/log/Log.hpp"
 #include "cpplox/compiler/VM.hpp"
 #include "cpplox/compiler/Compiler.hpp"
 
@@ -29,11 +30,11 @@ int main(int argc, const char* argv[]) {
         std::string source = "";
         bool bFileOk = readFile(argv[1], source);
         if (bFileOk == false) {
-            fprintf(stderr, "Error reading '%s'\n", argv[1]);
+            cpplox::errorln("Error reading '{}'", argv[1]);
             return 74;
         }
         if (isASCII(source) == false) {
-            fprintf(stderr, "Invalid input - '%s' - non-ascii characters found\n", argv[1]);
+            cpplox::errorln("Invalid input - '{}' - non-ascii characters found", argv[1]);
             return 1;
         }
 
@@ -52,7 +53,7 @@ void repl(VM& vm) {
     std::string line = "";
 
     for (;;) {
-        printf("> ");
+        cpplox::print("> ");
 
         std::getline(std::cin, line);
         if (std::cin.fail() == false) {
@@ -63,10 +64,10 @@ void repl(VM& vm) {
             if (isASCII(line)) {
                 interpret(line, vm);
             } else {
-                fprintf(stderr, "Input error. Non-ascii charater found.\n");
+                cpplox::errorln("Input error. Non-ascii charater found.");
             }
         } else {
-            fprintf(stderr, "Input error. Please try again.\n");
+            cpplox::errorln("Input error. Please try again.");
         }
     }
 }
