@@ -6,21 +6,16 @@
 #include <string_view>
 
 namespace cpplox {
-    enum class ScanError {
-        OK,
-        DONE,
-        UNTERMINATED_STRING,
-        UNKNOWN_CHARACTER,
-    };
+    class DiagnosticEngine;
 
     struct ScanResult {
-        ScanError errorType = ScanError::OK;
+        bool error = false;
         Token token;
     };
 
     class Scanner {
     public:
-        Scanner(std::string_view source);
+        Scanner(std::string_view source, DiagnosticEngine* e);
 
         bool isDone() const;
         ScanResult scanToken();
@@ -37,7 +32,7 @@ namespace cpplox {
         void string(ScanResult& result);
         void number(ScanResult& result);
         void ident(ScanResult& result);
-        void scanError(ScanError e, ScanResult& r) const;
+        void scanError(ScanResult& r) const;
         Token makeToken(TokenType t) const;
 
         TokenType identifierType() const;
@@ -53,5 +48,6 @@ namespace cpplox {
         const char* start = nullptr;
         const char* current = nullptr;
         unsigned line = 0;
+        DiagnosticEngine* diagnostic = nullptr;
     };
 } // namespace cpplox

@@ -1,31 +1,10 @@
 #pragma once
 
-#include "cpplox/core/Vector.hpp"
 #include "cpplox/compiler/Scanner.hpp"
 #include "cpplox/compiler/Chunk.hpp"
 
 namespace cpplox {
-    enum class CompileErrorType {
-        UNKNOWN,
-        SCAN_ERROR,
-        EXPECTED_TOKEN,
-        EXPECTED_EXPRESSION,
-        EXPECTED_STATEMENT,
-        CONSTANTS_LIMIT_REACHED,
-        INVALID_ASSIGNMENT_TARGET,
-    };
-
-    struct CompileError {
-        CompileErrorType type = CompileErrorType::UNKNOWN;
-        ScanError scanError = ScanError::OK;
-        Token token;
-        TokenType expectedToken = TokenType::EOF_TOKEN;
-    };
-
-    struct CompileResult {
-        bool hasError = false;
-        Vector<CompileError> errors;
-    };
+    class DiagnosticEngine;
 
     class Compiler {
     private:
@@ -33,13 +12,13 @@ namespace cpplox {
         enum class OpPrecedence;
 
     public:
-        Compiler();
+        Compiler(DiagnosticEngine* engine);
         ~Compiler() = default;
 
         Compiler(const Compiler&) = delete;
         Compiler& operator=(const Compiler&) = delete;
 
-        CompileResult compile(std::string source, Chunk& chunk);
+        bool compile(std::string source, Chunk& chunk);
 
     private:
         void init(std::string&& source, Chunk& chunk);
@@ -47,9 +26,14 @@ namespace cpplox {
 
         void synchronize();
         void advance();
-        void addError(const CompileError& e);
         bool consumeToken(TokenType token);
         bool match(TokenType type);
+
+        template <typename... Args>
+        void consumeTokenErr(TokenType token, std::string_view fmt, Args&&... args);
+        template <typename... Args>
+        void compileError(const Token& t, std::string_view fmt, Args&&... args);
+        bool processError();
 
         bool makeConstant(Value value,
                           bool searchExisting,
@@ -95,7 +79,7 @@ namespace cpplox {
             bool hadError = false;
             bool panicMode = false;
         } parser;
-        Vector<CompileError> errors;
         Chunk* currentChunk = nullptr;
+        DiagnosticEngine* diagnostics = nullptr;
     };
 } // namespace cpplox

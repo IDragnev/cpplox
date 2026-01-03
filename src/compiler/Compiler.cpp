@@ -1,4 +1,5 @@
 #include "cpplox/compiler/Compiler.hpp"
+#include "cpplox/diagnostics/DiagnosticEngine.hpp"
 
 namespace cpplox {
     enum class Compiler::OpPrecedence {
@@ -63,13 +64,14 @@ namespace cpplox {
         return r;
     }
 
-    Compiler::Compiler()
+    Compiler::Compiler(DiagnosticEngine* e)
         : source("")
-        , scanner(source)
+        , scanner(source, e)
+        , diagnostics(e)
     {
     }
 
-    CompileResult Compiler::compile(std::string compileSource, Chunk& chunk) {
+    bool Compiler::compile(std::string compileSource, Chunk& chunk) {
         init(std::move(compileSource), chunk);
 
         advance();
@@ -82,26 +84,22 @@ namespace cpplox {
         }
         emitOpCode(OpCode::RETURN);
 
-        CompileResult result;
-        result.errors = std::move(this->errors);
-        result.hasError = parser.hadError;
-
+        bool hadError = parser.hadError;
         cleanUp();
 
-        return result;
+        return hadError;
     }
 
     void Compiler::init(std::string&& compileSource, Chunk& chunk) {
         source = std::move(compileSource);
-        scanner = Scanner(source);
+        scanner = Scanner(source, diagnostics);
         currentChunk = &chunk;
     }
 
     void Compiler::cleanUp() {
         source = "";
-        scanner = Scanner(source);
+        scanner = Scanner(source, diagnostics);
         parser = Parser{};
-        errors = Vector<CompileError>{};
         currentChunk = nullptr;
     }
 
@@ -133,19 +131,20 @@ namespace cpplox {
     void Compiler::advance() {
         parser.previous = parser.current;
 
+        if (scanner.isDone()) {
+            parser.current = Token{};
+            return;
+        }
+
         while (scanner.isDone() == false) {
             ScanResult r = scanner.scanToken();
             parser.current = r.token;
 
-            if (r.errorType == ScanError::OK) {
+            if (r.error == false) {
                 break;
             }
             else {
-                addError(CompileError{
-                    .type = CompileErrorType::SCAN_ERROR,
-                    .scanError = r.errorType,
-                    .token = parser.current,
-                });
+                processError();
             }
         }
     }
@@ -169,13 +168,14 @@ namespace cpplox {
         else {
             emitOpCode(OpCode::NIL);
         }
-        consumeToken(TokenType::SEMICOLON);
+        consumeTokenErr(TokenType::SEMICOLON,
+                        "Expected ';' after variable declaration");
 
         defineVariable(idx, largeIdx);
     }
 
     void Compiler::parseVariable(std::size_t& idx, bool& largeIdx) {
-        consumeToken(TokenType::IDENTIFIER);
+        consumeTokenErr(TokenType::IDENTIFIER, "Expected variable name");
         makeConstant(Value(String(parser.previous.lexeme)),
                      true,
                      idx,
@@ -199,13 +199,13 @@ namespace cpplox {
 
     void Compiler::printStatement() {
         expression();
-        consumeToken(TokenType::SEMICOLON);
+        consumeTokenErr(TokenType::SEMICOLON, "Expected ';' after expression");
         emitOpCode(OpCode::PRINT);
     }
 
     void Compiler::expressionStatement() {
         expression();
-        consumeToken(TokenType::SEMICOLON);
+        consumeTokenErr(TokenType::SEMICOLON, "Expected ';' after expression");
         emitOpCode(OpCode::POP);
     }
 
@@ -221,10 +221,7 @@ namespace cpplox {
         ParseRule rule = getParseRule(parser.previous.type);
         ParseFn prefixRule = rule.prefix;
         if (prefixRule == nullptr) {
-            addError(CompileError {
-                .type = CompileErrorType::EXPECTED_EXPRESSION,
-                .token = parser.previous,
-            });
+            compileError(parser.previous, "Expected expression");
             return;
         }
 
@@ -240,16 +237,13 @@ namespace cpplox {
         }
 
         if (canAssign && match(TokenType::EQUAL)) {
-            addError(CompileError{
-                .type = CompileErrorType::INVALID_ASSIGNMENT_TARGET,
-                .token = parser.previous,
-            });
+            compileError(parser.previous, "Invalid assignment target");
         }
     }
 
     void Compiler::grouping(bool) {
         expression();
-        consumeToken(TokenType::RIGHT_PAREN);
+        consumeTokenErr(TokenType::RIGHT_PAREN, "Missing closing ')'");
     }
 
     void Compiler::binary(bool) {
@@ -380,23 +374,40 @@ namespace cpplox {
             return true;
         }
 
-        addError(CompileError{
-            .type = CompileErrorType::EXPECTED_TOKEN,
-            .token = parser.current,
-            .expectedToken = tokenType,
-        });
-
         return false;
     }
 
-    void Compiler::addError(const CompileError& e) {
+    template <typename... Args>
+    void Compiler::consumeTokenErr(TokenType token,
+                                   std::string_view fmt,
+                                   Args&&... args) {
+        bool ok = consumeToken(token);
+        if (ok == false) {
+            compileError(parser.current, fmt, std::forward<Args>(args)...);
+        }
+    }
+
+    template <typename... Args>
+    void Compiler::compileError(const Token& t,
+                                std::string_view fmt,
+                                Args&&... args) {
+        bool process = processError();
+        if (process && diagnostics != nullptr) {
+            diagnostics->report(t.line, fmt, std::forward<Args>(args)...);
+        } 
+    }
+
+    bool Compiler::processError() {
+        bool realError = false;
         if (parser.panicMode) {
-            return;
+            return realError;
         }
 
+        realError = true;
         parser.panicMode = true;
         parser.hadError = true;
-        errors.insertBack(e);
+
+        return realError;
     }
 
     bool Compiler::makeConstant(Value value,
@@ -430,10 +441,7 @@ namespace cpplox {
         } else if (idx <= C16MAX) {
             largeIdx = true;
         } else {
-            addError(CompileError{
-                .type = CompileErrorType::CONSTANTS_LIMIT_REACHED,
-                .token = parser.previous,
-            });
+            compileError(parser.previous, "Constants limits reached");
             success = false;
         }
 
@@ -481,4 +489,4 @@ namespace cpplox {
         emitByte(a);
         emitByte(b);
     }
-}
+} // namespace cpplox

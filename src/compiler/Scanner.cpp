@@ -1,11 +1,13 @@
 #include "cpplox/compiler/Scanner.hpp"
+#include "cpplox/diagnostics/DiagnosticEngine.hpp"
 
 namespace cpplox {
-    Scanner::Scanner(std::string_view source)
+    Scanner::Scanner(std::string_view source, DiagnosticEngine* e)
         : source(source)
         , start(source.data())
         , current(source.data()) 
         , line(1)
+        , diagnostic(e)
     {
         toTokenStart();
     }
@@ -20,13 +22,13 @@ namespace cpplox {
     ScanResult Scanner::scanToken() {
         ScanResult result;
         if (isDone()) {
-            result.errorType = ScanError::DONE;
+            result.error = true;
             result.token = makeToken(TokenType::EOF_TOKEN);
 
             return result;
         }
 
-        result.errorType = ScanError::OK;
+        result.error = false;
         char c = advance();
 
         if (isDigit(c)) {
@@ -94,7 +96,10 @@ namespace cpplox {
                 string(result);
             } break;
             default: {
-                scanError(ScanError::UNKNOWN_CHARACTER, result);
+                scanError(result);
+                if (diagnostic != nullptr) {
+                    diagnostic->report(line, "Unknown character found: '{}'", c);
+                }
             } break;
         }
 
@@ -118,7 +123,10 @@ namespace cpplox {
 
             result.token = makeToken(TokenType::STRING);
         } else {
-            scanError(ScanError::UNTERMINATED_STRING, result);
+            scanError(result);
+            if (diagnostic != nullptr) {
+                diagnostic->report(line, "Unterminated string");
+            }
         }
     }
 
@@ -219,8 +227,8 @@ namespace cpplox {
         return token;
     }
 
-    void Scanner::scanError(ScanError e, ScanResult& r) const {
-        r.errorType = e;
+    void Scanner::scanError(ScanResult& r) const {
+        r.error = true;
         r.token.type = TokenType::ERROR;
         r.token.line = line;
         r.token.lexeme = std::string_view();

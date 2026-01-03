@@ -21,6 +21,7 @@ add_library(
 )
 target_link_libraries(compiler
   PUBLIC corelib
+  PUBLIC diagnostics
   PRIVATE loglib
 )
 target_include_directories(compiler PUBLIC ${PROJECT_SOURCE_DIR}/include)
