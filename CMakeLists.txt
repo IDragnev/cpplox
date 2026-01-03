@@ -53,6 +53,7 @@ FetchContent_MakeAvailable(fmt)
 
 # CPPLOX targets
 add_subdirectory(include/cpplox/log)
+add_subdirectory(include/cpplox/diagnostics)
 add_subdirectory(src/core)
 add_subdirectory(src/compiler)
 add_subdirectory(app)
