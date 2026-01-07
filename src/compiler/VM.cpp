@@ -29,7 +29,7 @@ namespace cpplox {
         const auto readByte = [this] {
             return *(ip++);
         };
-        const auto readIdx16 = [this, &readByte] {
+        const auto readIdx16 = [&readByte] {
             auto a = readByte();
             auto b = readByte();
             return parseTwoByteInteger(a, b);
