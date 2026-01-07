@@ -34,6 +34,46 @@ TEST_CASE("Pop returns last element and decreases size") {
     CHECK_FALSE(s.isEmpty());
 }
 
+TEST_CASE("PopN(n) with n < size pops last n elements") {
+    ValueStack s;
+
+    const int size = 10;
+    for (int i = 1; i <= size; ++i) {
+        s.push(Value((double)i));
+    }
+
+    const int n = 4;
+    s.popN(n);
+
+    const int rem = size - n;
+    REQUIRE_FALSE(s.isEmpty());
+    REQUIRE(s.size() == rem);
+    for (int i = rem; i >= 1; --i) {
+        CHECK(s.pop().asNumber() == doctest::Approx(i));
+    }
+    CHECK(s.isEmpty());
+}
+
+TEST_CASE("PopN(n) with n >= size pops all elements") {
+    ValueStack s;
+
+    const int size = 10;
+    for (int i = 0; i < size; ++i) {
+        s.push(Value(false));
+    }
+
+    SUBCASE("n == size") {
+        s.popN(size);
+
+        REQUIRE(s.isEmpty());
+    }
+    SUBCASE("n > size") {
+        s.popN(size + 1);
+
+        REQUIRE(s.isEmpty());
+    }
+}
+
 TEST_CASE("PeekN returns nth-from-top element") {
     ValueStack s;
     s.push(Value(5.0));

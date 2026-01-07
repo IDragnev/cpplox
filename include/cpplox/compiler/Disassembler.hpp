@@ -22,8 +22,16 @@ namespace cpplox {
         std::size_t constant16Instruction(const char* name,
                                           const Chunk& chunk,
                                           std::size_t offset) const;
+        std::size_t integerInstruction(const char* name,
+                                       const Chunk& chunk,
+                                       std::size_t offset) const;
+        std::size_t integer16Instruction(const char* name,
+                                         const Chunk& chunk,
+                                         std::size_t offset) const;
         void printConstantInstruction(const char* name,
                                       const Chunk& chunk,
                                       std::size_t constIndex) const;
+        void printIntegerInstruction(const char* name,
+                                     std::size_t operand) const;
     };
 } // namespace cpplox

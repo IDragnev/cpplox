@@ -2,9 +2,10 @@
 
 #include "cpplox/core/ValueStack.hpp"
 #include "cpplox/core/ValueMap.hpp"
-#include "cpplox/compiler/Chunk.hpp"
 
 namespace cpplox {
+    struct Chunk;
+
     enum class InterpretResult {
         OK,
         COMPILE_ERROR,

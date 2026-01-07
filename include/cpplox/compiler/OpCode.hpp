@@ -1,0 +1,38 @@
+#pragma once
+
+namespace cpplox {
+    enum class OpCode {
+        RETURN,
+        CONSTANT,
+        CONSTANT_16,
+        NIL,
+        TRUE,
+        FALSE,
+        NOT,
+        NEGATE,
+        EQUAL,
+        NOT_EQUAL,
+        LESS,
+        LESS_EQUAL,
+        GREATER,
+        GREATER_EQUAL,
+        ADD,
+        SUBTRACT,
+        MULTIPLY,
+        DIVIDE,
+        PRINT,
+        POP,
+        POP_N,
+        POP_N_16,
+        DEFINE_GLOBAL,
+        DEFINE_GLOBAL_16,
+        READ_GLOBAL,
+        READ_GLOBAL_16,
+        SET_GLOBAL,
+        SET_GLOBAL_16,
+        READ_LOCAL,
+        READ_LOCAL_16,
+        SET_LOCAL,
+        SET_LOCAL_16,
+    };
+}

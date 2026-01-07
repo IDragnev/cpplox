@@ -1,5 +1,7 @@
 #include "cpplox/compiler/VM.hpp"
 #include "cpplox/compiler/Disassembler.hpp"
+#include "cpplox/compiler/OpCode.hpp"
+#include "cpplox/compiler/Bytecode.hpp"
 #include "cpplox/log/Log.hpp"
 #include <stdio.h>
 
@@ -27,14 +29,16 @@ namespace cpplox {
         const auto readByte = [this] {
             return *(ip++);
         };
+        const auto readIdx16 = [this, &readByte] {
+            auto a = readByte();
+            auto b = readByte();
+            return parseTwoByteInteger(a, b);
+        };
         const auto readConstant = [this, &readByte] {
             return chunk->constants[readByte()];
         };
-        const auto readConstant16 = [this, &readByte] {
-            auto a = readByte();
-            auto b = readByte();
-            const auto i = parseConstant16Index(a, b);
-            return chunk->constants[i];
+        const auto readConstant16 = [this, &readIdx16] {
+            return chunk->constants[readIdx16()];
         };
 
 #ifdef CPPLOX_DEBUG_TRACE_EXECUTION
@@ -136,6 +140,12 @@ namespace cpplox {
                 case OpCode::POP: {
                     stack.pop();
                 } break;
+                case OpCode::POP_N:
+                case OpCode::POP_N_16: {
+                    const std::size_t n =
+                        opCode == OpCode::POP_N ? readByte() : readIdx16();
+                    stack.popN(n);
+                } break;
                 case OpCode::DEFINE_GLOBAL:
                 case OpCode::DEFINE_GLOBAL_16: {
                     Value name = opCode == OpCode::DEFINE_GLOBAL
@@ -193,6 +203,18 @@ namespace cpplox {
                         runtimeError("Internal compiler error.");
                         return InterpretResult::RUNTIME_ERROR;
                     }
+                } break;
+                case OpCode::READ_LOCAL:
+                case OpCode::READ_LOCAL_16: {
+                    const std::size_t idx =
+                        opCode == OpCode::READ_LOCAL ? readByte() : readIdx16();
+                    stack.push(stack.at(idx));
+                } break;
+                case OpCode::SET_LOCAL:
+                case OpCode::SET_LOCAL_16: {
+                    const std::size_t idx =
+                        opCode == OpCode::SET_LOCAL ? readByte() : readIdx16();
+                    stack.at(idx) = stack.peek();
                 } break;
                 default: {
                     return InterpretResult::OK;

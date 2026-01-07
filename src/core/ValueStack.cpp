@@ -11,6 +11,16 @@ namespace cpplox {
         return v;
     }
 
+    void ValueStack::popN(std::size_t n) {
+        for (; n > 0; --n) {
+            if (isEmpty()) {
+                break;
+            }
+
+            stack.removeBack();
+        }
+    }
+
     const Value& ValueStack::peekN(std::size_t n) {
         const std::size_t i = stack.getCount() - 1 - n;
         return stack[i];

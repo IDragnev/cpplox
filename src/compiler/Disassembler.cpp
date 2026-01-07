@@ -1,5 +1,6 @@
 #include "cpplox/compiler/Disassembler.hpp"
-#include "cpplox/compiler/Chunk.hpp"
+#include "cpplox/compiler/OpCode.hpp"
+#include "cpplox/compiler/Bytecode.hpp"
 #include "cpplox/core/ValueFormatter.hpp"
 #include "cpplox/log/Log.hpp"
 
@@ -94,6 +95,18 @@ namespace cpplox {
             case OpCode::SET_GLOBAL_16: {
                 return constant16Instruction("SET_GLOBAL_16", chunk, offset);
             } break;
+            case OpCode::READ_LOCAL: {
+                return integerInstruction("READ_LOCAL", chunk, offset);
+            } break;
+            case OpCode::READ_LOCAL_16: {
+                return integer16Instruction("READ_LOCAL_16", chunk, offset);
+            } break;
+            case OpCode::SET_LOCAL: {
+                return integerInstruction("SET_LOCAL", chunk, offset);
+            } break;
+            case OpCode::SET_LOCAL_16: {
+                return integer16Instruction("SET_LOCAL_16", chunk, offset);
+            } break;
             case OpCode::TRUE: {
                 return simpleInstruction("TRUE", offset);
             } break;
@@ -108,6 +121,12 @@ namespace cpplox {
             } break;
             case OpCode::POP: {
                 return simpleInstruction("POP", offset);
+            } break;
+            case OpCode::POP_N: {
+                return integerInstruction("POP_N", chunk, offset);
+            } break;
+            case OpCode::POP_N_16: {
+                return integer16Instruction("POP_N_16", chunk, offset);
             } break;
             default: {
                 println("Unknown opcode {}", opCode);
@@ -136,8 +155,28 @@ namespace cpplox {
                                                     std::size_t offset) const {
         auto a = chunk.code[offset + 1];
         auto b = chunk.code[offset + 2];
-        auto constant = parseConstant16Index(a, b);
+        auto constant = parseTwoByteInteger(a, b);
         printConstantInstruction(name, chunk, constant);
+
+        return offset + 3;
+    }
+
+    std::size_t Disassembler::integerInstruction(const char* name,
+                                                 const Chunk& chunk,
+                                                 std::size_t offset) const {
+        auto operand = chunk.code[offset + 1];
+        printIntegerInstruction(name, operand);
+
+        return offset + 2;
+    }
+
+    std::size_t Disassembler::integer16Instruction(const char* name,
+                                                   const Chunk& chunk,
+                                                   std::size_t offset) const {
+        auto a = chunk.code[offset + 1];
+        auto b = chunk.code[offset + 2];
+        auto operand = parseTwoByteInteger(a, b);
+        printIntegerInstruction(name, operand);
 
         return offset + 3;
     }
@@ -147,5 +186,10 @@ namespace cpplox {
                                                 std::size_t constIndex) const {
         const Value& v = chunk.constants[constIndex];
         println("{:<16} {:>4} '{}'", name, constIndex, v);
+    }
+
+    void Disassembler::printIntegerInstruction(const char* name,
+                                               std::size_t operand) const {
+        println("{:<16} {:>4}", name, operand);
     }
 } // namespace cpplox

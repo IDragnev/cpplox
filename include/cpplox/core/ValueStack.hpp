@@ -8,11 +8,15 @@ namespace cpplox {
     public:
         ValueStack();
 
+        const Value& at(std::size_t i) const { return stack[i]; }
+        Value& at(std::size_t i) { return stack[i]; }
+
         const Value& peekN(std::size_t n);
         const Value& peek() const { return stack.back(); }
         Value& peek() { return stack.back(); }
 
         Value pop();
+        void popN(std::size_t n);
         void push(Value&& v) { stack.insertBack(std::move(v)); }
         void push(const Value& v) { stack.insertBack(v); }
         void clear();

@@ -1,7 +1,13 @@
 #include "cpplox/compiler/Compiler.hpp"
+#include "cpplox/compiler/OpCode.hpp"
+#include "cpplox/compiler/Bytecode.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
+#include <limits>
 
 namespace cpplox {
+    static const std::size_t MAX_LOCALS =
+        std::numeric_limits<std::uint16_t>::max() + 1;
+
     enum class Compiler::OpPrecedence {
         NONE,
         ASSIGNMENT, // =
@@ -94,6 +100,7 @@ namespace cpplox {
         source = std::move(compileSource);
         scanner = Scanner(source, diagnostics);
         currentChunk = &chunk;
+        locals.reserve(MAX_LOCALS);
     }
 
     void Compiler::cleanUp() {
@@ -101,6 +108,7 @@ namespace cpplox {
         scanner = Scanner(source, diagnostics);
         parser = Parser{};
         currentChunk = nullptr;
+        locals.clear();
     }
 
     void Compiler::synchronize() {
@@ -126,6 +134,58 @@ namespace cpplox {
 
             advance();
         }
+    }
+
+    void Compiler::beginScope() {
+        ++scopeDepth;
+    }
+
+    void Compiler::endScope() {
+        if (scopeDepth > 0) {
+            --scopeDepth;
+        }
+
+        std::uint16_t popCount = 0;
+        while (locals.isEmpty() == false && locals.back().depth > scopeDepth) {
+            locals.removeBack();
+            ++popCount;
+        }
+
+        emitIntegerInstruction(OpCode::POP_N,
+                               OpCode::POP_N_16,
+                               popCount);
+    }
+
+    void Compiler::addLocal(const Token& name) {
+        if (locals.getCount() == MAX_LOCALS) {
+            compileError(name, "Too many local variables in a function");
+            return;
+        }
+
+        locals.insertBack(Local{
+            .name = name,
+            .depth = scopeDepth,
+            .initialized = false,
+        });
+    }
+
+    bool Compiler::resolveLocal(const Token& name, std::size_t& idx) {
+        for (std::size_t i = locals.getCount(); i > 0; --i) {
+            auto localIdx = i - 1;
+            const Local& local = locals[localIdx];
+            if (local.name.lexeme == name.lexeme) {
+                if (local.initialized == false) {
+                    compileError(
+                        name,
+                        "Can't read a local variable in its initializer");
+                }
+
+                idx = localIdx;
+                return true;
+            }
+        }
+
+        return false;
     }
 
     void Compiler::advance() {
@@ -159,8 +219,7 @@ namespace cpplox {
 
     void Compiler::varDeclaration() {
         std::size_t idx = 0;
-        bool largeIdx = false;
-        parseVariable(idx, largeIdx);
+        parseVariable(idx);
 
         if (match(TokenType::EQUAL)) {
             expression();
@@ -171,30 +230,77 @@ namespace cpplox {
         consumeTokenErr(TokenType::SEMICOLON,
                         "Expected ';' after variable declaration");
 
-        defineVariable(idx, largeIdx);
+        defineVariable(idx);
     }
 
-    void Compiler::parseVariable(std::size_t& idx, bool& largeIdx) {
+    void Compiler::parseVariable(std::size_t& idx) {
         consumeTokenErr(TokenType::IDENTIFIER, "Expected variable name");
-        makeConstant(Value(String(parser.previous.lexeme)),
-                     true,
-                     idx,
-                     largeIdx);
+
+        const bool local = scopeDepth > 0;
+        if (local) {
+            declareVariable(parser.previous);
+        } else {
+            makeConstant(Value(String(parser.previous.lexeme)),
+                         true,
+                         idx);
+        }
     }
 
-    void Compiler::defineVariable(std::size_t idx, bool largeIdx) {
-        emitConstantInstruction(OpCode::DEFINE_GLOBAL,
-                                OpCode::DEFINE_GLOBAL_16,
-                                idx,
-                                largeIdx);
+    void Compiler::declareVariable(const Token& name) {
+        if (bool global = scopeDepth == 0; global) {
+            return;
+        }
+
+        for (std::size_t i = locals.getCount(); i > 0; --i) {
+            const Local& loc = locals[i - 1];
+
+            if (loc.initialized && loc.depth < scopeDepth) {
+                break;
+            }
+
+            if (loc.name.lexeme == name.lexeme) {
+                compileError(
+                    name,
+                    "Variable with name '{}' already exists in this scope",
+                    name.lexeme);
+            }
+        }
+
+        addLocal(name);
+    }
+
+    void Compiler::defineVariable(std::size_t idx) {
+        if (bool localScope = scopeDepth > 0; localScope) {
+            if (locals.getCount() > 0) {
+                locals.back().initialized = true;
+            }
+        } else {
+            emitIntegerInstruction(OpCode::DEFINE_GLOBAL,
+                                   OpCode::DEFINE_GLOBAL_16,
+                                   idx);
+        }
     }
 
     void Compiler::statement() {
         if (match(TokenType::PRINT)) {
             printStatement();
+        } else if (match(TokenType::LEFT_BRACE)) {
+            beginScope();
+            block();
+            endScope();
         } else {
             expressionStatement();
         }
+    }
+    
+    void Compiler::block() {
+        while (scanner.isDone() == false &&
+               peek(TokenType::RIGHT_BRACE) == false)
+        {
+            declaration();
+        }
+
+        consumeTokenErr(TokenType::RIGHT_BRACE, "Expected '}}' after block");
     }
 
     void Compiler::printStatement() {
@@ -328,20 +434,32 @@ namespace cpplox {
 
     void Compiler::namedVariable(const Token& t, bool canAssign) {
         std::size_t idx = 0;
-        bool largeIdx = false;
-        makeConstant(Value(String(t.lexeme)), true, idx, largeIdx);
+        bool local = resolveLocal(t, idx);
+        if (local == false) {
+            makeConstant(Value(String(t.lexeme)), true, idx);
+        }
 
         if (canAssign && match(TokenType::EQUAL)) {
             expression();
-            emitConstantInstruction(OpCode::SET_GLOBAL,
-                                    OpCode::SET_GLOBAL_16,
-                                    idx,
-                                    largeIdx);
+            if (local) {
+                emitIntegerInstruction(OpCode::SET_LOCAL,
+                                       OpCode::SET_LOCAL_16,
+                                       idx);
+            } else {
+                emitIntegerInstruction(OpCode::SET_GLOBAL,
+                                       OpCode::SET_GLOBAL_16,
+                                       idx);
+            }
         } else {
-            emitConstantInstruction(OpCode::READ_GLOBAL,
-                                    OpCode::READ_GLOBAL_16,
-                                    idx,
-                                    largeIdx);
+            if (local) {
+                emitIntegerInstruction(OpCode::READ_LOCAL,
+                                       OpCode::READ_LOCAL_16,
+                                       idx);
+            } else {
+                emitIntegerInstruction(OpCode::READ_GLOBAL,
+                                       OpCode::READ_GLOBAL_16,
+                                       idx);
+            }
         }
     }
 
@@ -366,6 +484,10 @@ namespace cpplox {
         }
 
         return false;
+    }
+
+    bool Compiler::peek(TokenType type) const {
+        return parser.current.type == type;
     }
 
     bool Compiler::consumeToken(TokenType tokenType) {
@@ -412,13 +534,7 @@ namespace cpplox {
 
     bool Compiler::makeConstant(Value value,
                                 bool searchExisting,
-                                std::size_t& idx,
-                                bool& largeIdx) {
-        constexpr auto CMAX =
-            static_cast<std::size_t>(std::numeric_limits<std::uint8_t>::max());
-        constexpr auto C16MAX =
-            static_cast<std::size_t>(std::numeric_limits<std::uint16_t>::max());
-
+                                std::size_t& idx) {
         bool found = false;
         if (searchExisting) {
             const Vector<Value>& constants = currentChunk->constants;
@@ -436,11 +552,7 @@ namespace cpplox {
         }
 
         bool success = true;
-        if (idx <= CMAX) {
-            largeIdx = false;
-        } else if (idx <= C16MAX) {
-            largeIdx = true;
-        } else {
+        if (fitsTwoBytes(idx) == false) {
             compileError(parser.previous, "Constants limits reached");
             success = false;
         }
@@ -450,27 +562,24 @@ namespace cpplox {
 
     void Compiler::emitConstant(Value value) {
         std::size_t i = 0;
-        bool const16 = false;
-        bool ok = makeConstant(std::move(value), false, i, const16);
+        bool ok = makeConstant(std::move(value), false, i);
         if (ok) {
-            emitConstantInstruction(OpCode::CONSTANT,
-                                    OpCode::CONSTANT_16,
-                                    i,
-                                    const16);
+            emitIntegerInstruction(OpCode::CONSTANT,
+                                   OpCode::CONSTANT_16,
+                                   i);
         }
     }
 
-    void Compiler::emitConstantInstruction(OpCode small,
-                                           OpCode big,
-                                           std::size_t idx,
-                                           bool const16) {
-        if (const16 == false) {
+    void Compiler::emitIntegerInstruction(OpCode small,
+                                          OpCode big,
+                                          std::size_t operand) {
+        if (fitsOneByte(operand)) {
             emitOpCode(small);
-            emitByte(static_cast<std::uint8_t>(idx));
-        } else {
+            emitByte(static_cast<std::uint8_t>(operand));
+        } else if (fitsTwoBytes(operand)) {
             std::uint8_t a = 0;
             std::uint8_t b = 0;
-            serializeConstant16Index(idx, a, b);
+            serializeTwoByteInteger(operand, a, b);
 
             emitOpCode(big);
             emitBytes(a, b);
