@@ -1,6 +1,8 @@
 #include "cpplox/log/Log.hpp"
 #include "cpplox/compiler/VM.hpp"
+#include "cpplox/compiler/Chunk.hpp"
 #include "cpplox/compiler/Compiler.hpp"
+#include "cpplox/diagnostics/DiagnosticEngine.hpp"
 
 #include <string>
 #include <iostream>
@@ -8,24 +10,33 @@
 #include <sstream>
 
 using cpplox::VM;
+using cpplox::Compiler;
 using cpplox::InterpretResult;
+using cpplox::DiagnosticConsumer;
+using cpplox::DiagnosticEngine;
 
-void logCompileErrors(const cpplox::CompileResult& r);
-void logCompileError(const cpplox::CompileError& r);
+class DiagnosticLogger : public DiagnosticConsumer {
+public:
+    void consume(cpplox::Diagnostic&& d) override {
+        cpplox::errorln("Compile error on line {}: {}.", d.line, d.msg);
+    }
+};
 
 bool isASCII(const std::string& str);
 
-InterpretResult interpret(std::string source, VM& vm);
-void repl(VM& vm);
+InterpretResult interpret(std::string source, VM& vm, Compiler& c);
+void repl(VM& vm, Compiler& c);
 bool readFile(const char* filename, std::string& result);
 
 int main(int argc, const char* argv[]) {
     std::locale::global(std::locale("en_US.UTF-8"));
 
+    DiagnosticEngine diagnostics(std::make_unique<DiagnosticLogger>());
+    Compiler compiler(&diagnostics);
     VM vm;
 
     if (argc == 1) {
-        repl(vm);
+        repl(vm, compiler);
     } else if (argc == 2) {
         std::string source = "";
         bool bFileOk = readFile(argv[1], source);
@@ -38,7 +49,7 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-        auto r = interpret(std::move(source), vm);
+        auto r = interpret(std::move(source), vm, compiler);
         if (r != InterpretResult::OK) {
             return 1;
         }
@@ -49,7 +60,7 @@ int main(int argc, const char* argv[]) {
     return 0;
 }
 
-void repl(VM& vm) {
+void repl(VM& vm, Compiler& compiler) {
     std::string line = "";
 
     for (;;) {
@@ -62,7 +73,7 @@ void repl(VM& vm) {
             }
 
             if (isASCII(line)) {
-                interpret(line, vm);
+                interpret(line, vm, compiler);
             } else {
                 cpplox::errorln("Input error. Non-ascii charater found.");
             }
@@ -72,13 +83,11 @@ void repl(VM& vm) {
     }
 }
 
-InterpretResult interpret(std::string source, VM& vm) {
-    cpplox::Compiler compiler;
+InterpretResult interpret(std::string source, VM& vm, Compiler& compiler) {
     cpplox::Chunk chunk;
 
-    cpplox::CompileResult r = compiler.compile(std::move(source), chunk);
-    if (r.hasError) {
-        logCompileErrors(r);
+    bool hadError = compiler.compile(std::move(source), chunk);
+    if (hadError) {
         return InterpretResult::COMPILE_ERROR;
     }
 
@@ -110,57 +119,4 @@ bool isASCII(const std::string& str) {
     }
 
     return true;
-}
-
-void logCompileErrors(const cpplox::CompileResult& r) {
-    fprintf(stderr, "Compile error.\n");
-
-    std::size_t count = r.errors.getCount();
-    for (std::size_t i = 0; i < count; ++i) {
-        logCompileError(r.errors[i]);
-    }
-}
-
-void logCompileError(const cpplox::CompileError& e) {
-    using cpplox::CompileErrorType;
-    using cpplox::ScanError;
-
-    fprintf(stderr, "Error at line %u: ", e.token.line);
-
-    switch (e.type) {
-        case CompileErrorType::SCAN_ERROR: {
-            switch (e.scanError) {
-                case ScanError::UNKNOWN_CHARACTER: {
-                    fprintf(stderr, "Unknown character found.");
-                } break;
-                case ScanError::UNTERMINATED_STRING: {
-                    fprintf(stderr, "Unterminated string.");
-                } break;
-                default: break;
-            }
-        } break;
-        case CompileErrorType::EXPECTED_TOKEN: {
-            fprintf(stderr,
-                    "Expected token %d.",
-                    static_cast<int>(e.expectedToken));
-            if (e.token.type != cpplox::TokenType::ERROR) {
-                fprintf(stderr, "Found %d.", static_cast<int>(e.token.type));
-            }
-        } break;
-        case CompileErrorType::EXPECTED_EXPRESSION: {
-            fprintf(stderr, "Expected expression.");
-        } break;
-        case CompileErrorType::EXPECTED_STATEMENT: {
-            fprintf(stderr, "Expected statement.");
-        } break;
-        case CompileErrorType::CONSTANTS_LIMIT_REACHED: {
-            fprintf(stderr, "Constants limit reached!");
-        } break;
-        case CompileErrorType::INVALID_ASSIGNMENT_TARGET: {
-            fprintf(stderr, "Invalid assignment target.");
-        } break;
-        default: break;
-    }
-
-    fprintf(stderr, "\n");
 }
