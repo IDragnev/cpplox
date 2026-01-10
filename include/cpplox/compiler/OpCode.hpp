@@ -34,5 +34,7 @@ namespace cpplox {
         READ_LOCAL_16,
         SET_LOCAL,
         SET_LOCAL_16,
+        JMP_IF_FALSE,
+        JMP,
     };
 }

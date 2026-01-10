@@ -284,6 +284,8 @@ namespace cpplox {
     void Compiler::statement() {
         if (match(TokenType::PRINT)) {
             printStatement();
+        } else if (match(TokenType::IF)) {
+            ifStatement();
         } else if (match(TokenType::LEFT_BRACE)) {
             beginScope();
             block();
@@ -301,6 +303,24 @@ namespace cpplox {
         }
 
         consumeTokenErr(TokenType::RIGHT_BRACE, "Expected '}}' after block");
+    }
+
+    void Compiler::ifStatement() {
+        consumeTokenErr(TokenType::LEFT_PAREN, "Expected '(' after if");
+        expression();
+        consumeTokenErr(TokenType::RIGHT_PAREN, "Expected ')' after condition");
+
+        std::size_t thenJmp = emitJump(OpCode::JMP_IF_FALSE);
+        emitOpCode(OpCode::POP);
+        statement();
+        std::size_t elseJmp = emitJump(OpCode::JMP);
+        patchJump(thenJmp);
+
+        emitOpCode(OpCode::POP);
+        if (match(TokenType::ELSE)) {
+            statement();
+        }
+        patchJump(elseJmp);
     }
 
     void Compiler::printStatement() {
@@ -584,6 +604,34 @@ namespace cpplox {
             emitOpCode(big);
             emitBytes(a, b);
         }
+    }
+
+    std::size_t Compiler::emitJump(OpCode op) {
+        emitOpCode(op);
+        emitBytes(0xff, 0xff);
+
+        return currentChunk->code.getCount() - 2;
+    }
+
+    void Compiler::patchJump(std::size_t offset) {
+        const std::size_t JMP_ARGS_COUNT = 2;
+        const std::size_t current = currentChunk->code.getCount();
+        if (current <= offset || current - offset < JMP_ARGS_COUNT) {
+            // guard against underflow
+            return;
+        }
+
+        const std::size_t jmp = current - offset - JMP_ARGS_COUNT;
+        if (fitsTwoBytes(jmp) == false) {
+            compileError(parser.previous, "Too much code to jump over");
+        }
+
+        std::uint8_t a = 0;
+        std::uint8_t b = 0;
+        serializeTwoByteInteger(jmp, a, b);
+
+        currentChunk->code[offset] = a;
+        currentChunk->code[offset + 1] = b;
     }
 
     void Compiler::emitOpCode(OpCode op) {

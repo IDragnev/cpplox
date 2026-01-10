@@ -128,8 +128,14 @@ namespace cpplox {
             case OpCode::POP_N_16: {
                 return integer16Instruction("POP_N_16", chunk, offset);
             } break;
+            case OpCode::JMP: {
+                return integer16Instruction("JMP", chunk, offset);
+            } break;
+            case OpCode::JMP_IF_FALSE: {
+                return integer16Instruction("JMP_IF_FALSE", chunk, offset);
+            } break;
             default: {
-                println("Unknown opcode {}", opCode);
+                println("Unknown opcode '{}'", opCode);
                 return offset + 1;
             } break;
         }

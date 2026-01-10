@@ -56,6 +56,8 @@ namespace cpplox {
         void emitIntegerInstruction(OpCode small,
                                     OpCode big,
                                     std::size_t operand);
+        std::size_t emitJump(OpCode op);
+        void patchJump(std::size_t offset);
         void emitOpCode(OpCode op);
         void emitByte(std::uint8_t byte);
         void emitBytes(std::uint8_t a, std::uint8_t b);
@@ -67,6 +69,7 @@ namespace cpplox {
         void declareVariable(const Token& t);
         void defineVariable(std::size_t idx);
         void statement();
+        void ifStatement();
         void block();
         void printStatement();
         void expressionStatement();

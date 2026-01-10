@@ -216,6 +216,16 @@ namespace cpplox {
                         opCode == OpCode::SET_LOCAL ? readByte() : readIdx16();
                     stack.at(idx) = stack.peek();
                 } break;
+                case OpCode::JMP_IF_FALSE: {
+                    const std::size_t offset = readIdx16();
+                    if (stack.peek().isFalsey()) {
+                        ip += offset;
+                    }
+                } break;
+                case OpCode::JMP: {
+                    const std::size_t offset = readIdx16();
+                    ip += offset;
+                } break;
                 default: {
                     return InterpretResult::OK;
                 } break;
