@@ -36,5 +36,6 @@ namespace cpplox {
         SET_LOCAL_16,
         JMP_IF_FALSE,
         JMP,
+        LOOP,
     };
 }

@@ -226,6 +226,10 @@ namespace cpplox {
                     const std::size_t offset = readIdx16();
                     ip += offset;
                 } break;
+                case OpCode::LOOP: {
+                    const std::size_t offset = readIdx16();
+                    ip -= offset;
+                } break;
                 default: {
                     return InterpretResult::OK;
                 } break;

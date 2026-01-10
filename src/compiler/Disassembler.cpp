@@ -134,6 +134,9 @@ namespace cpplox {
             case OpCode::JMP_IF_FALSE: {
                 return integer16Instruction("JMP_IF_FALSE", chunk, offset);
             } break;
+            case OpCode::LOOP: {
+                return integer16Instruction("LOOP", chunk, offset);
+            } break;
             default: {
                 println("Unknown opcode '{}'", opCode);
                 return offset + 1;

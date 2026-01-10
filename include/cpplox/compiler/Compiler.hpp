@@ -56,11 +56,14 @@ namespace cpplox {
         void emitIntegerInstruction(OpCode small,
                                     OpCode big,
                                     std::size_t operand);
+        void emitTwoByteIntegerInstruction(OpCode op, std::size_t operand);
+        void emitLoop(std::size_t loopStart);
         std::size_t emitJump(OpCode op);
         void patchJump(std::size_t offset);
         void emitOpCode(OpCode op);
         void emitByte(std::uint8_t byte);
         void emitBytes(std::uint8_t a, std::uint8_t b);
+        std::size_t currentChunkCodeOffset() const;
 
         // statement parsers
         void declaration();
@@ -70,6 +73,7 @@ namespace cpplox {
         void defineVariable(std::size_t idx);
         void statement();
         void ifStatement();
+        void whileStatement();
         void block();
         void printStatement();
         void expressionStatement();

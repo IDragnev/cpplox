@@ -288,6 +288,8 @@ namespace cpplox {
             printStatement();
         } else if (match(TokenType::IF)) {
             ifStatement();
+        } else if (match(TokenType::WHILE)) {
+            whileStatement();
         } else if (match(TokenType::LEFT_BRACE)) {
             beginScope();
             block();
@@ -323,6 +325,22 @@ namespace cpplox {
             statement();
         }
         patchJump(elseJmp);
+    }
+
+    void Compiler::whileStatement() {
+        const std::size_t loopStart = currentChunkCodeOffset();
+
+        consumeTokenErr(TokenType::LEFT_PAREN, "Expected '(' after while");
+        expression();
+        consumeTokenErr(TokenType::RIGHT_PAREN, "Expected ')' after condition");
+
+        std::size_t exitJmp = emitJump(OpCode::JMP_IF_FALSE);
+        emitOpCode(OpCode::POP);
+        statement();
+        emitLoop(loopStart);
+
+        patchJump(exitJmp);
+        emitOpCode(OpCode::POP);
     }
 
     void Compiler::printStatement() {
@@ -618,12 +636,33 @@ namespace cpplox {
             emitOpCode(small);
             emitByte(static_cast<std::uint8_t>(operand));
         } else if (fitsTwoBytes(operand)) {
-            std::uint8_t a = 0;
-            std::uint8_t b = 0;
-            serializeTwoByteInteger(operand, a, b);
+            emitTwoByteIntegerInstruction(big, operand);
+        }
+    }
 
-            emitOpCode(big);
-            emitBytes(a, b);
+    void Compiler::emitTwoByteIntegerInstruction(OpCode op,
+                                                 std::size_t operand) {
+        std::uint8_t a = 0;
+        std::uint8_t b = 0;
+        serializeTwoByteInteger(operand, a, b);
+
+        emitOpCode(op);
+        emitBytes(a, b);
+    }
+
+    void Compiler::emitLoop(std::size_t loopStart) {
+        const std::size_t current = currentChunkCodeOffset();
+        if (current <= loopStart) {
+            // guard against underflow
+            return;
+        }
+
+        const std::size_t instructionSize = 3;
+        std::size_t offset = current + instructionSize - loopStart;
+        if (fitsTwoBytes(offset)) {
+            emitTwoByteIntegerInstruction(OpCode::LOOP, offset);
+        } else {
+            compileError(parser.previous, "Loop body too large");
         }
     }
 
@@ -636,7 +675,7 @@ namespace cpplox {
 
     void Compiler::patchJump(std::size_t offset) {
         const std::size_t JMP_ARGS_COUNT = 2;
-        const std::size_t current = currentChunk->code.getCount();
+        const std::size_t current = currentChunkCodeOffset();
         if (current <= offset || current - offset < JMP_ARGS_COUNT) {
             // guard against underflow
             return;
@@ -666,5 +705,9 @@ namespace cpplox {
     void Compiler::emitBytes(std::uint8_t a, std::uint8_t b) {
         emitByte(a);
         emitByte(b);
+    }
+
+    std::size_t Compiler::currentChunkCodeOffset() const {
+        return currentChunk->code.getCount();
     }
 } // namespace cpplox
