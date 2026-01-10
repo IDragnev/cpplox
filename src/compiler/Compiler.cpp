@@ -290,6 +290,8 @@ namespace cpplox {
             ifStatement();
         } else if (match(TokenType::WHILE)) {
             whileStatement();
+        } else if (match(TokenType::FOR)) {
+            forStatement();
         } else if (match(TokenType::LEFT_BRACE)) {
             beginScope();
             block();
@@ -341,6 +343,53 @@ namespace cpplox {
 
         patchJump(exitJmp);
         emitOpCode(OpCode::POP);
+    }
+
+    void Compiler::forStatement() {
+        beginScope();
+
+        consumeTokenErr(TokenType::LEFT_PAREN, "Expected '(' after for");
+        if (match(TokenType::SEMICOLON)) {
+            // no initializer
+        } else if (match(TokenType::VAR)) {
+            varDeclaration();
+        } else {
+            expressionStatement();
+        }
+
+        bool hasCondition = false;
+        std::size_t exitJmp = 0;
+        std::size_t loopStart = currentChunkCodeOffset();
+        if (match(TokenType::SEMICOLON) == false) {
+            hasCondition = true;
+            expression();
+            consumeTokenErr(TokenType::SEMICOLON,
+                            "Expected ';' after loop condition");
+            exitJmp = emitJump(OpCode::JMP_IF_FALSE);
+            emitOpCode(OpCode::POP); // condition
+        }
+
+        if (match(TokenType::RIGHT_PAREN) == false) {
+            const std::size_t bodyJmp = emitJump(OpCode::JMP);
+            const std::size_t increment = currentChunkCodeOffset();
+            expression();
+            emitOpCode(OpCode::POP);
+            consumeTokenErr(TokenType::RIGHT_PAREN, "Expected ')' after for clauses");
+
+            emitLoop(loopStart);
+            loopStart = increment;
+            patchJump(bodyJmp);
+        }
+
+        statement();
+        emitLoop(loopStart);
+
+        if (hasCondition) {
+            patchJump(exitJmp);
+            emitOpCode(OpCode::POP); // condition
+        }
+
+        endScope();
     }
 
     void Compiler::printStatement() {

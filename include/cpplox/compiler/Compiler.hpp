@@ -74,6 +74,7 @@ namespace cpplox {
         void statement();
         void ifStatement();
         void whileStatement();
+        void forStatement();
         void block();
         void printStatement();
         void expressionStatement();
