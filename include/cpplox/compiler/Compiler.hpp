@@ -86,6 +86,8 @@ namespace cpplox {
         void binary(bool canAssign);
         void literal(bool canAssign);
         void string(bool canAssign);
+        void and_(bool canAssign);
+        void or_(bool canAssign);
 
     private:
         std::string source = "";

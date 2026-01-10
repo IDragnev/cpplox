@@ -50,6 +50,8 @@ namespace cpplox {
             rules[as_index(TokenType::GREATER)]       = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::COMPARISON, };
             rules[as_index(TokenType::LESS_EQUAL)]    = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::COMPARISON, };
             rules[as_index(TokenType::LESS)]          = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::COMPARISON, };
+            rules[as_index(TokenType::AND)]           = ParseRule{                               .infix = &Compiler::and_,   .infixPrec = OpPrecedence::AND, };
+            rules[as_index(TokenType::OR)]            = ParseRule{                               .infix = &Compiler::or_,    .infixPrec = OpPrecedence::OR, };
             rules[as_index(TokenType::NUMBER)]        = ParseRule{ .prefix = &Compiler::number, };
             rules[as_index(TokenType::TRUE)]          = ParseRule{ .prefix = &Compiler::literal, };
             rules[as_index(TokenType::FALSE)]         = ParseRule{ .prefix = &Compiler::literal, };
@@ -495,6 +497,25 @@ namespace cpplox {
         v.remove_suffix(1);
 
         emitConstant(Value(v));
+    }
+
+    void Compiler::and_(bool) {
+        std::size_t jmp = emitJump(OpCode::JMP_IF_FALSE);
+        emitOpCode(OpCode::POP);
+        parsePrecedence(OpPrecedence::AND);
+
+        patchJump(jmp);
+    }
+
+    void Compiler::or_(bool) {
+        std::size_t elseJmp = emitJump(OpCode::JMP_IF_FALSE);
+        std::size_t endJmp = emitJump(OpCode::JMP);
+
+        patchJump(elseJmp);
+        emitOpCode(OpCode::POP);
+        parsePrecedence(OpPrecedence::OR);
+
+        patchJump(endJmp);
     }
 
     bool Compiler::match(TokenType type) {
