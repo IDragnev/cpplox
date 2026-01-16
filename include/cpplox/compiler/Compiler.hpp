@@ -1,10 +1,11 @@
 #pragma once
 
-#include "cpplox/compiler/Chunk.hpp"
 #include "cpplox/compiler/Scanner.hpp"
 #include "cpplox/core/Vector.hpp"
+#include "cpplox/core/Value.hpp"
 
 namespace cpplox {
+    struct Chunk;
     class DiagnosticEngine;
     enum class OpCode;
 

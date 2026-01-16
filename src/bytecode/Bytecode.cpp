@@ -1,4 +1,4 @@
-#include "cpplox/compiler/Bytecode.hpp"
+#include "cpplox/bytecode/Bytecode.hpp"
 
 namespace cpplox {
     bool fitsOneByte(std::size_t i) {

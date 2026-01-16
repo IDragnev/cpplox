@@ -1,6 +1,6 @@
-#include "cpplox/compiler/Disassembler.hpp"
-#include "cpplox/compiler/OpCode.hpp"
-#include "cpplox/compiler/Bytecode.hpp"
+#include "cpplox/bytecode/Disassembler.hpp"
+#include "cpplox/bytecode/OpCode.hpp"
+#include "cpplox/bytecode/Bytecode.hpp"
 #include "cpplox/core/ValueFormatter.hpp"
 #include "cpplox/log/Log.hpp"
 

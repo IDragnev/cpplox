@@ -1,5 +1,5 @@
 #include "doctest/doctest.h"
-#include "cpplox/compiler/Bytecode.hpp"
+#include "cpplox/bytecode/Bytecode.hpp"
 
 TEST_CASE("fitsOneByte") {
     using cpplox::fitsOneByte;

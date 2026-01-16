@@ -1,20 +1,12 @@
 set(COMPILER_HEADERS_DIR ${PROJECT_SOURCE_DIR}/include/cpplox/compiler)
 
 set(CPPLOX_COMPILER_SOURCE
-  ${COMPILER_HEADERS_DIR}/OpCode.hpp
-  ${COMPILER_HEADERS_DIR}/Chunk.hpp
-  ${COMPILER_HEADERS_DIR}/Bytecode.hpp
   ${COMPILER_HEADERS_DIR}/Token.hpp
   ${COMPILER_HEADERS_DIR}/Scanner.hpp
   ${COMPILER_HEADERS_DIR}/Compiler.hpp
-  ${COMPILER_HEADERS_DIR}/VM.hpp
-  ${COMPILER_HEADERS_DIR}/Disassembler.hpp
 
-  Bytecode.cpp
   Scanner.cpp
   Compiler.cpp
-  VM.cpp
-  Disassembler.cpp
 )
 
 add_library(
@@ -24,8 +16,8 @@ add_library(
 )
 target_link_libraries(compiler
   PUBLIC corelib
+  PUBLIC bytecode
   PUBLIC diagnostics
-  PRIVATE loglib
 )
 target_include_directories(compiler PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_compile_features(compiler PUBLIC cxx_std_20)

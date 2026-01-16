@@ -1,6 +1,6 @@
 #include "cpplox/log/Log.hpp"
-#include "cpplox/compiler/VM.hpp"
-#include "cpplox/compiler/Chunk.hpp"
+#include "cpplox/vm/VM.hpp"
+#include "cpplox/bytecode/Chunk.hpp"
 #include "cpplox/compiler/Compiler.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 

@@ -1,6 +1,7 @@
 #include "cpplox/compiler/Compiler.hpp"
-#include "cpplox/compiler/OpCode.hpp"
-#include "cpplox/compiler/Bytecode.hpp"
+#include "cpplox/bytecode/OpCode.hpp"
+#include "cpplox/bytecode/Bytecode.hpp"
+#include "cpplox/bytecode/Chunk.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 #include <limits>
 

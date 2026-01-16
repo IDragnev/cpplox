@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "cpplox/compiler/Chunk.hpp"
+#include "cpplox/bytecode/Chunk.hpp"
 
 namespace cpplox {
     bool fitsOneByte(std::size_t i);
