@@ -6,8 +6,6 @@
 namespace cpplox {
     class ValueStack {
     public:
-        ValueStack();
-
         const Value& at(std::size_t i) const { return stack[i]; }
         Value& at(std::size_t i) { return stack[i]; }
 
@@ -20,6 +18,7 @@ namespace cpplox {
         void push(Value&& v) { stack.insertBack(std::move(v)); }
         void push(const Value& v) { stack.insertBack(v); }
         void clear();
+        void reserve(std::size_t size);
 
         bool isEmpty() const { return stack.isEmpty(); }
         std::size_t size() const { return stack.getCount(); }

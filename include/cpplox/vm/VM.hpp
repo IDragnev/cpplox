@@ -2,9 +2,11 @@
 
 #include "cpplox/core/ValueStack.hpp"
 #include "cpplox/core/ValueMap.hpp"
+#include "cpplox/core/Vector.hpp"
 
 namespace cpplox {
-    struct Chunk;
+    class Function;
+    class Object;
 
     enum class InterpretResult {
         OK,
@@ -17,6 +19,12 @@ namespace cpplox {
         requires(Op op, double a, double b, Value c) { c = op(a, b); };
 
     class VM {
+        struct CallFrame {
+            const Function* function = nullptr;
+            const std::uint8_t* ip = nullptr;
+            std::size_t bp = 0;
+        };
+
     public:
         VM() = default;
         ~VM() = default;
@@ -24,7 +32,7 @@ namespace cpplox {
         VM(const VM&) = delete;
         VM& operator=(const VM&) = delete;
 
-        InterpretResult interpret(const Chunk& chunk);
+        InterpretResult interpret(Function* func, Vector<Object*>&& objects);
 
     private:
         InterpretResult run();
@@ -35,9 +43,8 @@ namespace cpplox {
         void runtimeError(const char* msg);
 
     private:
-        const std::uint8_t* ip = nullptr;
-        const Chunk* chunk = nullptr;
         ValueStack stack;
         ValueMap globals;
+        Vector<CallFrame> frames;
     };
 } // namespace cpplox

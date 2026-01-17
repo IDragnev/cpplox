@@ -28,6 +28,12 @@ struct fmt::formatter<cpplox::Value> {
                 std::string s = fmt::format("\"{}\"", v.asString());
                 return spec.format(std::string_view(s), ctx);
             } break;
+            case cpplox::ValueType::OBJECT: {
+                std::string s =
+                    fmt::format("<obj {}>",
+                                static_cast<const void*>(v.asObject()));
+                return spec.format(std::string_view(s), ctx);
+            } break;
         }
 
         return spec.format(std::string_view("<invalid>"), ctx);

@@ -2,6 +2,7 @@
 #include "cpplox/bytecode/OpCode.hpp"
 #include "cpplox/bytecode/Bytecode.hpp"
 #include "cpplox/bytecode/Chunk.hpp"
+#include "cpplox/runtime/Function.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 #include <limits>
 
@@ -80,38 +81,75 @@ namespace cpplox {
     {
     }
 
-    bool Compiler::compile(std::string compileSource, Chunk& chunk) {
-        init(std::move(compileSource), chunk);
+    bool Compiler::compile(std::string src, Function* &f, Vector<Object*>& objects) {
+        bool initOk = init(std::move(src));
+        if (initOk) {
+            advance();
+            while (scanner.isDone() == false) {
+                declaration();
 
-        advance();
-        while (scanner.isDone() == false) {
-            declaration();
-
-            if (parser.panicMode) {
-                synchronize();
+                if (parser.panicMode) {
+                    synchronize();
+                }
             }
+            emitOpCode(OpCode::RETURN);
         }
-        emitOpCode(OpCode::RETURN);
 
-        bool hadError = parser.hadError;
+        bool hadError = initOk == false || parser.hadError;
+        if (hadError == false) {
+            objects = std::move(gcObjects);
+            f = function;
+        }
+
         cleanUp();
 
         return hadError;
     }
 
-    void Compiler::init(std::string&& compileSource, Chunk& chunk) {
+    bool Compiler::init(std::string&& compileSource) {
         source = std::move(compileSource);
         scanner = Scanner(source, diagnostics);
-        currentChunk = &chunk;
         locals.reserve(MAX_LOCALS);
+        gcObjects.reserve(256);
+        funType = FunctionType::SCRIPT;
+        function = makeObject<Function>("<script>");
+
+        // reserved for the function being compiled
+        locals.insertBack(Local{
+            .name = Token{},
+            .depth = 0,
+            .initialized = true,
+        });
+
+        return function != nullptr;
     }
 
     void Compiler::cleanUp() {
         source = "";
         scanner = Scanner(source, diagnostics);
         parser = Parser{};
-        currentChunk = nullptr;
+        function = nullptr;
         locals.clear();
+        scopeDepth = 0;
+
+        const std::size_t size = gcObjects.getCount();
+        for (std::size_t i = 0; i < size; ++i) {
+            delete gcObjects[i];
+        }
+        gcObjects.clear();
+    }
+
+    template <typename T, typename... Args>
+    T* Compiler::makeObject(Args&&... args) {
+        T* obj = new(std::nothrow) T(std::forward<Args>(args)...);
+        if (obj != nullptr) {
+            gcObjects.insertBack(obj);
+        }
+        else {
+            compileError(parser.previous, "Out of memory");
+        }
+
+        return obj;
     }
 
     void Compiler::synchronize() {
@@ -646,7 +684,7 @@ namespace cpplox {
                                 std::size_t& idx) {
         bool found = false;
         if (searchExisting) {
-            const Vector<Value>& constants = currentChunk->constants;
+            const Vector<Value>& constants = function->chunk.constants;
             const std::size_t size = constants.getCount();
             for (std::size_t i = 0; i < size; ++i) {
                 if (constants[i] == value) {
@@ -657,7 +695,7 @@ namespace cpplox {
             }
         }
         if (found == false) {
-            idx = addConstant(*currentChunk, std::move(value));
+            idx = addConstant(function->chunk, std::move(value));
         }
 
         bool success = true;
@@ -720,7 +758,7 @@ namespace cpplox {
         emitOpCode(op);
         emitBytes(0xff, 0xff);
 
-        return currentChunk->code.getCount() - 2;
+        return function->chunk.code.getCount() - 2;
     }
 
     void Compiler::patchJump(std::size_t offset) {
@@ -740,8 +778,8 @@ namespace cpplox {
         std::uint8_t b = 0;
         serializeTwoByteInteger(jmp, a, b);
 
-        currentChunk->code[offset] = a;
-        currentChunk->code[offset + 1] = b;
+        function->chunk.code[offset] = a;
+        function->chunk.code[offset + 1] = b;
     }
 
     void Compiler::emitOpCode(OpCode op) {
@@ -749,7 +787,7 @@ namespace cpplox {
     }
 
     void Compiler::emitByte(std::uint8_t byte) {
-        addCode(*currentChunk, byte, parser.previous.line);
+        addCode(function->chunk, byte, parser.previous.line);
     }
 
     void Compiler::emitBytes(std::uint8_t a, std::uint8_t b) {
@@ -758,6 +796,6 @@ namespace cpplox {
     }
 
     std::size_t Compiler::currentChunkCodeOffset() const {
-        return currentChunk->code.getCount();
+        return function->chunk.code.getCount();
     }
 } // namespace cpplox

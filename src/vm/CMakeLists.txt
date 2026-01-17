@@ -14,6 +14,7 @@ add_library(
 target_link_libraries(vm
   PUBLIC corelib
   PUBLIC bytecode
+  PUBLIC runtime
   PRIVATE loglib
 )
 target_include_directories(vm PUBLIC ${PROJECT_SOURCE_DIR}/include)

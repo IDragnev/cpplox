@@ -4,7 +4,6 @@ target_compile_features(cpplox_exe PRIVATE cxx_std_20)
 target_link_libraries(cpplox_exe
   compiler
   vm
-  bytecode
   loglib
 )
 

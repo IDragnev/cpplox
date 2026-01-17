@@ -5,7 +5,8 @@
 #include "cpplox/core/Value.hpp"
 
 namespace cpplox {
-    struct Chunk;
+    class Function;
+    class Object;
     class DiagnosticEngine;
     enum class OpCode;
 
@@ -13,6 +14,8 @@ namespace cpplox {
     private:
         struct ParseRule;
         enum class OpPrecedence;
+
+        enum class FunctionType { SCRIPT, FUNCTION };
 
         struct Local {
             Token name;
@@ -27,11 +30,13 @@ namespace cpplox {
         Compiler(const Compiler&) = delete;
         Compiler& operator=(const Compiler&) = delete;
 
-        bool compile(std::string source, Chunk& chunk);
+        bool compile(std::string src, Function* &f, Vector<Object*>& gcObjects);
 
     private:
-        void init(std::string&& source, Chunk& chunk);
+        bool init(std::string&& source);
         void cleanUp();
+        template <typename T, typename... Args>
+        T* makeObject(Args&&... args);
 
         void beginScope();
         void endScope();
@@ -104,7 +109,9 @@ namespace cpplox {
             bool hadError = false;
             bool panicMode = false;
         } parser;
-        Chunk* currentChunk = nullptr;
+        FunctionType funType = FunctionType::SCRIPT;
+        Function* function = nullptr;
+        Vector<Object*> gcObjects;
         Vector<Local> locals;
         std::uint16_t scopeDepth = 0;
         DiagnosticEngine* diagnostics = nullptr;

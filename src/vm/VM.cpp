@@ -2,43 +2,62 @@
 #include "cpplox/bytecode/Disassembler.hpp"
 #include "cpplox/bytecode/OpCode.hpp"
 #include "cpplox/bytecode/Bytecode.hpp"
+#include "cpplox/runtime/Object.hpp"
+#include "cpplox/runtime/Function.hpp"
 #include "cpplox/log/Log.hpp"
 #include <stdio.h>
 
 #include "cpplox/core/Format.hpp"
 
 namespace cpplox {
-    InterpretResult VM::interpret(const Chunk& c) {
-        if (c.code.isEmpty()) {
+    InterpretResult VM::interpret(Function* func, Vector<Object*>&& objects) {
+        if (func == nullptr) {
+            return InterpretResult::COMPILE_ERROR;
+        }
+        if (func->chunk.code.isEmpty()) {
             return InterpretResult::OK;
         }
 
-        chunk = &c;
-        ip = chunk->code.data();
+        stack.reserve(2056);
+        frames.reserve(512);
+
+        stack.push(Value(func));
+        frames.insertBack(CallFrame{
+            .function = func,
+            .ip = func->chunk.code.data(),
+            .bp = 0,
+        });
 
         auto r = run();
 
+        frames.clear();
         stack.clear();
-        chunk = nullptr;
-        ip = nullptr;
+
+        // ok for now, will be managed by the runtime GC
+        const std::size_t size = objects.getCount();
+        for (std::size_t i = 0; i < size; ++i) {
+            delete objects[i];
+        }
 
         return r;
     }
 
     InterpretResult VM::run() {
-        const auto readByte = [this] {
-            return *(ip++);
+        CallFrame* frame = &frames.back();
+
+        const auto readByte = [&frame] {
+            return *(frame->ip++);
         };
         const auto readIdx16 = [&readByte] {
             auto a = readByte();
             auto b = readByte();
             return parseTwoByteInteger(a, b);
         };
-        const auto readConstant = [this, &readByte] {
-            return chunk->constants[readByte()];
+        const auto readConstant = [&frame, &readByte] {
+            return frame->function->chunk.constants[readByte()];
         };
-        const auto readConstant16 = [this, &readIdx16] {
-            return chunk->constants[readIdx16()];
+        const auto readConstant16 = [&frame, &readIdx16] {
+            return frame->function->chunk.constants[readIdx16()];
         };
 
 #ifdef CPPLOX_DEBUG_TRACE_EXECUTION
@@ -47,8 +66,8 @@ namespace cpplox {
 
         for (;;) {
 #ifdef CPPLOX_DEBUG_TRACE_EXECUTION
-            disassembler.disassembleInstruction(*chunk,
-                                                ip - chunk->code.data());
+            disassembler.disassembleInstruction(frame->function->chunk,
+                                                frame->ip - frame->function->chunk.code.data());
 #endif
 
 #define BINARY_OP(op) \
@@ -206,29 +225,31 @@ namespace cpplox {
                 } break;
                 case OpCode::READ_LOCAL:
                 case OpCode::READ_LOCAL_16: {
-                    const std::size_t idx =
+                    std::size_t idx =
                         opCode == OpCode::READ_LOCAL ? readByte() : readIdx16();
+                    idx += frame->bp;
                     stack.push(stack.at(idx));
                 } break;
                 case OpCode::SET_LOCAL:
                 case OpCode::SET_LOCAL_16: {
-                    const std::size_t idx =
+                    std::size_t idx =
                         opCode == OpCode::SET_LOCAL ? readByte() : readIdx16();
+                    idx += frame->bp;
                     stack.at(idx) = stack.peek();
                 } break;
                 case OpCode::JMP_IF_FALSE: {
                     const std::size_t offset = readIdx16();
                     if (stack.peek().isFalsey()) {
-                        ip += offset;
+                        frame->ip += offset;
                     }
                 } break;
                 case OpCode::JMP: {
                     const std::size_t offset = readIdx16();
-                    ip += offset;
+                    frame->ip += offset;
                 } break;
                 case OpCode::LOOP: {
                     const std::size_t offset = readIdx16();
-                    ip -= offset;
+                    frame->ip -= offset;
                 } break;
                 default: {
                     return InterpretResult::OK;
@@ -256,10 +277,14 @@ namespace cpplox {
     void VM::runtimeError(const char* msg) {
         fprintf(stderr, "Runtime error: %s\n", msg);
 
-        std::size_t instruction = this->ip - this->chunk->code.data() - 1;
-        if (instruction <= this->chunk->lines.getCount()) {
-            unsigned line = this->chunk->lines[instruction];
-            fprintf(stderr, "[line %u] in script\n", line);
+        if (frames.getCount() > 0) {
+            const CallFrame& frame = frames.back();
+            const Chunk& chunk = frame.function->chunk;
+            std::size_t instruction = frame.ip - chunk.code.data() - 1;
+            if (instruction <= chunk.lines.getCount()) {
+                unsigned line = chunk.lines[instruction];
+                fprintf(stderr, "[line %u] in script\n", line);
+            }
         }
     }
 }

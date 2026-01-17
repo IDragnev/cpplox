@@ -1,7 +1,6 @@
 #include "cpplox/log/Log.hpp"
-#include "cpplox/vm/VM.hpp"
-#include "cpplox/bytecode/Chunk.hpp"
 #include "cpplox/compiler/Compiler.hpp"
+#include "cpplox/vm/VM.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 
 #include <string>
@@ -84,14 +83,16 @@ void repl(VM& vm, Compiler& compiler) {
 }
 
 InterpretResult interpret(std::string source, VM& vm, Compiler& compiler) {
-    cpplox::Chunk chunk;
-
-    bool hadError = compiler.compile(std::move(source), chunk);
+    cpplox::Function* func = nullptr;
+    cpplox::Vector<cpplox::Object*> objs;
+    bool hadError = compiler.compile(std::move(source), func, objs);
     if (hadError) {
         return InterpretResult::COMPILE_ERROR;
     }
 
-    return vm.interpret(chunk);
+    auto r = vm.interpret(func, std::move(objs));
+
+    return r;
 }
 
 // Reads a file in a single step.

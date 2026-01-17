@@ -1,5 +1,6 @@
 #include "doctest/doctest.h"
 #include "cpplox/core/Value.hpp"
+#include "cpplox/core/String.hpp"
 
 using cpplox::Value;
 

@@ -1,8 +1,8 @@
 #include "cpplox/core/ValueStack.hpp"
 
 namespace cpplox {
-    ValueStack::ValueStack() {
-        stack.reserve(256);
+    void ValueStack::reserve(std::size_t size) {
+        stack.reserve(size);
     }
 
     Value ValueStack::pop() {

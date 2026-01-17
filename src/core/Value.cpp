@@ -1,6 +1,17 @@
 #include "cpplox/core/Value.hpp"
+#include "cpplox/core/String.hpp"
 
 namespace cpplox {
+    Value::Value(String&& s)
+        : type(ValueType::STRING)
+        , as{.string = new String(std::move(s))}
+    {}
+
+    Value::Value(std::string_view s)
+        : type(ValueType::STRING)
+        , as{.string = new String(s)}
+    {}
+
     Value& Value::operator=(const Value& other) {
         if (this != &other) {
             destroy();
@@ -33,6 +44,9 @@ namespace cpplox {
             case ValueType::STRING: {
                 this->as.string = other.as.string;
             } break;
+            case ValueType::OBJECT: {
+                this->as.object = other.as.object;
+            } break;
         }
 
         other.type = ValueType::NIL;
@@ -52,6 +66,9 @@ namespace cpplox {
             } break;
             case ValueType::STRING: {
                 this->as.string = new String(*other.as.string);
+            } break;
+            case ValueType::OBJECT: {
+                this->as.object = other.as.object;
             } break;
         }
     }
@@ -76,6 +93,9 @@ namespace cpplox {
             } break;
             case ValueType::STRING: {
                 return asString() == rhs.asString();
+            } break;
+            case ValueType::OBJECT: {
+                return asObject() == rhs.asObject();
             } break;
             case ValueType::NIL: {
                 return true;

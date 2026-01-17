@@ -1,15 +1,17 @@
 #pragma once
 
-#include "cpplox/core/String.hpp"
-
 #include <string_view>
 
 namespace cpplox {
+    class Object;
+    class String;
+
     enum class ValueType {
         BOOL,
         NIL,
         NUMBER,
         STRING,
+        OBJECT,
     };
 
     class Value {
@@ -23,13 +25,11 @@ namespace cpplox {
             : type(ValueType::NUMBER)
             , as{.number = d}
         {}
-        explicit Value(String&& s)
-            : type(ValueType::STRING)
-            , as{.string = new String(std::move(s))}
-        {}
-        explicit Value(std::string_view s)
-            : type(ValueType::STRING)
-            , as{.string = new String(s)}
+        explicit Value(String&& s);
+        explicit Value(std::string_view s);
+        explicit Value(Object* obj)
+            : type(ValueType::OBJECT)
+            , as{.object = obj}
         {}
 
         Value(const Value& other) { copy(other); }
@@ -47,11 +47,14 @@ namespace cpplox {
         bool isBoolean() const { return holdsType(ValueType::BOOL); }
         bool isNumber() const { return holdsType(ValueType::NUMBER); }
         bool isString() const { return holdsType(ValueType::STRING); }
+        bool isObject() const { return holdsType(ValueType::OBJECT); }
 
         bool asBoolean() const { return as.boolean; }
         double asNumber() const { return as.number; }
         const String& asString() const { return *(as.string); }
         String& asString() { return *(as.string); }
+        Object* asObject() { return as.object; }
+        const Object* asObject() const { return as.object; }
 
         bool isFalsey() const;
 
@@ -71,6 +74,7 @@ namespace cpplox {
             bool boolean;
             double number;
             String* string;
+            Object* object;
         } as;
     };
 
