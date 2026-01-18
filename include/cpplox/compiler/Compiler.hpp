@@ -9,10 +9,12 @@ namespace cpplox {
     class Object;
     class DiagnosticEngine;
     enum class OpCode;
+    class String;
 
     class Compiler {
     private:
         struct ParseRule;
+        struct Frame;
         enum class OpPrecedence;
 
         enum class FunctionType { SCRIPT, FUNCTION };
@@ -34,10 +36,12 @@ namespace cpplox {
 
     private:
         bool init(std::string&& source);
+        void initFrame(Frame& frame, Function* f, FunctionType t);
         void cleanUp();
         template <typename T, typename... Args>
         T* makeObject(Args&&... args);
 
+        bool inLocalScope() const;
         void beginScope();
         void endScope();
         void addLocal(const Token& name);
@@ -58,6 +62,7 @@ namespace cpplox {
         bool makeConstant(Value value,
                           bool searchExisting,
                           std::size_t& idx);
+        void emitReturn();
         void emitConstant(Value value);
         void emitIntegerInstruction(OpCode small,
                                     OpCode big,
@@ -73,14 +78,17 @@ namespace cpplox {
 
         // statement parsers
         void declaration();
+        void funDeclaration();
+        void function(FunctionType type, const Token& name);
         void varDeclaration();
-        void parseVariable(std::size_t& idx);
+        void parseVariable(std::size_t& idx, std::string_view msg);
         void declareVariable(const Token& t);
         void defineVariable(std::size_t idx);
         void statement();
         void ifStatement();
         void whileStatement();
         void forStatement();
+        void returnStatement();
         void block();
         void printStatement();
         void expressionStatement();
@@ -89,6 +97,8 @@ namespace cpplox {
         static ParseRule getParseRule(TokenType t);
         void parsePrecedence(OpPrecedence p);
         void expression();
+        void call(bool canAssign);
+        unsigned argList();
         void variable(bool canAssign);
         void namedVariable(const Token& t, bool canAssign);
         void number(bool canAssign);
@@ -109,11 +119,13 @@ namespace cpplox {
             bool hadError = false;
             bool panicMode = false;
         } parser;
-        FunctionType funType = FunctionType::SCRIPT;
-        Function* function = nullptr;
+        struct Frame {
+            FunctionType funType = FunctionType::SCRIPT;
+            Function* function = nullptr;
+            Vector<Local> locals;
+            std::uint16_t scopeDepth = 0;
+        } frame;
         Vector<Object*> gcObjects;
-        Vector<Local> locals;
-        std::uint16_t scopeDepth = 0;
         DiagnosticEngine* diagnostics = nullptr;
     };
 } // namespace cpplox

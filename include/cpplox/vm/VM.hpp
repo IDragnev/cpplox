@@ -27,7 +27,7 @@ namespace cpplox {
 
     public:
         VM() = default;
-        ~VM() = default;
+        ~VM();
 
         VM(const VM&) = delete;
         VM& operator=(const VM&) = delete;
@@ -36,9 +36,13 @@ namespace cpplox {
 
     private:
         InterpretResult run();
+        void addObjects(Vector<Object*>&& objects);
 
         template <NumberBinaryOp Op>
         bool numBinaryOp(const Op& op);
+
+        bool callValue(const Value& v, std::uint8_t argc);
+        bool call(const Function* f, std::uint8_t argc);
 
         void runtimeError(const char* msg);
 
@@ -46,5 +50,6 @@ namespace cpplox {
         ValueStack stack;
         ValueMap globals;
         Vector<CallFrame> frames;
+        Vector<Object*> gcObjects;
     };
 } // namespace cpplox

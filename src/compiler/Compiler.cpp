@@ -9,6 +9,7 @@
 namespace cpplox {
     static const std::size_t MAX_LOCALS =
         std::numeric_limits<std::uint16_t>::max() + 1;
+    static const std::size_t MAX_FUN_PARAMS = 255;
 
     enum class Compiler::OpPrecedence {
         NONE,
@@ -41,7 +42,7 @@ namespace cpplox {
             const auto size = as_index(TokenType::MAX_VALUE);
             Vector<ParseRule> rules(size);
             // clang-format off
-            rules[as_index(TokenType::LEFT_PAREN)]    = ParseRule{ .prefix = &Compiler::grouping, };
+            rules[as_index(TokenType::LEFT_PAREN)]    = ParseRule{ .prefix = &Compiler::grouping,.infix = &Compiler::call,   .infixPrec = OpPrecedence::CALL, };
             rules[as_index(TokenType::MINUS)]         = ParseRule{ .prefix = &Compiler::unary,   .infix = &Compiler::binary, .infixPrec = OpPrecedence::TERM, };
             rules[as_index(TokenType::PLUS)]          = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::TERM, };
             rules[as_index(TokenType::SLASH)]         = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::FACTOR, };
@@ -92,13 +93,13 @@ namespace cpplox {
                     synchronize();
                 }
             }
-            emitOpCode(OpCode::RETURN);
+            emitReturn();
         }
 
         bool hadError = initOk == false || parser.hadError;
         if (hadError == false) {
             objects = std::move(gcObjects);
-            f = function;
+            f = frame.function;
         }
 
         cleanUp();
@@ -109,28 +110,36 @@ namespace cpplox {
     bool Compiler::init(std::string&& compileSource) {
         source = std::move(compileSource);
         scanner = Scanner(source, diagnostics);
-        locals.reserve(MAX_LOCALS);
         gcObjects.reserve(256);
-        funType = FunctionType::SCRIPT;
-        function = makeObject<Function>("<script>");
+
+        Function* scriptFun = makeObject<Function>("<script>");
+        if (scriptFun != nullptr) {
+            initFrame(frame, scriptFun, FunctionType::SCRIPT);
+            return true;
+        }
+
+        return false;
+    }
+
+    void Compiler::initFrame(Frame& fr, Function* f, FunctionType t) {
+        fr.funType = t;
+        fr.function = f;
+        fr.scopeDepth = 0;
+        fr.locals.reserve(MAX_LOCALS);
 
         // reserved for the function being compiled
-        locals.insertBack(Local{
+        fr.locals.insertBack(Local{
             .name = Token{},
             .depth = 0,
             .initialized = true,
         });
-
-        return function != nullptr;
     }
 
     void Compiler::cleanUp() {
         source = "";
         scanner = Scanner(source, diagnostics);
         parser = Parser{};
-        function = nullptr;
-        locals.clear();
-        scopeDepth = 0;
+        frame = Frame{};
 
         const std::size_t size = gcObjects.getCount();
         for (std::size_t i = 0; i < size; ++i) {
@@ -177,18 +186,24 @@ namespace cpplox {
         }
     }
 
+    bool Compiler::inLocalScope() const {
+        return frame.scopeDepth > 0;
+    }
+
     void Compiler::beginScope() {
-        ++scopeDepth;
+        ++frame.scopeDepth;
     }
 
     void Compiler::endScope() {
-        if (scopeDepth > 0) {
-            --scopeDepth;
+        if (frame.scopeDepth > 0) {
+            --frame.scopeDepth;
         }
 
         std::uint16_t popCount = 0;
-        while (locals.isEmpty() == false && locals.back().depth > scopeDepth) {
-            locals.removeBack();
+        while (frame.locals.isEmpty() == false &&
+               frame.locals.back().depth > frame.scopeDepth)
+        {
+            frame.locals.removeBack();
             ++popCount;
         }
 
@@ -198,22 +213,22 @@ namespace cpplox {
     }
 
     void Compiler::addLocal(const Token& name) {
-        if (locals.getCount() == MAX_LOCALS) {
+        if (frame.locals.getCount() == MAX_LOCALS) {
             compileError(name, "Too many local variables in a function");
             return;
         }
 
-        locals.insertBack(Local{
+        frame.locals.insertBack(Local{
             .name = name,
-            .depth = scopeDepth,
+            .depth = frame.scopeDepth,
             .initialized = false,
         });
     }
 
     bool Compiler::resolveLocal(const Token& name, std::size_t& idx) {
-        for (std::size_t i = locals.getCount(); i > 0; --i) {
+        for (std::size_t i = frame.locals.getCount(); i > 0; --i) {
             auto localIdx = i - 1;
-            const Local& local = locals[localIdx];
+            const Local& local = frame.locals[localIdx];
             if (local.name.lexeme == name.lexeme) {
                 if (local.initialized == false) {
                     compileError(
@@ -251,16 +266,75 @@ namespace cpplox {
     }
 
     void Compiler::declaration() {
-        if (match(TokenType::VAR)) {
+        if (match(TokenType::FUN)) {
+            funDeclaration();
+        } else if (match(TokenType::VAR)) {
             varDeclaration();
         } else {
             statement();
         }
     }
 
+    void Compiler::funDeclaration() {
+        std::size_t idx = 0;
+        parseVariable(idx, "Expected function name");
+
+        if (inLocalScope()) {
+            // functions can refer to themselves in their bodies
+            if (frame.locals.getCount() > 0) {
+                frame.locals.back().initialized = true;
+            }
+        }
+
+        function(FunctionType::FUNCTION, parser.previous);
+        defineVariable(idx);
+    }
+
+    void Compiler::function(FunctionType type, const Token& name) {
+        auto* fun = makeObject<Function>(name.lexeme);
+        if (fun == nullptr) {
+            return;
+        }
+
+        Frame oldFrame = std::move(frame);
+        frame = Frame{};
+        initFrame(frame, fun, type);
+
+        beginScope();
+
+        consumeTokenErr(TokenType::LEFT_PAREN,
+                        "Expected '(' after function name");
+        if (peek(TokenType::RIGHT_PAREN) == false) {
+            do {
+                ++(frame.function->arity);
+                if (frame.function->arity > MAX_FUN_PARAMS) {
+                    compileError(parser.current,
+                                 "Can't have more than {} parameters",
+                                 MAX_FUN_PARAMS);
+                    break;
+                }
+
+                std::size_t idx = 0;
+                parseVariable(idx, "Expected parameter name");
+                defineVariable(idx);
+            } while (match(TokenType::COMMA));
+        }
+        consumeTokenErr(TokenType::RIGHT_PAREN,
+                        "Expected ')' after parameters");
+        consumeTokenErr(TokenType::LEFT_BRACE,
+                        "Expected '{' before function body");
+        block();
+        emitReturn();
+
+        endScope();
+
+        frame = std::move(oldFrame);
+        emitConstant(Value(fun));
+    }
+
     void Compiler::varDeclaration() {
         std::size_t idx = 0;
-        parseVariable(idx);
+        parseVariable(idx, "Expected variable name");
 
         if (match(TokenType::EQUAL)) {
             expression();
@@ -274,11 +348,10 @@ namespace cpplox {
         defineVariable(idx);
     }
 
-    void Compiler::parseVariable(std::size_t& idx) {
-        consumeTokenErr(TokenType::IDENTIFIER, "Expected variable name");
+    void Compiler::parseVariable(std::size_t& idx, std::string_view msg) {
+        consumeTokenErr(TokenType::IDENTIFIER, msg);
 
-        const bool local = scopeDepth > 0;
-        if (local) {
+        if (inLocalScope()) {
             declareVariable(parser.previous);
         } else {
             makeConstant(Value(String(parser.previous.lexeme)),
@@ -288,14 +361,14 @@ namespace cpplox {
     }
 
     void Compiler::declareVariable(const Token& name) {
-        if (bool global = scopeDepth == 0; global) {
+        if (inLocalScope() == false) {
             return;
         }
 
-        for (std::size_t i = locals.getCount(); i > 0; --i) {
-            const Local& loc = locals[i - 1];
+        for (std::size_t i = frame.locals.getCount(); i > 0; --i) {
+            const Local& loc = frame.locals[i - 1];
 
-            if (loc.initialized && loc.depth < scopeDepth) {
+            if (loc.initialized && loc.depth < frame.scopeDepth) {
                 break;
             }
 
@@ -311,9 +384,9 @@ namespace cpplox {
     }
 
     void Compiler::defineVariable(std::size_t idx) {
-        if (bool localScope = scopeDepth > 0; localScope) {
-            if (locals.getCount() > 0) {
-                locals.back().initialized = true;
+        if (inLocalScope()) {
+            if (frame.locals.getCount() > 0) {
+                frame.locals.back().initialized = true;
             }
         } else {
             emitIntegerInstruction(OpCode::DEFINE_GLOBAL,
@@ -331,6 +404,8 @@ namespace cpplox {
             whileStatement();
         } else if (match(TokenType::FOR)) {
             forStatement();
+        } else if (match(TokenType::RETURN)) {
+            returnStatement();
         } else if (match(TokenType::LEFT_BRACE)) {
             beginScope();
             block();
@@ -431,6 +506,21 @@ namespace cpplox {
         endScope();
     }
 
+    void Compiler::returnStatement() {
+        if (frame.funType == FunctionType::SCRIPT) {
+            compileError(parser.previous, "Can't return from top-level code");
+            return;
+        }
+
+        if (match(TokenType::SEMICOLON)) {
+            emitReturn();
+        } else {
+            expression();
+            consumeTokenErr(TokenType::SEMICOLON, "Expected ';' after return");
+            emitOpCode(OpCode::RETURN);
+        }
+    }
+
     void Compiler::printStatement() {
         expression();
         consumeTokenErr(TokenType::SEMICOLON, "Expected ';' after expression");
@@ -445,6 +535,31 @@ namespace cpplox {
 
     void Compiler::expression() {
         parsePrecedence(OpPrecedence::ASSIGNMENT);
+    }
+
+    void Compiler::call(bool) {
+        unsigned count = argList();
+        emitOpCode(OpCode::CALL);
+        emitByte(static_cast<std::uint8_t>(count));
+    }
+
+    unsigned Compiler::argList() {
+        unsigned count = 0;
+
+        if (peek(TokenType::RIGHT_PAREN) == false) {
+            do {
+                ++count;
+                if (count > MAX_FUN_PARAMS) {
+                    compileError(parser.current, "Can't have more than {} arguments", MAX_FUN_PARAMS);
+                    break;
+                }
+                expression();
+            } while (match(TokenType::COMMA));
+        }
+        consumeTokenErr(TokenType::RIGHT_PAREN,
+                        "Expected ')' after function arguments");
+
+        return count;
     }
 
     void Compiler::parsePrecedence(OpPrecedence precedence) {
@@ -684,7 +799,7 @@ namespace cpplox {
                                 std::size_t& idx) {
         bool found = false;
         if (searchExisting) {
-            const Vector<Value>& constants = function->chunk.constants;
+            const Vector<Value>& constants = frame.function->chunk.constants;
             const std::size_t size = constants.getCount();
             for (std::size_t i = 0; i < size; ++i) {
                 if (constants[i] == value) {
@@ -695,7 +810,7 @@ namespace cpplox {
             }
         }
         if (found == false) {
-            idx = addConstant(function->chunk, std::move(value));
+            idx = addConstant(frame.function->chunk, std::move(value));
         }
 
         bool success = true;
@@ -715,6 +830,11 @@ namespace cpplox {
                                    OpCode::CONSTANT_16,
                                    i);
         }
+    }
+
+    void Compiler::emitReturn() {
+        emitOpCode(OpCode::NIL);
+        emitOpCode(OpCode::RETURN);
     }
 
     void Compiler::emitIntegerInstruction(OpCode small,
@@ -758,7 +878,7 @@ namespace cpplox {
         emitOpCode(op);
         emitBytes(0xff, 0xff);
 
-        return function->chunk.code.getCount() - 2;
+        return frame.function->chunk.code.getCount() - 2;
     }
 
     void Compiler::patchJump(std::size_t offset) {
@@ -778,8 +898,8 @@ namespace cpplox {
         std::uint8_t b = 0;
         serializeTwoByteInteger(jmp, a, b);
 
-        function->chunk.code[offset] = a;
-        function->chunk.code[offset + 1] = b;
+        frame.function->chunk.code[offset] = a;
+        frame.function->chunk.code[offset + 1] = b;
     }
 
     void Compiler::emitOpCode(OpCode op) {
@@ -787,7 +907,7 @@ namespace cpplox {
     }
 
     void Compiler::emitByte(std::uint8_t byte) {
-        addCode(function->chunk, byte, parser.previous.line);
+        addCode(frame.function->chunk, byte, parser.previous.line);
     }
 
     void Compiler::emitBytes(std::uint8_t a, std::uint8_t b) {
@@ -796,6 +916,6 @@ namespace cpplox {
     }
 
     std::size_t Compiler::currentChunkCodeOffset() const {
-        return function->chunk.code.getCount();
+        return frame.function->chunk.code.getCount();
     }
 } // namespace cpplox

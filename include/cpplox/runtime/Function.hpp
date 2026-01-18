@@ -16,7 +16,7 @@ namespace cpplox {
         Function* clone() const override;
 
         const String name;
-        const unsigned arity = 0;
+        unsigned arity = 0;
         Chunk chunk;
     };
 }

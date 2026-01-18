@@ -37,5 +37,6 @@ namespace cpplox {
         JMP_IF_FALSE,
         JMP,
         LOOP,
+        CALL,
     };
 }

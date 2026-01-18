@@ -7,11 +7,11 @@
 namespace cpplox {
     void Disassembler::disassembleChunk(const Chunk& chunk,
                                         const std::string_view& name) const {
-        println("=== {} ===", name);
-
+        println("=== {} START ===", name);
         for (std::size_t offset = 0; offset < chunk.code.getCount();) {
             offset = disassembleInstruction(chunk, offset);
         }
+        println("=== {} END ===", name);
     }
 
     std::size_t Disassembler::disassembleInstruction(const Chunk& chunk,
@@ -136,6 +136,9 @@ namespace cpplox {
             } break;
             case OpCode::LOOP: {
                 return integer16Instruction("LOOP", chunk, offset);
+            } break;
+            case OpCode::CALL: {
+                return integerInstruction("CALL", chunk, offset);
             } break;
             default: {
                 println("Unknown opcode '{}'", opCode);

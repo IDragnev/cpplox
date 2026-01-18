@@ -5,11 +5,19 @@
 #include "cpplox/runtime/Object.hpp"
 #include "cpplox/runtime/Function.hpp"
 #include "cpplox/log/Log.hpp"
-#include <stdio.h>
 
 #include "cpplox/core/Format.hpp"
 
 namespace cpplox {
+    VM::~VM() {
+        // ok for now, will be managed by the runtime GC
+        const std::size_t cnt = gcObjects.getCount();
+        for (std::size_t i = 0; i < cnt; ++i) {
+            delete gcObjects[i];
+        }
+        gcObjects.clear();
+    }
+
     InterpretResult VM::interpret(Function* func, Vector<Object*>&& objects) {
         if (func == nullptr) {
             return InterpretResult::COMPILE_ERROR;
@@ -18,28 +26,27 @@ namespace cpplox {
             return InterpretResult::OK;
         }
 
+        addObjects(std::move(objects));
         stack.reserve(2056);
         frames.reserve(512);
 
         stack.push(Value(func));
-        frames.insertBack(CallFrame{
-            .function = func,
-            .ip = func->chunk.code.data(),
-            .bp = 0,
-        });
+        call(func, 0);
 
         auto r = run();
 
         frames.clear();
         stack.clear();
 
-        // ok for now, will be managed by the runtime GC
-        const std::size_t size = objects.getCount();
-        for (std::size_t i = 0; i < size; ++i) {
-            delete objects[i];
-        }
-
         return r;
+    }
+
+    void VM::addObjects(Vector<Object*>&& objects) {
+        const std::size_t cnt = objects.getCount();
+        for (std::size_t i = 0; i < cnt; ++i) {
+            gcObjects.insertBack(objects[i]);
+        }
+        objects.clear();
     }
 
     InterpretResult VM::run() {
@@ -251,13 +258,68 @@ namespace cpplox {
                     const std::size_t offset = readIdx16();
                     frame->ip -= offset;
                 } break;
+                case OpCode::CALL: {
+                    const std::uint8_t argc = readByte();
+                    const Value& fun = stack.peekN(argc);
+                    if (callValue(fun, argc) == false) {
+                        return InterpretResult::RUNTIME_ERROR;
+                    }
+                    frame = &frames.back();
+                } break;
+                case OpCode::RETURN: {
+                    Value result = stack.pop();
+                    const std::size_t poppedBP = frame->bp;
+
+                    frames.removeBack();
+                    if (frames.isEmpty()) {
+                        return InterpretResult::OK;
+                    }
+                    frame = &frames.back();
+
+                    const std::size_t popCnt = stack.size() - poppedBP;
+                    stack.popN(popCnt);
+                    stack.push(result);
+                } break;
                 default: {
-                    return InterpretResult::OK;
+                    return InterpretResult::RUNTIME_ERROR;
                 } break;
             }
 
 #undef BINARY_OP
         }
+    }
+
+    bool VM::callValue(const Value& v, std::uint8_t argc) {
+        if (v.isObject()) {
+            const Function* fun = v.asObject()->as<Function>();
+            if (fun != nullptr) {
+                return call(fun, argc);
+            }
+        }
+
+        runtimeError("Can only call functions and classes.");
+        return false;
+    }
+
+    bool VM::call(const Function* f, std::uint8_t argc) {
+        if (f->arity != argc) {
+            // todo: add expected and actual count
+            runtimeError("Invalid argument count");
+            return false;
+        }
+
+        frames.insertBack(CallFrame{
+            .function = f,
+            .ip = f->chunk.code.data(),
+            .bp = stack.size() - argc - 1,
+        });
+
+#ifdef CPPLOX_DEBUG_TRACE_EXECUTION
+        Disassembler disassembler;
+        disassembler.disassembleChunk(f->chunk, f->name.c_str());
+#endif
+
+        return true;
     }
 
     template <NumberBinaryOp Op>
@@ -275,15 +337,18 @@ namespace cpplox {
     }
 
     void VM::runtimeError(const char* msg) {
-        fprintf(stderr, "Runtime error: %s\n", msg);
+        errorln("Runtime error: {}", msg);
 
-        if (frames.getCount() > 0) {
-            const CallFrame& frame = frames.back();
+        for (std::size_t i = frames.getCount(); i > 0; --i) {
+            const CallFrame& frame = frames[i - 1];
             const Chunk& chunk = frame.function->chunk;
+
             std::size_t instruction = frame.ip - chunk.code.data() - 1;
             if (instruction <= chunk.lines.getCount()) {
                 unsigned line = chunk.lines[instruction];
-                fprintf(stderr, "[line %u] in script\n", line);
+                errorln("[line {}] in {}",
+                        line,
+                        i != 1 ? frame.function->name : "script");
             }
         }
     }

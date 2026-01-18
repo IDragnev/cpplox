@@ -20,6 +20,10 @@ namespace cpplox {
         T* as() {
             return _type == T::TYPE ? static_cast<T*>(this) : nullptr;
         }
+        template <HasTypeTag T>
+        const T* as() const {
+            return _type == T::TYPE ? static_cast<const T*>(this) : nullptr;
+        }
 
         virtual Object* clone() const = 0;
 
