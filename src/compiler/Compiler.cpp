@@ -75,41 +75,58 @@ namespace cpplox {
         return r;
     }
 
-    Compiler::Compiler(DiagnosticEngine* e)
+    Compiler::Compiler()
         : source("")
-        , scanner(source, e)
-        , diagnostics(e)
+        , scanner(source, nullptr)
     {
     }
 
-    bool Compiler::compile(std::string src, Function* &f, Vector<Object*>& objects) {
-        bool initOk = init(std::move(src));
+    CompileResult Compiler::replExpression(std::string src,
+                                           DiagnosticEngine* engine) {
+        bool initOk = init(std::move(src), engine);
         if (initOk) {
             advance();
-            while (scanner.isDone() == false) {
+            expression();
+            emitOpCode(OpCode::PRINT);
+            emitReturn();
+        }
+
+        bool error = initOk == false ||
+                     peek(TokenType::EOF_TOKEN) == false ||
+                     parser.hadError;
+        CompileResult result = prepareResult(error);
+
+        cleanUp();
+
+        return result;
+    }
+
+    CompileResult Compiler::compile(std::string src, DiagnosticEngine* diag) {
+        bool initOk = init(std::move(src), diag);
+        if (initOk) {
+            advance();
+            do {
                 declaration();
 
                 if (parser.panicMode) {
                     synchronize();
                 }
-            }
+            } while (peek(TokenType::EOF_TOKEN) == false);
             emitReturn();
         }
 
-        bool hadError = initOk == false || parser.hadError;
-        if (hadError == false) {
-            objects = std::move(gcObjects);
-            f = frame.function;
-        }
+        bool error = initOk == false || parser.hadError;
+        CompileResult result = prepareResult(error);
 
         cleanUp();
 
-        return hadError;
+        return result;
     }
 
-    bool Compiler::init(std::string&& compileSource) {
+    bool Compiler::init(std::string&& compileSource, DiagnosticEngine* engine) {
         source = std::move(compileSource);
-        scanner = Scanner(source, diagnostics);
+        diagnostics = engine;
+        scanner = Scanner(source, engine);
         gcObjects.reserve(256);
 
         Function* scriptFun = makeObject<Function>("<script>");
@@ -135,9 +152,21 @@ namespace cpplox {
         });
     }
 
+    CompileResult Compiler::prepareResult(bool hadError) {
+        CompileResult result;
+        result.error = hadError;
+        if (result.error == false) {
+            result.gcObjects = std::move(gcObjects);
+            result.function = frame.function;
+        }
+
+        return result;
+    }
+
     void Compiler::cleanUp() {
         source = "";
-        scanner = Scanner(source, diagnostics);
+        diagnostics = nullptr;
+        scanner = Scanner(source, nullptr);
         parser = Parser{};
         frame = Frame{};
 
@@ -164,7 +193,7 @@ namespace cpplox {
     void Compiler::synchronize() {
         parser.panicMode = false;
 
-        while (scanner.isDone() == false) {
+        while (peek(TokenType::EOF_TOKEN) == false) {
             if (parser.previous.type == TokenType::SEMICOLON) {
                 return;
             }
@@ -245,10 +274,15 @@ namespace cpplox {
     }
 
     void Compiler::advance() {
+        if (parser.current.type == TokenType::EOF_TOKEN) {
+            return;
+        }
+
         parser.previous = parser.current;
 
         if (scanner.isDone()) {
-            parser.current = Token{};
+            ScanResult r = scanner.scanToken();
+            parser.current = r.token;
             return;
         }
 
@@ -416,7 +450,7 @@ namespace cpplox {
     }
     
     void Compiler::block() {
-        while (scanner.isDone() == false &&
+        while (peek(TokenType::EOF_TOKEN) == false &&
                peek(TokenType::RIGHT_BRACE) == false)
         {
             declaration();

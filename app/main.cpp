@@ -23,19 +23,23 @@ public:
 
 bool isASCII(const std::string& str);
 
-InterpretResult interpret(std::string source, VM& vm, Compiler& c);
-void repl(VM& vm, Compiler& c);
+InterpretResult interpret(std::string source,
+                          bool repl,
+                          DiagnosticEngine& e,
+                          VM& vm,
+                          Compiler& c);
+void repl(DiagnosticEngine& e, VM& vm, Compiler& c);
 bool readFile(const char* filename, std::string& result);
 
 int main(int argc, const char* argv[]) {
     std::locale::global(std::locale("en_US.UTF-8"));
 
     DiagnosticEngine diagnostics(std::make_unique<DiagnosticLogger>());
-    Compiler compiler(&diagnostics);
+    Compiler compiler;
     VM vm;
 
     if (argc == 1) {
-        repl(vm, compiler);
+        repl(diagnostics, vm, compiler);
     } else if (argc == 2) {
         std::string source = "";
         bool bFileOk = readFile(argv[1], source);
@@ -48,7 +52,7 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-        auto r = interpret(std::move(source), vm, compiler);
+        auto r = interpret(std::move(source), false, diagnostics, vm, compiler);
         if (r != InterpretResult::OK) {
             return 1;
         }
@@ -59,7 +63,7 @@ int main(int argc, const char* argv[]) {
     return 0;
 }
 
-void repl(VM& vm, Compiler& compiler) {
+void repl(DiagnosticEngine& e, VM& vm, Compiler& compiler) {
     std::string line = "";
 
     for (;;) {
@@ -72,7 +76,7 @@ void repl(VM& vm, Compiler& compiler) {
             }
 
             if (isASCII(line)) {
-                interpret(line, vm, compiler);
+                interpret(line, true, e, vm, compiler);
             } else {
                 cpplox::errorln("Input error. Non-ascii charater found.");
             }
@@ -82,15 +86,26 @@ void repl(VM& vm, Compiler& compiler) {
     }
 }
 
-InterpretResult interpret(std::string source, VM& vm, Compiler& compiler) {
-    cpplox::Function* func = nullptr;
-    cpplox::Vector<cpplox::Object*> objs;
-    bool hadError = compiler.compile(std::move(source), func, objs);
-    if (hadError) {
+InterpretResult interpret(std::string source,
+                          bool repl,
+                          DiagnosticEngine& e,
+                          VM& vm,
+                          Compiler& compiler) {
+    cpplox::CompileResult result;
+    if (repl) {
+        result = compiler.replExpression(source, nullptr);
+        if (result.error) {
+            result = compiler.compile(std::move(source), &e);
+        }
+    } else {
+        result = compiler.compile(std::move(source), &e);
+    }
+
+    if (result.error) {
         return InterpretResult::COMPILE_ERROR;
     }
 
-    auto r = vm.interpret(func, std::move(objs));
+    auto r = vm.interpret(result.function, std::move(result.gcObjects));
 
     return r;
 }

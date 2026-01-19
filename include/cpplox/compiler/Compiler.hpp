@@ -4,12 +4,20 @@
 #include "cpplox/core/Vector.hpp"
 #include "cpplox/core/Value.hpp"
 
+#include <string>
+
 namespace cpplox {
     class Function;
     class Object;
     class DiagnosticEngine;
     enum class OpCode;
     class String;
+
+    struct CompileResult {
+        bool error = false;
+        Function* function = nullptr;
+        Vector<Object*> gcObjects;
+    };
 
     class Compiler {
     private:
@@ -26,17 +34,19 @@ namespace cpplox {
         };
 
     public:
-        Compiler(DiagnosticEngine* engine);
+        Compiler();
         ~Compiler() = default;
 
         Compiler(const Compiler&) = delete;
         Compiler& operator=(const Compiler&) = delete;
 
-        bool compile(std::string src, Function* &f, Vector<Object*>& gcObjects);
+        CompileResult compile(std::string src, DiagnosticEngine* engine);
+        CompileResult replExpression(std::string src, DiagnosticEngine* engine);
 
     private:
-        bool init(std::string&& source);
+        bool init(std::string&& source, DiagnosticEngine* engine);
         void initFrame(Frame& frame, Function* f, FunctionType t);
+        CompileResult prepareResult(bool hadError);
         void cleanUp();
         template <typename T, typename... Args>
         T* makeObject(Args&&... args);
