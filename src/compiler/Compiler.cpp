@@ -326,8 +326,8 @@ namespace cpplox {
         block();
         emitReturn();
 
-        endScope();
-
+        // no need for endScope because we
+        // return to compiling the parent function
         frame = std::move(oldFrame);
         emitConstant(Value(fun));
     }
