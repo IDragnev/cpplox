@@ -1,4 +1,5 @@
 #include "cpplox/log/Log.hpp"
+#include "cpplox/core/StringFormatter.hpp"
 #include "cpplox/compiler/Compiler.hpp"
 #include "cpplox/vm/VM.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
@@ -11,6 +12,7 @@
 using cpplox::VM;
 using cpplox::Compiler;
 using cpplox::InterpretResult;
+using cpplox::InterpretResultCode;
 using cpplox::DiagnosticConsumer;
 using cpplox::DiagnosticEngine;
 
@@ -52,8 +54,11 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-        auto r = interpret(std::move(source), false, diagnostics, vm, compiler);
-        if (r != InterpretResult::OK) {
+        const auto r = interpret(std::move(source), false, diagnostics, vm, compiler);
+        if (r.code != InterpretResultCode::OK) {
+            if (r.code == InterpretResultCode::RUNTIME_ERROR) {
+                cpplox::errorln("Runtime error: {}", r.error);
+            }
             return 1;
         }
     } else {
@@ -76,7 +81,10 @@ void repl(DiagnosticEngine& e, VM& vm, Compiler& compiler) {
             }
 
             if (isASCII(line)) {
-                interpret(line, true, e, vm, compiler);
+                const auto r = interpret(line, true, e, vm, compiler);
+                if (r.code == InterpretResultCode::RUNTIME_ERROR) {
+                    cpplox::errorln("Runtime error: {}", r.error);
+                }
             } else {
                 cpplox::errorln("Input error. Non-ascii charater found.");
             }
@@ -91,21 +99,22 @@ InterpretResult interpret(std::string source,
                           DiagnosticEngine& e,
                           VM& vm,
                           Compiler& compiler) {
-    cpplox::CompileResult result;
+    cpplox::CompileResult compiled;
     if (repl) {
-        result = compiler.replExpression(source, nullptr);
-        if (result.error) {
-            result = compiler.compile(std::move(source), &e);
+        compiled = compiler.replExpression(source, nullptr);
+        if (compiled.error) {
+            compiled = compiler.compile(std::move(source), &e);
         }
     } else {
-        result = compiler.compile(std::move(source), &e);
+        compiled = compiler.compile(std::move(source), &e);
     }
 
-    if (result.error) {
-        return InterpretResult::COMPILE_ERROR;
+    InterpretResult r;
+    if (compiled.error) {
+        r.code = InterpretResultCode::COMPILE_ERROR;
+    } else {
+        r = vm.interpret(compiled.function, std::move(compiled.gcObjects));
     }
-
-    auto r = vm.interpret(result.function, std::move(result.gcObjects));
 
     return r;
 }

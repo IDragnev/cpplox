@@ -8,6 +8,9 @@
 
 #include "cpplox/core/Format.hpp"
 
+#include <iterator>
+#include <fmt/format.h>
+
 namespace cpplox {
     VM::~VM() {
         // ok for now, will be managed by the runtime GC
@@ -19,11 +22,15 @@ namespace cpplox {
     }
 
     InterpretResult VM::interpret(Function* func, Vector<Object*>&& objects) {
+        InterpretResult result;
+
         if (func == nullptr) {
-            return InterpretResult::COMPILE_ERROR;
+            result.code = InterpretResultCode::COMPILE_ERROR;
+            return result;
         }
         if (func->chunk.code.isEmpty()) {
-            return InterpretResult::OK;
+            result.code = InterpretResultCode::OK;
+            return result;
         }
 
         addObjects(std::move(objects));
@@ -33,12 +40,13 @@ namespace cpplox {
         stack.push(Value(func));
         call(func, 0);
 
-        auto r = run();
+        result.code = run();
+        result.error = std::move(error);
 
         frames.clear();
         stack.clear();
 
-        return r;
+        return result;
     }
 
     void VM::addObjects(Vector<Object*>&& objects) {
@@ -49,7 +57,7 @@ namespace cpplox {
         objects.clear();
     }
 
-    InterpretResult VM::run() {
+    InterpretResultCode VM::run() {
         CallFrame* frame = &frames.back();
 
         const auto readByte = [&frame] {
@@ -80,7 +88,7 @@ namespace cpplox {
 #define BINARY_OP(op) \
             bool bOk = numBinaryOp([](double a, double b) { return Value(a op b); }); \
             if (bOk == false) { \
-               return InterpretResult::RUNTIME_ERROR; \
+               return InterpretResultCode::RUNTIME_ERROR; \
             }
 
             const auto opCode = static_cast<OpCode>(readByte());
@@ -97,7 +105,7 @@ namespace cpplox {
                         stack.push(Value(a + b));
                     } else {
                         runtimeError("Operands must be two numbers or two strings.");
-                        return InterpretResult::RUNTIME_ERROR;
+                        return InterpretResultCode::RUNTIME_ERROR;
                     }
                 } break;
                 case OpCode::SUBTRACT: {
@@ -137,7 +145,7 @@ namespace cpplox {
                         stack.push(Value(-x));
                     } else {
                         runtimeError("Operand must be a number.");
-                        return InterpretResult::RUNTIME_ERROR;
+                        return InterpretResultCode::RUNTIME_ERROR;
                     }
                 } break;
                 case OpCode::NOT: {
@@ -160,8 +168,8 @@ namespace cpplox {
                     stack.push(Value::nil());
                 } break;
                 case OpCode::PRINT: {
-                    Value v = stack.pop();
-                    println("{}", v);
+                    printValue(stack.peek());
+                    stack.pop();
                 } break;
                 case OpCode::POP: {
                     stack.pop();
@@ -181,8 +189,8 @@ namespace cpplox {
                         globals.insert(name.asString(), stack.peek());
                         stack.pop();
                     } else {
-                        runtimeError("Internal compiler error.");
-                        return InterpretResult::RUNTIME_ERROR;
+                        runtimeError("Internal error.");
+                        return InterpretResultCode::RUNTIME_ERROR;
                     }
                 } break;
                 case OpCode::READ_GLOBAL:
@@ -196,16 +204,12 @@ namespace cpplox {
                         if (exists) {
                             stack.push(value);
                         } else {
-                            String error = "Undefined variable '";
-                            error += name.asString();
-                            error += "'.";
-                            runtimeError(error.c_str());
-
-                            return InterpretResult::RUNTIME_ERROR;
+                            runtimeError("Undefined variable '{}'.", name);
+                            return InterpretResultCode::RUNTIME_ERROR;
                         }
                     } else {
-                        runtimeError("Internal compiler error.");
-                        return InterpretResult::RUNTIME_ERROR;
+                        runtimeError("Internal error.");
+                        return InterpretResultCode::RUNTIME_ERROR;
                     }
                 } break;
                 case OpCode::SET_GLOBAL:
@@ -218,16 +222,12 @@ namespace cpplox {
                         if (exists) {
                             globals.insert(name.asString(), stack.peek());
                         } else {
-                            String error = "Undefined variable '";
-                            error += name.asString();
-                            error += "'.";
-                            runtimeError(error.c_str());
-
-                            return InterpretResult::RUNTIME_ERROR;
+                            runtimeError("Undefined variable '{}'.", name);
+                            return InterpretResultCode::RUNTIME_ERROR;
                         }
                     } else {
-                        runtimeError("Internal compiler error.");
-                        return InterpretResult::RUNTIME_ERROR;
+                        runtimeError("Internal error.");
+                        return InterpretResultCode::RUNTIME_ERROR;
                     }
                 } break;
                 case OpCode::READ_LOCAL:
@@ -262,7 +262,7 @@ namespace cpplox {
                     const std::uint8_t argc = readByte();
                     const Value& fun = stack.peekN(argc);
                     if (callValue(fun, argc) == false) {
-                        return InterpretResult::RUNTIME_ERROR;
+                        return InterpretResultCode::RUNTIME_ERROR;
                     }
                     frame = &frames.back();
                 } break;
@@ -272,7 +272,7 @@ namespace cpplox {
 
                     frames.removeBack();
                     if (frames.isEmpty()) {
-                        return InterpretResult::OK;
+                        return InterpretResultCode::OK;
                     }
                     frame = &frames.back();
 
@@ -281,11 +281,26 @@ namespace cpplox {
                     stack.push(result);
                 } break;
                 default: {
-                    return InterpretResult::RUNTIME_ERROR;
+                    runtimeError("Unknown opcode");
+                    return InterpretResultCode::RUNTIME_ERROR;
                 } break;
             }
 
 #undef BINARY_OP
+        }
+    }
+
+    void VM::printValue(const Value& v) const {
+        if (v.isObject() == false) {
+            println("{}", v);
+        } else {
+            const Object* obj = v.asObject();
+            switch (obj->type()) {
+                case ObjectType::FUNCTION: {
+                    const Function* fun = obj->as<Function>();
+                    println("<fun {}:{}>", fun->name, fun->arity);
+                } break;
+            }
         }
     }
 
@@ -303,8 +318,9 @@ namespace cpplox {
 
     bool VM::call(const Function* f, std::uint8_t argc) {
         if (f->arity != argc) {
-            // todo: add expected and actual count
-            runtimeError("Invalid argument count");
+            runtimeError("Invalid argument count. Expected {}, found {}.",
+                         f->arity,
+                         argc);
             return false;
         }
 
@@ -336,8 +352,30 @@ namespace cpplox {
         return false;
     }
 
-    void VM::runtimeError(const char* msg) {
-        errorln("Runtime error: {}", msg);
+    // A simple wrapper so we don't expose fmt in the header
+    struct FmtBuffer {
+        fmt::memory_buffer buffer;
+    };
+
+    template <typename... Args>
+    void VM::runtimeError(std::string_view fmtStr, Args&&... args) {
+        FmtBuffer b;
+        b.buffer.reserve(512);
+
+        const std::size_t LINE_W = 60;
+        error.reserve((frames.getCount() + 1) * LINE_W);
+
+        fmt::vformat_to(std::back_inserter(b.buffer),
+                        fmtStr,
+                        fmt::make_format_args(args...));
+        error += std::string_view(b.buffer.data(), b.buffer.size());
+        b.buffer.clear();
+
+        appendCallStackInfo(b);
+    }
+
+    void VM::appendCallStackInfo(FmtBuffer& buf) {
+        buf.buffer.clear();
 
         for (std::size_t i = frames.getCount(); i > 0; --i) {
             const CallFrame& frame = frames[i - 1];
@@ -346,9 +384,13 @@ namespace cpplox {
             std::size_t instruction = frame.ip - chunk.code.data() - 1;
             if (instruction <= chunk.lines.getCount()) {
                 unsigned line = chunk.lines[instruction];
-                errorln("[line {}] in {}",
-                        line,
-                        i != 1 ? frame.function->name : "script");
+
+                fmt::format_to(std::back_inserter(buf.buffer),
+                               "\n[line {}] in {}",
+                               line,
+                               i != 1 ? frame.function->name : "script");
+                error += std::string_view(buf.buffer.data(), buf.buffer.size());
+                buf.buffer.clear();
             }
         }
     }

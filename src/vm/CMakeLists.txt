@@ -16,6 +16,7 @@ target_link_libraries(vm
   PUBLIC bytecode
   PUBLIC runtime
   PRIVATE loglib
+  PRIVATE fmt
 )
 target_include_directories(vm PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_compile_features(vm PUBLIC cxx_std_20)
