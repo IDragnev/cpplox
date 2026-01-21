@@ -19,19 +19,24 @@ namespace cpplox {
 
         const char* c_str() const;
         std::size_t size() const;
+        std::size_t capacity() const;
         std::uint32_t hashValue() const;
+
+        void reserve(std::size_t capacity);
 
         String& operator+=(const String& rhs);
         String& operator+=(const char* rhs);
+        String& operator+=(std::string_view sv);
         String& operator+=(char rhs);
 
     private:
-        void append(const char* string);
+        void append(const char* string, std::size_t len);
         void updateHash();
 
     private:
         char* content = nullptr;
         std::size_t len = 0;
+        std::size_t cap = 0;
         std::uint32_t hash = 0;
     };
 

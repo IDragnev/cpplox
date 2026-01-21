@@ -9,6 +9,7 @@ namespace cpplox {
     String::String(char c)
         : content{new char[2]{c, '\0'}}
         , len(1)
+        , cap(2)
     {
         updateHash();
     }
@@ -18,17 +19,20 @@ namespace cpplox {
     String::String(String&& source) noexcept
         : content{source.content}
         , len(source.len)
+        , cap(source.cap)
         , hash(source.hash)
     {
         source.content = nullptr;
         source.len = 0;
+        source.cap = 0;
         source.updateHash();
     }
 
     String::String(const char* string) {
         if (string != nullptr) {
             len = std::strlen(string);
-            content = new char[len + 1] {};
+            cap = len + 1;
+            content = new char[cap] {};
             std::copy_n(string, len, content);
         }
         updateHash();
@@ -37,7 +41,8 @@ namespace cpplox {
     String::String(std::string_view string) {
         if (string.size() > 0) {
             len = string.size();
-            content = new char[len + 1]{};
+            cap = len + 1;
+            content = new char[cap]{};
             std::copy_n(string.data(), len, content);
         }
         updateHash();
@@ -47,6 +52,7 @@ namespace cpplox {
         if (this != &rhs) {
             String copy(rhs);
             std::swap(copy.len, this->len);
+            std::swap(copy.cap, this->cap);
             std::swap(copy.content, this->content);
             std::swap(copy.hash, this->hash);
         }
@@ -58,6 +64,7 @@ namespace cpplox {
         if (this != &rhs) {
             String temp = std::move(rhs);
             std::swap(len, temp.len);
+            std::swap(cap, temp.cap);
             std::swap(content, temp.content);
             std::swap(hash, temp.hash);
         }
@@ -69,24 +76,38 @@ namespace cpplox {
         delete[] content;
     }
 
-    void String::append(const char* string) {
+    void String::append(const char* string, std::size_t sourceLen) {
         if (string == nullptr) {
             return;
         }
-
-        if (std::size_t sourceLen = std::strlen(string); sourceLen > 0) {
-            std::size_t currentLen = size();
-            auto buffer = new char[sourceLen + currentLen + 1];
-
-            std::copy_n(this->content, currentLen, buffer);
-            std::copy_n(string, sourceLen + 1, buffer + currentLen);
-
-            delete[] this->content;
-            this->content = buffer;
-            this->len = sourceLen + currentLen;
-
-            updateHash();
+        if (sourceLen == 0) {
+            return;
         }
+
+        const std::size_t neededCap = len + sourceLen + 1;
+        if (neededCap > cap) {
+            reserve(neededCap);
+        }
+
+        std::copy_n(string, sourceLen, content + len);
+        len += sourceLen;
+
+        updateHash();
+    }
+
+    void String::reserve(std::size_t capacity) {
+        if (cap >= capacity) {
+            return;
+        }
+
+        auto buffer = new char[capacity]{};
+        if (len > 0) {
+            std::copy_n(content, len, buffer);
+        }
+
+        delete[] content;
+        content = buffer;
+        cap = capacity;
     }
 
     void String::updateHash() {
@@ -106,25 +127,35 @@ namespace cpplox {
         return len;
     }
 
+    std::size_t String::capacity() const {
+        return cap;
+    }
+
     std::uint32_t String::hashValue() const {
         return hash;
     }
 
     String& String::operator+=(const String& string) {
-        append(string.c_str());
+        append(string.c_str(), string.size());
 
         return *this;
     }
 
     String& String::operator+=(const char* string) {
-        append(string);
+        append(string, std::strlen(string));
+
+        return *this;
+    }
+
+    String& cpplox::String::operator+=(std::string_view sv) {
+        append(sv.data(), sv.size());
 
         return *this;
     }
 
     String& String::operator+=(char c) {
         char buffer[]{c, '\0'};
-        append(buffer);
+        append(buffer, 2);
 
         return *this;
     }

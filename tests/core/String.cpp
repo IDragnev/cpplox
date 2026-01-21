@@ -34,6 +34,7 @@ TEST_CASE("String(c) is \"c\"") {
     String s{'c'};
 
     CHECK(s.size() == 1);
+    CHECK(s.capacity() > s.size());
     CHECK(areEqual(s.c_str(), "c"));
 }
 
@@ -41,6 +42,7 @@ TEST_CASE("String(const char*)") {
     String s{"c"};
 
     CHECK(s.size() == 1);
+    CHECK(s.capacity() > s.size());
     CHECK(areEqual(s.c_str(), "c"));
 }
 
@@ -51,7 +53,27 @@ TEST_CASE("String(string_view)") {
     String s{sv};
 
     CHECK(s.size() == 1);
+    CHECK(s.capacity() > s.size());
     CHECK(areEqual(s.c_str(), "b"));
+}
+
+TEST_CASE("Empty strings have equal hash values") {
+    String a;
+    String b("");
+    String c{nullptr};
+    String d(std::string_view(""));
+
+    CHECK(a.hashValue() == b.hashValue());
+    CHECK(b.hashValue() == c.hashValue());
+    CHECK(c.hashValue() == d.hashValue());
+}
+
+TEST_CASE("Non-empty equal strings have equal hash values") {
+    const char* lit = "abcdefg";
+    String a(lit);
+    String b(lit);
+
+    CHECK(a.hashValue() == b.hashValue());
 }
 
 TEST_CASE("Copy ctor from non-empty") {
@@ -74,10 +96,14 @@ TEST_CASE("Copy ctor from empty") {
 
 TEST_CASE("Move ctor from non-empty") {
     String a("x");
+    const auto hash = a.hashValue();
+
     String b = std::move(a);
 
     CHECK(a.size() == 0);
     CHECK(b.size() == 1);
+    CHECK(b.hashValue() == hash);
+    CHECK(a.hashValue() == String{}.hashValue());
     CHECK(areEqual(a.c_str(), ""));
     CHECK(areEqual(b.c_str(), "x"));
 }
@@ -87,17 +113,23 @@ TEST_CASE("Move ctor from empty") {
     String b = std::move(a);
     CHECK(a.size() == 0);
     CHECK(b.size() == 0);
+    CHECK(b.hashValue() == a.hashValue());
+    CHECK(a.hashValue() == String{}.hashValue());
     CHECK(areEqual(a.c_str(), ""));
     CHECK(areEqual(b.c_str(), ""));
 }
 
 TEST_CASE("Move assignment non-empty to non-empty") {
     String a("1234");
+    const auto hash = a.hashValue();
     String b("def");
+
     b = std::move(a);
 
     CHECK(a.size() == 0);
     CHECK(b.size() == 4);
+    CHECK(a.hashValue() == String{}.hashValue());
+    CHECK(b.hashValue() == hash);
     CHECK(areEqual(a.c_str(), ""));
     CHECK(areEqual(b.c_str(), "1234"));
 }
@@ -109,17 +141,23 @@ TEST_CASE("Move assignment empty to non-empty") {
 
     CHECK(a.size() == 0);
     CHECK(b.size() == 0);
+    CHECK(b.hashValue() == a.hashValue());
+    CHECK(b.hashValue() == String{}.hashValue());
     CHECK(areEqual(a.c_str(), ""));
     CHECK(areEqual(b.c_str(), ""));
 }
 
 TEST_CASE("Move assignment non-empty to empty") {
     String a("abc");
+    const auto hash = a.hashValue();
     String b;
+
     b = std::move(a);
 
     CHECK(a.size() == 0);
     CHECK(b.size() == 3);
+    CHECK(b.hashValue() == hash);
+    CHECK(a.hashValue() == String{}.hashValue());
     CHECK(areEqual(a.c_str(), ""));
     CHECK(areEqual(b.c_str(), "abc"));
 }
@@ -131,6 +169,8 @@ TEST_CASE("Move assignment empty to empty") {
 
     CHECK(a.size() == 0);
     CHECK(b.size() == 0);
+    CHECK(b.hashValue() == a.hashValue());
+    CHECK(a.hashValue() == String{}.hashValue());
     CHECK(areEqual(a.c_str(), ""));
     CHECK(areEqual(b.c_str(), ""));
 }
@@ -141,6 +181,7 @@ TEST_CASE("Copy assignment non-empty to non-empty") {
     b = a;
 
     CHECK(a.size() == b.size());
+    CHECK(b.hashValue() == a.hashValue());
     CHECK(areEqual(a.c_str(), b.c_str()));
     CHECK(a.hashValue() == b.hashValue());
 }
@@ -151,6 +192,7 @@ TEST_CASE("Copy assignment empty to non-empty") {
     b = a;
 
     CHECK(a.size() == b.size());
+    CHECK(b.hashValue() == a.hashValue());
     CHECK(areEqual(a.c_str(), b.c_str()));
     CHECK(a.hashValue() == b.hashValue());
 }
@@ -161,6 +203,7 @@ TEST_CASE("Copy assignment non-empty to empty") {
     b = a;
 
     CHECK(a.size() == b.size());
+    CHECK(b.hashValue() == a.hashValue());
     CHECK(areEqual(a.c_str(), b.c_str()));
     CHECK(a.hashValue() == b.hashValue());
 }
@@ -171,11 +214,12 @@ TEST_CASE("Copy assignment empty to empty") {
     b = a;
 
     CHECK(a.size() == b.size());
+    CHECK(b.hashValue() == a.hashValue());
     CHECK(areEqual(a.c_str(), b.c_str()));
     CHECK(a.hashValue() == b.hashValue());
 }
 
-TEST_CASE("Append") {
+TEST_CASE("append") {
     String str;
 
     str += "1";
@@ -189,22 +233,23 @@ TEST_CASE("Append") {
     str += "";
     CHECK(str.size() == 3);
     CHECK(areEqual(str.c_str(), "123"));
+
+    CHECK(str.hashValue() == String("123").hashValue());
 }
 
-TEST_CASE("Empty strings have equal hash values") {
-    String a;
-    String b("");
-    String c{nullptr};
-    String d(std::string_view(""));
+TEST_CASE("reserve") {
+    String str;
+    const auto cap = str.capacity();
+    const auto expectetdCap = cap + 10;
 
-    CHECK(a.hashValue() == b.hashValue());
-    CHECK(b.hashValue() == c.hashValue());
-    CHECK(c.hashValue() == d.hashValue());
-}
+    str.reserve(expectetdCap);
+    const auto newCap = str.capacity();
+    CHECK(newCap > cap);
+    CHECK(newCap >= expectetdCap);
 
-TEST_CASE("Non-empty equal strings have equal hash values") {
-    String a("abcdefg");
-    String b(std::string_view("abcdefg"));
+    str.reserve(cap);
+    CHECK(str.capacity() == newCap);
 
-    CHECK(a.hashValue() == b.hashValue());
+    str += "xyz";
+    CHECK(str.capacity() == newCap);
 }
