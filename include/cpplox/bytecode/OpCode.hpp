@@ -38,5 +38,7 @@ namespace cpplox {
         JMP,
         LOOP,
         CALL,
+        MAKE_CLOSURE,
+        MAKE_CLOSURE_16,
     };
 }

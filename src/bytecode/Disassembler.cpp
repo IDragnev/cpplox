@@ -30,8 +30,8 @@ namespace cpplox {
             printPrefix(offset, chunk.lines[offset]);
         }
 
-        const std::uint8_t opCode = chunk.code[offset];
-        switch (static_cast<OpCode>(opCode)) {
+        const auto opCode = static_cast<OpCode>(chunk.code[offset]);
+        switch (opCode) {
             case OpCode::ADD: {
                 return simpleInstruction("ADD", offset);
             } break;
@@ -140,8 +140,22 @@ namespace cpplox {
             case OpCode::CALL: {
                 return integerInstruction("CALL", chunk, offset);
             } break;
+            case OpCode::MAKE_CLOSURE: {
+                const auto constant = chunk.code[offset + 1];
+                printConstantInstruction("MAKE_CLOSURE", chunk, constant);
+                return offset + 2;
+            } break;
+            case OpCode::MAKE_CLOSURE_16: {
+                const auto a = chunk.code[offset + 1];
+                const auto b = chunk.code[offset + 2];
+                const auto constant = parseTwoByteInteger(a, b);
+
+                printConstantInstruction("MAKE_CLOSURE_16", chunk, constant);
+                return offset + 3;
+            } break;
             default: {
-                println("Unknown opcode '{}'", opCode);
+                println("Unknown opcode '{}'",
+                        static_cast<std::uint8_t>(opCode));
                 return offset + 1;
             } break;
         }

@@ -3,8 +3,10 @@ set(RUNTIME_HEADERS_DIR ${PROJECT_SOURCE_DIR}/include/cpplox/runtime)
 set(CPPLOX_RUNTIME_SOURCE
   ${RUNTIME_HEADERS_DIR}/Object.hpp
   ${RUNTIME_HEADERS_DIR}/Function.hpp
+  ${RUNTIME_HEADERS_DIR}/Closure.hpp
 
   Function.cpp
+  Closure.cpp
 )
 
 add_library(

@@ -15,8 +15,4 @@ namespace cpplox {
         , arity(arity)
         , chunk(c)
     {}
-
-    Function* Function::clone() const {
-        return new Function(name, arity, chunk);
-    }
 } // namespace cpplox

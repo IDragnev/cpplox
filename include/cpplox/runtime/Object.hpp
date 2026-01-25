@@ -3,6 +3,7 @@
 namespace cpplox {
     enum class ObjectType {
         FUNCTION,
+        CLOSURE,
     };
 
     template <typename T>
@@ -24,8 +25,6 @@ namespace cpplox {
         const T* as() const {
             return _type == T::TYPE ? static_cast<const T*>(this) : nullptr;
         }
-
-        virtual Object* clone() const = 0;
 
     private:
         ObjectType _type;

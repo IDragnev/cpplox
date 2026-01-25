@@ -4,6 +4,7 @@
 #include "cpplox/bytecode/Bytecode.hpp"
 #include "cpplox/runtime/Object.hpp"
 #include "cpplox/runtime/Function.hpp"
+#include "cpplox/runtime/Closure.hpp"
 #include "cpplox/log/Log.hpp"
 
 #include "cpplox/core/Format.hpp"
@@ -38,9 +39,18 @@ namespace cpplox {
         frames.reserve(512);
 
         stack.push(Value(func));
-        call(func, 0);
+        Closure* closure = makeObject<Closure>(func);
+        if (closure != nullptr) {
+            stack.pop();
+            stack.push(Value(closure));
+            call(closure, 0);
 
-        result.code = run();
+            result.code = run();
+        }
+        else {
+            result.code = InterpretResultCode::RUNTIME_ERROR;
+        }
+
         result.error = std::move(error);
 
         frames.clear();
@@ -69,10 +79,10 @@ namespace cpplox {
             return parseTwoByteInteger(a, b);
         };
         const auto readConstant = [&frame, &readByte] {
-            return frame->function->chunk.constants[readByte()];
+            return frame->closure->function->chunk.constants[readByte()];
         };
         const auto readConstant16 = [&frame, &readIdx16] {
-            return frame->function->chunk.constants[readIdx16()];
+            return frame->closure->function->chunk.constants[readIdx16()];
         };
 
 #ifdef CPPLOX_DEBUG_TRACE_EXECUTION
@@ -81,8 +91,8 @@ namespace cpplox {
 
         for (;;) {
 #ifdef CPPLOX_DEBUG_TRACE_EXECUTION
-            disassembler.disassembleInstruction(frame->function->chunk,
-                                                frame->ip - frame->function->chunk.code.data());
+            disassembler.disassembleInstruction(frame->closure->function->chunk,
+                                                frame->ip - frame->closure->function->chunk.code.data());
 #endif
 
 #define BINARY_OP(op) \
@@ -258,6 +268,24 @@ namespace cpplox {
                     const std::size_t offset = readIdx16();
                     frame->ip -= offset;
                 } break;
+                case OpCode::MAKE_CLOSURE:
+                case OpCode::MAKE_CLOSURE_16: {
+                    Value val = opCode == OpCode::MAKE_CLOSURE
+                                    ? readConstant()
+                                    : readConstant16();
+                    if (val.isObject()) {
+                        const Function* function = val.asObject()->as<Function>();
+                        if (function != nullptr) {
+                            Closure* closure = makeObject<Closure>(function);
+                            if (closure != nullptr) {
+                                stack.push(Value(closure));
+                            }
+                            else {
+                                return InterpretResultCode::RUNTIME_ERROR;
+                            }
+                        }
+                    }
+                } break;
                 case OpCode::CALL: {
                     const std::uint8_t argc = readByte();
                     const Value& fun = stack.peekN(argc);
@@ -300,13 +328,19 @@ namespace cpplox {
                     const Function* fun = obj->as<Function>();
                     println("<fun {}:{}>", fun->name, fun->arity);
                 } break;
+                case ObjectType::CLOSURE: {
+                    const Closure* closure = obj->as<Closure>();
+                    println("<fun {}:{}>",
+                            closure->function->name,
+                            closure->function->arity);
+                } break;
             }
         }
     }
 
     bool VM::callValue(const Value& v, std::uint8_t argc) {
         if (v.isObject()) {
-            const Function* fun = v.asObject()->as<Function>();
+            const Closure* fun = v.asObject()->as<Closure>();
             if (fun != nullptr) {
                 return call(fun, argc);
             }
@@ -316,23 +350,24 @@ namespace cpplox {
         return false;
     }
 
-    bool VM::call(const Function* f, std::uint8_t argc) {
-        if (f->arity != argc) {
+    bool VM::call(const Closure* f, std::uint8_t argc) {
+        if (f->function->arity != argc) {
             runtimeError("Invalid argument count. Expected {}, found {}.",
-                         f->arity,
+                         f->function->arity,
                          argc);
             return false;
         }
 
         frames.insertBack(CallFrame{
-            .function = f,
-            .ip = f->chunk.code.data(),
+            .closure = f,
+            .ip = f->function->chunk.code.data(),
             .bp = stack.size() - argc - 1,
         });
 
 #ifdef CPPLOX_DEBUG_TRACE_EXECUTION
         Disassembler disassembler;
-        disassembler.disassembleChunk(f->chunk, f->name.c_str());
+        disassembler.disassembleChunk(f->function->chunk,
+                                      f->function->name.c_str());
 #endif
 
         return true;
@@ -379,7 +414,7 @@ namespace cpplox {
 
         for (std::size_t i = frames.getCount(); i > 0; --i) {
             const CallFrame& frame = frames[i - 1];
-            const Chunk& chunk = frame.function->chunk;
+            const Chunk& chunk = frame.closure->function->chunk;
 
             std::size_t instruction = frame.ip - chunk.code.data() - 1;
             if (instruction <= chunk.lines.getCount()) {
@@ -388,10 +423,23 @@ namespace cpplox {
                 fmt::format_to(std::back_inserter(buf.buffer),
                                "\n[line {}] in {}",
                                line,
-                               i != 1 ? frame.function->name : "script");
+                               i != 1 ? frame.closure->function->name : "script");
                 error += std::string_view(buf.buffer.data(), buf.buffer.size());
                 buf.buffer.clear();
             }
         }
+    }
+
+    template <typename T, typename... Args>
+    T* VM::makeObject(Args&&... args) {
+        T* obj = new(std::nothrow) T(std::forward<Args>(args)...);
+        if (obj != nullptr) {
+            gcObjects.insertBack(obj);
+        }
+        else {
+            runtimeError("Out of memory");
+        }
+
+        return obj;
     }
 }

@@ -74,6 +74,7 @@ namespace cpplox {
                           std::size_t& idx);
         void emitReturn();
         void emitConstant(Value value);
+        void emitClosure(Function* fun);
         void emitIntegerInstruction(OpCode small,
                                     OpCode big,
                                     std::size_t operand);

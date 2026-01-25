@@ -7,6 +7,7 @@
 
 namespace cpplox {
     class Function;
+    class Closure;
     class Object;
 
     enum class InterpretResultCode {
@@ -26,7 +27,7 @@ namespace cpplox {
 
     class VM {
         struct CallFrame {
-            const Function* function = nullptr;
+            const Closure* closure = nullptr;
             const std::uint8_t* ip = nullptr;
             std::size_t bp = 0;
         };
@@ -43,12 +44,14 @@ namespace cpplox {
     private:
         InterpretResultCode run();
         void addObjects(Vector<Object*>&& objects);
+        template <typename T, typename... Args>
+        T* makeObject(Args&&... args);
 
         template <NumberBinaryOp Op>
         bool numBinaryOp(const Op& op);
 
         bool callValue(const Value& v, std::uint8_t argc);
-        bool call(const Function* f, std::uint8_t argc);
+        bool call(const Closure* f, std::uint8_t argc);
         void printValue(const Value& v) const;
 
         template <typename... Args>

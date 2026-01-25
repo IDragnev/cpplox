@@ -363,7 +363,7 @@ namespace cpplox {
         // no need for endScope because we
         // return to compiling the parent function
         frame = std::move(oldFrame);
-        emitConstant(Value(fun));
+        emitClosure(fun);
     }
 
     void Compiler::varDeclaration() {
@@ -854,6 +854,16 @@ namespace cpplox {
         }
 
         return success;
+    }
+
+    void Compiler::emitClosure(Function* fun) {
+        std::size_t i = 0;
+        bool ok = makeConstant(Value(fun), false, i);
+        if (ok) {
+            emitIntegerInstruction(OpCode::MAKE_CLOSURE,
+                                   OpCode::MAKE_CLOSURE_16,
+                                   i);
+        }
     }
 
     void Compiler::emitConstant(Value value) {
