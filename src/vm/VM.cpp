@@ -5,6 +5,7 @@
 #include "cpplox/runtime/Object.hpp"
 #include "cpplox/runtime/Function.hpp"
 #include "cpplox/runtime/Closure.hpp"
+#include "cpplox/runtime/Upvalue.hpp"
 #include "cpplox/log/Log.hpp"
 
 #include "cpplox/core/Format.hpp"
@@ -273,18 +274,48 @@ namespace cpplox {
                     Value val = opCode == OpCode::MAKE_CLOSURE
                                     ? readConstant()
                                     : readConstant16();
-                    if (val.isObject()) {
-                        const Function* function = val.asObject()->as<Function>();
-                        if (function != nullptr) {
-                            Closure* closure = makeObject<Closure>(function);
-                            if (closure != nullptr) {
-                                stack.push(Value(closure));
-                            }
-                            else {
-                                return InterpretResultCode::RUNTIME_ERROR;
+                    if (val.isObject() == false) {
+                        runtimeError("Internal error.");
+                        return InterpretResultCode::RUNTIME_ERROR;
+                    }
+
+                    const Function* function = val.asObject()->as<Function>();
+                    if (function != nullptr) {
+                        Closure* closure = makeObject<Closure>(function);
+                        if (closure != nullptr) {
+                            stack.push(Value(closure));
+                            const std::size_t upvc = readByte();
+                            for (std::size_t i = 0; i < upvc; ++i) {
+                                const bool isLocal = readByte() == 1;
+                                const std::size_t index =
+                                    isLocal ? readIdx16() : readByte();
+                                if (isLocal) {
+                                    closure->upvalues[i] =
+                                        captureUpvalue(frame->bp + index);
+                                    if (closure->upvalues[i] == nullptr) {
+                                        return InterpretResultCode::RUNTIME_ERROR;
+                                    }
+                                } else {
+                                    closure->upvalues[i] = frame->closure->upvalues[index];
+                                }
                             }
                         }
+                        else {
+                            return InterpretResultCode::RUNTIME_ERROR;
+                        }
                     }
+                } break;
+                case OpCode::CLOSE_UPVALUE: {
+                    closeUpvalues(stack.size() - 1);
+                    stack.pop();
+                } break;
+                case OpCode::READ_UPVALUE: {
+                    const auto idx = readByte();
+                    stack.push(*(frame->closure->upvalues[idx]->location));
+                } break;
+                case OpCode::SET_UPVALUE: {
+                    const auto idx = readByte();
+                    *(frame->closure->upvalues[idx]->location) = stack.peek();
                 } break;
                 case OpCode::CALL: {
                     const std::uint8_t argc = readByte();
@@ -297,6 +328,7 @@ namespace cpplox {
                 case OpCode::RETURN: {
                     Value result = stack.pop();
                     const std::size_t poppedBP = frame->bp;
+                    closeUpvalues(poppedBP);
 
                     frames.removeBack();
                     if (frames.isEmpty()) {
@@ -371,6 +403,51 @@ namespace cpplox {
 #endif
 
         return true;
+    }
+
+    Upvalue* VM::captureUpvalue(std::size_t offset) {
+        if (offset >= stack.size()) {
+            runtimeError("Internal error.");
+            return nullptr;
+        }
+        Value* const local = &stack.at(offset);
+
+        // the list is sorted by stack offset (descending)
+        Upvalue* prev = nullptr;
+        Upvalue* upvalue = openUpvalues;
+        while (upvalue != nullptr && upvalue->location > local) {
+            prev = upvalue;
+            upvalue = upvalue->next;
+        }
+
+        if (upvalue != nullptr && upvalue->location == local) {
+            return upvalue;
+        }
+
+        auto* newUpv = makeObject<Upvalue>(local);
+        if (newUpv == nullptr) {
+            return nullptr;
+        }
+
+        newUpv->next = upvalue;
+        if (prev == nullptr) {
+            openUpvalues = newUpv;
+        } else {
+            prev->next = newUpv;
+        }
+
+        return newUpv;
+    }
+
+    void VM::closeUpvalues(std::size_t offset) {
+        const Value* const location = &stack.at(offset);
+        while (openUpvalues != nullptr && openUpvalues->location >= location) {
+            Upvalue* const upv = openUpvalues;
+            upv->closed = *upv->location;
+            upv->location = &upv->closed;
+
+            openUpvalues = openUpvalues->next;
+        }
     }
 
     template <NumberBinaryOp Op>

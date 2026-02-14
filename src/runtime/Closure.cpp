@@ -4,5 +4,6 @@ namespace cpplox {
     Closure::Closure(const Function* fun)
         : Object(TYPE)
         , function(fun)
+        , upvalues(fun->upvaluesCount)
     {}
 } // namespace cpplox

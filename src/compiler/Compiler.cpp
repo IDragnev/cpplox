@@ -9,6 +9,7 @@
 namespace cpplox {
     static const std::size_t MAX_LOCALS =
         std::numeric_limits<std::uint16_t>::max() + 1;
+    static const std::size_t MAX_UPVALUES = 255;
     static const std::size_t MAX_FUN_PARAMS = 255;
 
     enum class Compiler::OpPrecedence {
@@ -131,24 +132,27 @@ namespace cpplox {
 
         Function* scriptFun = makeObject<Function>("<script>");
         if (scriptFun != nullptr) {
-            initFrame(frame, scriptFun, FunctionType::SCRIPT);
+            initFrame(frame, scriptFun, FunctionType::SCRIPT, nullptr);
             return true;
         }
 
         return false;
     }
 
-    void Compiler::initFrame(Frame& fr, Function* f, FunctionType t) {
+    void Compiler::initFrame(Frame& fr, Function* f, FunctionType t, Frame* parent) {
         fr.funType = t;
         fr.function = f;
         fr.scopeDepth = 0;
+        fr.parent = parent;
         fr.locals.reserve(MAX_LOCALS);
+        fr.upvalues.reserve(MAX_UPVALUES);
 
         // reserved for the function being compiled
         fr.locals.insertBack(Local{
             .name = Token{},
             .depth = 0,
             .initialized = true,
+            .captured = false,
         });
     }
 
@@ -232,18 +236,33 @@ namespace cpplox {
         while (frame.locals.isEmpty() == false &&
                frame.locals.back().depth > frame.scopeDepth)
         {
+            bool captured = frame.locals.back().captured;
+            if (captured == false) {
+                ++popCount;
+            } else {
+                if (popCount > 0) {
+                    emitIntegerInstruction(OpCode::POP_N,
+                                           OpCode::POP_N_16,
+                                           popCount);
+                    popCount = 0;
+                }
+                emitOpCode(OpCode::CLOSE_UPVALUE);
+            }
+
             frame.locals.removeBack();
-            ++popCount;
         }
 
-        emitIntegerInstruction(OpCode::POP_N,
-                               OpCode::POP_N_16,
-                               popCount);
+        if (popCount > 0) {
+            emitIntegerInstruction(OpCode::POP_N, OpCode::POP_N_16, popCount);
+        }
     }
 
     void Compiler::addLocal(const Token& name) {
         if (frame.locals.getCount() == MAX_LOCALS) {
-            compileError(name, "Too many local variables in a function");
+            compileError(
+                name,
+                "Can't have more than {} local variables in a function",
+                MAX_LOCALS);
             return;
         }
 
@@ -251,13 +270,39 @@ namespace cpplox {
             .name = name,
             .depth = frame.scopeDepth,
             .initialized = false,
+            .captured = false,
         });
     }
 
-    bool Compiler::resolveLocal(const Token& name, std::size_t& idx) {
-        for (std::size_t i = frame.locals.getCount(); i > 0; --i) {
+    void Compiler::addUpvalue(Frame& fr,
+                              const Token& name,
+                              Upvalue upvalue,
+                              std::size_t& upvalueIdx) {
+        const auto size = fr.upvalues.getCount();
+        for (std::size_t i = 0; i < size; ++i) {
+            if (fr.upvalues[i] == upvalue) {
+                upvalueIdx = i;
+                return;
+            }
+        }
+
+        if (fr.upvalues.getCount() == MAX_UPVALUES) {
+            compileError(name,
+                         "Can't have more than {} captures in a closure",
+                         MAX_UPVALUES);
+            return;
+        }
+
+        upvalueIdx = fr.upvalues.getCount();
+
+        fr.upvalues.insertBack(upvalue);
+        fr.function->upvaluesCount++;
+    }
+
+    bool Compiler::resolveLocal(Frame& fr, const Token& name, std::size_t& idx) {
+        for (std::size_t i = fr.locals.getCount(); i > 0; --i) {
             auto localIdx = i - 1;
-            const Local& local = frame.locals[localIdx];
+            const Local& local = fr.locals[localIdx];
             if (local.name.lexeme == name.lexeme) {
                 if (local.initialized == false) {
                     compileError(
@@ -268,6 +313,32 @@ namespace cpplox {
                 idx = localIdx;
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    bool Compiler::resolveUpvalue(Frame& fr,
+                                  const Token& name,
+                                  std::size_t& idx) {
+        if (fr.parent == nullptr) {
+            return false;
+        }
+
+        if (std::size_t local = 0;
+            resolveLocal(*fr.parent, name, local)) {
+            addUpvalue(fr, name, Upvalue{.index = local, .isLocal = true}, idx);
+            fr.parent->locals[local].captured = true;
+            return true;
+        }
+
+        if (std::size_t upvalue = 0;
+            resolveUpvalue(*fr.parent, name, upvalue)) {
+            addUpvalue(fr,
+                       name,
+                       Upvalue{.index = upvalue, .isLocal = false},
+                       idx);
+            return true;
         }
 
         return false;
@@ -332,7 +403,7 @@ namespace cpplox {
 
         Frame oldFrame = std::move(frame);
         frame = Frame{};
-        initFrame(frame, fun, type);
+        initFrame(frame, fun, type, &oldFrame);
 
         beginScope();
 
@@ -362,8 +433,9 @@ namespace cpplox {
 
         // no need for endScope because we
         // return to compiling the parent function
+        Frame closureFrame = std::move(frame);
         frame = std::move(oldFrame);
-        emitClosure(fun);
+        emitClosure(fun, closureFrame);
     }
 
     void Compiler::varDeclaration() {
@@ -711,9 +783,13 @@ namespace cpplox {
 
     void Compiler::namedVariable(const Token& t, bool canAssign) {
         std::size_t idx = 0;
-        bool local = resolveLocal(t, idx);
+        bool upvalue = false;
+        bool local = resolveLocal(frame, t, idx);
         if (local == false) {
-            makeConstant(Value(String(t.lexeme)), true, idx);
+            upvalue = resolveUpvalue(frame, t, idx);
+            if (upvalue == false) {
+                makeConstant(Value(String(t.lexeme)), true, idx);
+            }
         }
 
         if (canAssign && match(TokenType::EQUAL)) {
@@ -722,6 +798,9 @@ namespace cpplox {
                 emitIntegerInstruction(OpCode::SET_LOCAL,
                                        OpCode::SET_LOCAL_16,
                                        idx);
+            } else if (upvalue) {
+                emitOpCode(OpCode::SET_UPVALUE);
+                emitByte(static_cast<std::uint8_t>(idx));
             } else {
                 emitIntegerInstruction(OpCode::SET_GLOBAL,
                                        OpCode::SET_GLOBAL_16,
@@ -732,6 +811,9 @@ namespace cpplox {
                 emitIntegerInstruction(OpCode::READ_LOCAL,
                                        OpCode::READ_LOCAL_16,
                                        idx);
+            } else if (upvalue) {
+                emitOpCode(OpCode::READ_UPVALUE);
+                emitByte(static_cast<std::uint8_t>(idx));
             } else {
                 emitIntegerInstruction(OpCode::READ_GLOBAL,
                                        OpCode::READ_GLOBAL_16,
@@ -856,13 +938,28 @@ namespace cpplox {
         return success;
     }
 
-    void Compiler::emitClosure(Function* fun) {
-        std::size_t i = 0;
-        bool ok = makeConstant(Value(fun), false, i);
+    void Compiler::emitClosure(Function* fun, const Frame& closureFrame) {
+        std::size_t idx = 0;
+        bool ok = makeConstant(Value(fun), false, idx);
         if (ok) {
             emitIntegerInstruction(OpCode::MAKE_CLOSURE,
                                    OpCode::MAKE_CLOSURE_16,
-                                   i);
+                                   idx);
+        }
+
+        const auto count = closureFrame.upvalues.getCount();
+        emitByte(static_cast<std::uint8_t>(count));
+        for (std::size_t i = 0; i < count; ++i) {
+            const Upvalue& u = closureFrame.upvalues[i];
+            emitByte(u.isLocal ? 1 : 0);
+            if (u.isLocal) {
+                std::uint8_t a = 0;
+                std::uint8_t b = 0;
+                serializeTwoByteInteger(u.index, a, b);
+                emitBytes(a, b);
+            } else {
+                emitByte(static_cast<std::uint8_t>(u.index));
+            }
         }
     }
 

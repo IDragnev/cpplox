@@ -31,6 +31,16 @@ namespace cpplox {
             Token name;
             std::uint16_t depth = 0;
             bool initialized = false;
+            bool captured = false;
+        };
+
+        struct Upvalue {
+            std::size_t index = 0;
+            bool isLocal = false;
+
+            bool operator==(const Upvalue& v) const {
+                return index == v.index && isLocal == v.isLocal;
+            }
         };
 
     public:
@@ -45,7 +55,7 @@ namespace cpplox {
 
     private:
         bool init(std::string&& source, DiagnosticEngine* engine);
-        void initFrame(Frame& frame, Function* f, FunctionType t);
+        void initFrame(Frame& frame, Function* f, FunctionType t, Frame* parent);
         CompileResult prepareResult(bool hadError);
         void cleanUp();
         template <typename T, typename... Args>
@@ -55,7 +65,12 @@ namespace cpplox {
         void beginScope();
         void endScope();
         void addLocal(const Token& name);
-        bool resolveLocal(const Token& name, std::size_t& idx);
+        void addUpvalue(Frame& frame,
+                        const Token& name,
+                        Upvalue upv,
+                        std::size_t& upvalueIdx);
+        bool resolveLocal(Frame& frame, const Token& name, std::size_t& idx);
+        bool resolveUpvalue(Frame& frame, const Token& name, std::size_t& idx);
 
         void synchronize();
         void advance();
@@ -74,7 +89,7 @@ namespace cpplox {
                           std::size_t& idx);
         void emitReturn();
         void emitConstant(Value value);
-        void emitClosure(Function* fun);
+        void emitClosure(Function* fun, const Frame& closureFrame);
         void emitIntegerInstruction(OpCode small,
                                     OpCode big,
                                     std::size_t operand);
@@ -131,9 +146,11 @@ namespace cpplox {
             bool panicMode = false;
         } parser;
         struct Frame {
+            Frame* parent = nullptr;
             FunctionType funType = FunctionType::SCRIPT;
             Function* function = nullptr;
             Vector<Local> locals;
+            Vector<Upvalue> upvalues;
             std::uint16_t scopeDepth = 0;
         } frame;
         Vector<Object*> gcObjects;

@@ -40,5 +40,8 @@ namespace cpplox {
         CALL,
         MAKE_CLOSURE,
         MAKE_CLOSURE_16,
+        READ_UPVALUE,
+        SET_UPVALUE,
+        CLOSE_UPVALUE,
     };
 }

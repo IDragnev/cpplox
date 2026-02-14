@@ -10,11 +10,10 @@ namespace cpplox {
         static constexpr ObjectType TYPE = ObjectType::FUNCTION;
 
         explicit Function(const String& name);
-        Function(const String& name, unsigned arity);
-        Function(const String& name, unsigned arity, const Chunk& c);
 
         const String name;
         unsigned arity = 0;
+        unsigned upvaluesCount = 0;
         Chunk chunk;
     };
 }

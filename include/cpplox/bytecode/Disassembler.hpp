@@ -33,5 +33,7 @@ namespace cpplox {
                                       std::size_t constIndex) const;
         void printIntegerInstruction(const char* name,
                                      std::size_t operand) const;
+        std::size_t closureUpvalues(const Chunk& chunk,
+                                    std::size_t offset) const;
     };
 } // namespace cpplox

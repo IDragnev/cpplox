@@ -4,6 +4,7 @@ set(CPPLOX_RUNTIME_SOURCE
   ${RUNTIME_HEADERS_DIR}/Object.hpp
   ${RUNTIME_HEADERS_DIR}/Function.hpp
   ${RUNTIME_HEADERS_DIR}/Closure.hpp
+  ${RUNTIME_HEADERS_DIR}/Upvalue.hpp
 
   Function.cpp
   Closure.cpp

@@ -9,6 +9,7 @@ namespace cpplox {
     class Function;
     class Closure;
     class Object;
+    class Upvalue;
 
     enum class InterpretResultCode {
         OK,
@@ -54,6 +55,9 @@ namespace cpplox {
         bool call(const Closure* f, std::uint8_t argc);
         void printValue(const Value& v) const;
 
+        Upvalue* captureUpvalue(std::size_t offset);
+        void closeUpvalues(std::size_t offset);
+
         template <typename... Args>
         void runtimeError(std::string_view fmtStr, Args&&... args);
         void appendCallStackInfo(struct FmtBuffer& buf);
@@ -63,6 +67,7 @@ namespace cpplox {
         ValueMap globals;
         Vector<CallFrame> frames;
         Vector<Object*> gcObjects;
+        Upvalue* openUpvalues = nullptr;
         String error = "";
     };
 } // namespace cpplox

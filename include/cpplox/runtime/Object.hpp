@@ -4,6 +4,7 @@ namespace cpplox {
     enum class ObjectType {
         FUNCTION,
         CLOSURE,
+        UPVALUE,
     };
 
     template <typename T>

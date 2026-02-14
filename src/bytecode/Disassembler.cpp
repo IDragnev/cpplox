@@ -143,7 +143,7 @@ namespace cpplox {
             case OpCode::MAKE_CLOSURE: {
                 const auto constant = chunk.code[offset + 1];
                 printConstantInstruction("MAKE_CLOSURE", chunk, constant);
-                return offset + 2;
+                return closureUpvalues(chunk, offset + 2);
             } break;
             case OpCode::MAKE_CLOSURE_16: {
                 const auto a = chunk.code[offset + 1];
@@ -151,7 +151,16 @@ namespace cpplox {
                 const auto constant = parseTwoByteInteger(a, b);
 
                 printConstantInstruction("MAKE_CLOSURE_16", chunk, constant);
-                return offset + 3;
+                return closureUpvalues(chunk, offset + 3);
+            } break;
+            case OpCode::READ_UPVALUE: {
+                return integerInstruction("READ_UPVALUE", chunk, offset);
+            } break;
+            case OpCode::SET_UPVALUE: {
+                return integerInstruction("SET_UPVALUE", chunk, offset);
+            } break;
+            case OpCode::CLOSE_UPVALUE: {
+                return simpleInstruction("CLOSE_UPVALUE", offset);
             } break;
             default: {
                 println("Unknown opcode '{}'",
@@ -217,5 +226,30 @@ namespace cpplox {
     void Disassembler::printIntegerInstruction(const char* name,
                                                std::size_t operand) const {
         println("{:<16} {:>4}", name, operand);
+    }
+
+    std::size_t Disassembler::closureUpvalues(const Chunk& chunk,
+                                              std::size_t offset) const {
+        const std::uint8_t count = chunk.code[offset++];
+        println("{:04}     | argc = {:>4}", offset - 1, count);
+
+        for (std::uint8_t i = 0; i < count; ++i) {
+            const bool local = chunk.code[offset] == 1;
+            if (local) {
+                const auto a = chunk.code[offset + 1];
+                const auto b = chunk.code[offset + 2];
+                const auto idx = parseTwoByteInteger(a, b);
+                println("{:04}     | local {:>4}", offset, idx);
+
+                offset += 3;
+            } else {
+                const auto idx = chunk.code[offset + 1];
+                println("{:04}     | upvalue {:>4}", offset, idx);
+
+                offset += 2;
+            }
+        }
+
+        return offset;
     }
 } // namespace cpplox
