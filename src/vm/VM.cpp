@@ -366,6 +366,7 @@ namespace cpplox {
                             closure->function->name,
                             closure->function->arity);
                 } break;
+                case ObjectType::UPVALUE: { } break;
             }
         }
     }
