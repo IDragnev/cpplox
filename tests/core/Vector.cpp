@@ -3,6 +3,8 @@
 
 using cpplox::Vector;
 
+Vector<int> makeVec(std::initializer_list<int> init);
+
 TEST_CASE("Default constructed Vector is empty") {
     Vector<int> v;
 
@@ -363,4 +365,52 @@ TEST_CASE("Vectors with same elements in different order are not equal") {
 
     CHECK_FALSE(a == b);
     CHECK(a != b);
+}
+
+TEST_SUITE("removeLastN") {
+    TEST_CASE("n = 0 on empty vector") {
+        Vector<int> v;
+
+        v.removeLastN(0);
+
+        CHECK(v.getCount() == 0);
+    }
+
+    TEST_CASE("n = 0 on non-empty vector") {
+        auto v = makeVec({1, 2, 3});
+
+        v.removeLastN(0);
+
+        CHECK(v.getCount() == 3);
+        CHECK(v[0] == 1);
+        CHECK(v[1] == 2);
+        CHECK(v[2] == 3);
+    }
+
+    TEST_CASE("n > getCount() removes everything") {
+        auto v = makeVec({10, 20, 30});
+
+        v.removeLastN(v.getCount() + 10);
+
+        CHECK(v.getCount() == 0);
+    }
+
+    TEST_CASE("n < getCount() removes only the last n elements") {
+        auto v = makeVec({5, 6, 7, 8, 9});
+
+        v.removeLastN(2);
+
+        CHECK(v.getCount() == 3);
+        CHECK(v[0] == 5);
+        CHECK(v[1] == 6);
+        CHECK(v[2] == 7);
+    }
+
+    TEST_CASE("n == getCount() removes all elements") {
+        auto v = makeVec({1, 2, 3});
+
+        v.removeLastN(v.getCount());
+
+        CHECK(v.getCount() == 0);
+    }
 }

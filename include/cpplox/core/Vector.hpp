@@ -26,6 +26,7 @@ namespace cpplox {
         void insertAt(std::size_t position, const T& item);
         void removeAt(std::size_t position);
         void removeBack();
+        void removeLastN(std::size_t n);
 
         T& operator[](std::size_t position);
         const T& operator[](std::size_t position) const;

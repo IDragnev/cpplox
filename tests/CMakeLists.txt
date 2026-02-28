@@ -3,6 +3,7 @@ add_executable(core_test
   core/String.cpp
   core/Value.cpp
   core/Vector.cpp
+  core/Algorithm.cpp
   core/ValueStack.cpp
   core/ValueMap.cpp
 )

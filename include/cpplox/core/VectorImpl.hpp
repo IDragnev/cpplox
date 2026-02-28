@@ -169,8 +169,20 @@ namespace cpplox {
     }
 
     template <typename T>
+    void Vector<T>::removeLastN(std::size_t n) {
+        if (n > count) {
+            n = count;
+        }
+
+        while (n > 0) {
+            --n;
+            --count;
+        }
+    }
+
+    template <typename T>
     inline void Vector<T>::removeBack() {
-        removeAt(count - 1);
+        removeLastN(1);
     }
 
     template <typename T>
