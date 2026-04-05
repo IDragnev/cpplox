@@ -28,7 +28,7 @@ namespace cpplox {
 
     class VM {
         struct CallFrame {
-            const Closure* closure = nullptr;
+            Closure* closure = nullptr;
             const std::uint8_t* ip = nullptr;
             std::size_t bp = 0;
         };
@@ -47,12 +47,14 @@ namespace cpplox {
         void addObjects(Vector<Object*>&& objects);
         template <typename T, typename... Args>
         T* makeObject(Args&&... args);
+        void runGC();
+        void traceGCRoots();
 
         template <NumberBinaryOp Op>
         bool numBinaryOp(const Op& op);
 
-        bool callValue(const Value& v, std::uint8_t argc);
-        bool call(const Closure* f, std::uint8_t argc);
+        bool callValue(Value& v, std::uint8_t argc);
+        bool call(Closure* f, std::uint8_t argc);
         void printValue(const Value& v) const;
 
         Upvalue* captureUpvalue(std::size_t offset);

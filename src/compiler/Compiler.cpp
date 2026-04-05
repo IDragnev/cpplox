@@ -3,7 +3,9 @@
 #include "cpplox/bytecode/Bytecode.hpp"
 #include "cpplox/bytecode/Chunk.hpp"
 #include "cpplox/runtime/Function.hpp"
+#include "cpplox/runtime/GC.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
+
 #include <limits>
 
 namespace cpplox {
@@ -176,14 +178,14 @@ namespace cpplox {
 
         const std::size_t size = gcObjects.getCount();
         for (std::size_t i = 0; i < size; ++i) {
-            delete gcObjects[i];
+            gc::freeObject(gcObjects[i]);
         }
         gcObjects.clear();
     }
 
     template <typename T, typename... Args>
     T* Compiler::makeObject(Args&&... args) {
-        T* obj = new(std::nothrow) T(std::forward<Args>(args)...);
+        T* obj = gc::makeObject<T>(std::forward<Args>(args)...);
         if (obj != nullptr) {
             gcObjects.insertBack(obj);
         }

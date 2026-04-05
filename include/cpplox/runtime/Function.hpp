@@ -11,6 +11,8 @@ namespace cpplox {
 
         explicit Function(const String& name);
 
+        void trace(gc::Visitor& v) override;
+
         const String name;
         unsigned arity = 0;
         unsigned upvaluesCount = 0;

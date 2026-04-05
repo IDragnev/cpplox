@@ -10,9 +10,11 @@ namespace cpplox {
     public:
         static constexpr ObjectType TYPE = ObjectType::CLOSURE;
 
-        explicit Closure(const Function* fun);
+        explicit Closure(Function* fun);
 
-        const Function* const function = nullptr;
+        void trace(gc::Visitor& v) override;
+
+        Function* const function = nullptr;
         Vector<Upvalue*> upvalues;
     };
 }

@@ -5,9 +5,13 @@ set(CPPLOX_RUNTIME_SOURCE
   ${RUNTIME_HEADERS_DIR}/Function.hpp
   ${RUNTIME_HEADERS_DIR}/Closure.hpp
   ${RUNTIME_HEADERS_DIR}/Upvalue.hpp
+  ${RUNTIME_HEADERS_DIR}/GCVisitor.hpp
+  ${RUNTIME_HEADERS_DIR}/GC.hpp
 
   Function.cpp
   Closure.cpp
+  Upvalue.cpp
+  GC.cpp
 )
 
 add_library(
@@ -16,6 +20,7 @@ add_library(
   ${CPPLOX_RUNTIME_SOURCE}
 )
 target_link_libraries(runtime
+  PUBLIC loglib
   PUBLIC corelib
   PUBLIC bytecode
 )

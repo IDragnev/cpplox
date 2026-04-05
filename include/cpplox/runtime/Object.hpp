@@ -1,5 +1,7 @@
 #pragma once
 
+#include "cpplox/runtime/GCVisitor.hpp"
+
 namespace cpplox {
     enum class ObjectType {
         FUNCTION,
@@ -15,6 +17,8 @@ namespace cpplox {
         explicit Object(ObjectType t) : _type(t) {}
         virtual ~Object() = default;
 
+        virtual void trace(gc::Visitor& v) = 0;
+
         ObjectType type() const { return _type; }
         bool hasType(ObjectType t) const { return _type == t; }
 
@@ -26,6 +30,9 @@ namespace cpplox {
         const T* as() const {
             return _type == T::TYPE ? static_cast<const T*>(this) : nullptr;
         }
+
+    public:
+        bool isReachable = false;
 
     private:
         ObjectType _type;

@@ -6,8 +6,9 @@
 #include "cpplox/runtime/Function.hpp"
 #include "cpplox/runtime/Closure.hpp"
 #include "cpplox/runtime/Upvalue.hpp"
+#include "cpplox/runtime/GC.hpp"
 #include "cpplox/log/Log.hpp"
-
+#include "cpplox/core/Algorithm.hpp"
 #include "cpplox/core/Format.hpp"
 
 #include <iterator>
@@ -16,10 +17,9 @@
 namespace cpplox {
     VM::~VM() {
         // ok for now, will be managed by the runtime GC
-        const std::size_t cnt = gcObjects.getCount();
-        for (std::size_t i = 0; i < cnt; ++i) {
-            delete gcObjects[i];
-        }
+        forEach(gcObjects, [](Object* o) {
+            gc::freeObject(o);
+        });
         gcObjects.clear();
     }
 
@@ -61,10 +61,9 @@ namespace cpplox {
     }
 
     void VM::addObjects(Vector<Object*>&& objects) {
-        const std::size_t cnt = objects.getCount();
-        for (std::size_t i = 0; i < cnt; ++i) {
-            gcObjects.insertBack(objects[i]);
-        }
+        forEach(objects, [this] (Object* o) {
+            gcObjects.insertBack(o);
+        });
         objects.clear();
     }
 
@@ -279,7 +278,7 @@ namespace cpplox {
                         return InterpretResultCode::RUNTIME_ERROR;
                     }
 
-                    const Function* function = val.asObject()->as<Function>();
+                    Function* function = val.asObject()->as<Function>();
                     if (function != nullptr) {
                         Closure* closure = makeObject<Closure>(function);
                         if (closure != nullptr) {
@@ -319,7 +318,7 @@ namespace cpplox {
                 } break;
                 case OpCode::CALL: {
                     const std::uint8_t argc = readByte();
-                    const Value& fun = stack.peekN(argc);
+                    Value& fun = stack.peekN(argc);
                     if (callValue(fun, argc) == false) {
                         return InterpretResultCode::RUNTIME_ERROR;
                     }
@@ -371,9 +370,9 @@ namespace cpplox {
         }
     }
 
-    bool VM::callValue(const Value& v, std::uint8_t argc) {
+    bool VM::callValue(Value& v, std::uint8_t argc) {
         if (v.isObject()) {
-            const Closure* fun = v.asObject()->as<Closure>();
+            Closure* fun = v.asObject()->as<Closure>();
             if (fun != nullptr) {
                 return call(fun, argc);
             }
@@ -383,7 +382,7 @@ namespace cpplox {
         return false;
     }
 
-    bool VM::call(const Closure* f, std::uint8_t argc) {
+    bool VM::call(Closure* f, std::uint8_t argc) {
         if (f->function->arity != argc) {
             runtimeError("Invalid argument count. Expected {}, found {}.",
                          f->function->arity,
@@ -510,7 +509,11 @@ namespace cpplox {
 
     template <typename T, typename... Args>
     T* VM::makeObject(Args&&... args) {
-        T* obj = new(std::nothrow) T(std::forward<Args>(args)...);
+#ifdef CPPLOX_DEBUG_STRESS_GC
+        runGC();
+#endif
+
+        T* obj = gc::makeObject<T>(std::forward<Args>(args)...);
         if (obj != nullptr) {
             gcObjects.insertBack(obj);
         }
@@ -519,5 +522,51 @@ namespace cpplox {
         }
 
         return obj;
+    }
+
+    void VM::runGC() {
+        traceGCRoots();
+
+        // todo: optimize with intrusive linked list
+        forEach(gcObjects, [](Object* &obj) {
+            if (obj != nullptr) {
+                if (obj->isReachable == false) {
+                    gc::freeObject(obj);
+                    obj = nullptr;
+                }
+                else {
+                    obj->isReachable = false;
+                }
+            }
+        });
+        removeIf(gcObjects, [] (const Object* obj) {
+            return obj == nullptr;
+        });
+    }
+
+    void VM::traceGCRoots() {
+        const std::size_t stackSize = stack.size();
+        for (std::size_t i = 0; i < stackSize; ++i) {
+            Value& v = stack.at(i);
+            if (v.isObject()) {
+                gc::traceRoot(v.asObject());
+            }
+        }
+
+        globals.forEachValue([](Value& v) {
+            if (v.isObject()) {
+                gc::traceRoot(v.asObject());
+            }
+        });
+
+        forEach(frames, [](CallFrame& f) { 
+            gc::traceRoot(f.closure);
+        });
+
+        for (Upvalue* upvalue = openUpvalues; upvalue != nullptr;
+             upvalue = upvalue->next)
+        {
+            gc::traceRoot(upvalue);
+        }
     }
 }

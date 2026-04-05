@@ -9,7 +9,8 @@ namespace cpplox {
         const Value& at(std::size_t i) const { return stack[i]; }
         Value& at(std::size_t i) { return stack[i]; }
 
-        const Value& peekN(std::size_t n);
+        const Value& peekN(std::size_t n) const;
+        Value& peekN(std::size_t n);
         const Value& peek() const { return stack.back(); }
         Value& peek() { return stack.back(); }
 

@@ -21,7 +21,12 @@ namespace cpplox {
         }
     }
 
-    const Value& ValueStack::peekN(std::size_t n) {
+    const Value& ValueStack::peekN(std::size_t n) const {
+        const std::size_t i = stack.getCount() - 1 - n;
+        return stack[i];
+    }
+
+    Value& ValueStack::peekN(std::size_t n) {
         const std::size_t i = stack.getCount() - 1 - n;
         return stack[i];
     }
