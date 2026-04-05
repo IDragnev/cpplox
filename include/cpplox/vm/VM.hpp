@@ -47,6 +47,7 @@ namespace cpplox {
         void addObjects(Vector<Object*>&& objects);
         template <typename T, typename... Args>
         T* makeObject(Args&&... args);
+        static std::size_t objectSize(Object* o);
         void runGC();
         void traceGCRoots();
 
@@ -69,6 +70,8 @@ namespace cpplox {
         ValueMap globals;
         Vector<CallFrame> frames;
         Vector<Object*> gcObjects;
+        std::uint64_t bytesAllocated = 0;
+        std::uint64_t nextGC = 1024 * 1024;
         Upvalue* openUpvalues = nullptr;
         String error = "";
     };

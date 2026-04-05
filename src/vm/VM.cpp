@@ -63,6 +63,7 @@ namespace cpplox {
     void VM::addObjects(Vector<Object*>&& objects) {
         forEach(objects, [this] (Object* o) {
             gcObjects.insertBack(o);
+            bytesAllocated += objectSize(o);
         });
         objects.clear();
     }
@@ -513,8 +514,13 @@ namespace cpplox {
         runGC();
 #endif
 
+        if (bytesAllocated > nextGC) {
+            runGC();
+        }
+
         T* obj = gc::makeObject<T>(std::forward<Args>(args)...);
         if (obj != nullptr) {
+            bytesAllocated += sizeof(T);
             gcObjects.insertBack(obj);
         }
         else {
@@ -524,13 +530,37 @@ namespace cpplox {
         return obj;
     }
 
+    std::size_t VM::objectSize(Object* obj) {
+        if (obj == nullptr) {
+            return 0;
+        }
+
+        std::uint64_t objSize = 0;
+        switch (obj->type()) {
+            case ObjectType::FUNCTION: {
+                objSize = sizeof(Function);
+            } break;
+            case ObjectType::CLOSURE: {
+                objSize = sizeof(Closure);
+            } break;
+            case ObjectType::UPVALUE: {
+                objSize = sizeof(Upvalue);
+            } break;
+        }
+
+        return objSize;
+    }
+
     void VM::runGC() {
         traceGCRoots();
 
+        const auto before = bytesAllocated;
+
         // todo: optimize with intrusive linked list
-        forEach(gcObjects, [](Object* &obj) {
+        forEach(gcObjects, [this](Object* &obj) {
             if (obj != nullptr) {
                 if (obj->isReachable == false) {
+                    bytesAllocated -= objectSize(obj);
                     gc::freeObject(obj);
                     obj = nullptr;
                 }
@@ -542,6 +572,16 @@ namespace cpplox {
         removeIf(gcObjects, [] (const Object* obj) {
             return obj == nullptr;
         });
+
+        const std::uint64_t HEAP_GROWTH_FACTOR = 2;
+        nextGC = bytesAllocated * HEAP_GROWTH_FACTOR;
+
+#ifdef CPPLOX_DEBUG_LOG_GC
+        println("GC Collected {} bytes from the total {}. Next run at {}.",
+                before - bytesAllocated,
+                before,
+                nextGC);
+#endif
     }
 
     void VM::traceGCRoots() {
