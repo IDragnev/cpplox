@@ -468,6 +468,7 @@ namespace cpplox {
                         }
                     }
                 } break;
+                default: { } break;
             }
         }
 
