@@ -8,6 +8,7 @@ namespace cpplox {
         CLOSURE,
         UPVALUE,
         CLASS,
+        INSTANCE,
     };
 
     template <typename T>

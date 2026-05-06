@@ -7,6 +7,7 @@
 #include "cpplox/runtime/Closure.hpp"
 #include "cpplox/runtime/Upvalue.hpp"
 #include "cpplox/runtime/Class.hpp"
+#include "cpplox/runtime/Instance.hpp"
 #include "cpplox/runtime/GC.hpp"
 #include "cpplox/log/Log.hpp"
 #include "cpplox/core/Algorithm.hpp"
@@ -380,6 +381,10 @@ namespace cpplox {
                     const Class* classObj = obj->as<Class>();
                     println("<class {}>", classObj->name);
                 } break;
+                case ObjectType::INSTANCE: {
+                    const Instance* instance = obj->as<Instance>();
+                    println("<{} intance>", instance->klass->name);
+                } break;
                 case ObjectType::CLOSURE: {
                     const Closure* closure = obj->as<Closure>();
                     println("<fun {}:{}>",
@@ -393,9 +398,26 @@ namespace cpplox {
 
     bool VM::callValue(Value& v, std::uint8_t argc) {
         if (v.isObject()) {
-            Closure* fun = v.asObject()->as<Closure>();
-            if (fun != nullptr) {
-                return call(fun, argc);
+            switch (v.asObject()->type()) {
+                case ObjectType::CLOSURE: {
+                    Closure* fun = v.asObject()->as<Closure>();
+                    if (fun != nullptr) {
+                        return call(fun, argc);
+                    }
+                } break;
+                case ObjectType::CLASS: {
+                    Class* klass = v.asObject()->as<Class>();
+                    if (klass != nullptr) {
+                        Instance* inst = makeObject<Instance>(klass);
+                        if (inst != nullptr) {
+                            stack.push(Value(inst));
+                            return true;
+                        }
+                        else {
+                            return false;
+                        }
+                    }
+                } break;
             }
         }
 
@@ -568,6 +590,9 @@ namespace cpplox {
             } break;
             case ObjectType::CLASS: {
                 objSize = sizeof(Class);
+            } break;
+            case ObjectType::INSTANCE: {
+                objSize = sizeof(Instance);
             } break;
         }
 

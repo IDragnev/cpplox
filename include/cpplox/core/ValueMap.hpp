@@ -1,3 +1,5 @@
+#pragma once
+
 #include "cpplox/core/String.hpp"
 #include "cpplox/core/Value.hpp"
 #include "cpplox/core/Vector.hpp"
