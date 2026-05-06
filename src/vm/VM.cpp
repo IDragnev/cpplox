@@ -357,6 +357,56 @@ namespace cpplox {
                         }
                     }
                 } break;
+                case OpCode::GET_PROPERTY:
+                case OpCode::GET_PROPERTY_16: {
+                    Value name = opCode == OpCode::GET_PROPERTY
+                                     ? readConstant()
+                                     : readConstant16();
+                    Value instance = stack.peek();
+                    if (instance.isObject() == false ||
+                        instance.asObject()->hasType(ObjectType::INSTANCE) == false)
+                    {
+                        runtimeError("Only instances have properties.");
+                        return InterpretResultCode::RUNTIME_ERROR;
+                    }
+
+                    if (name.isString()) {
+                        Instance* inst = instance.asObject()->as<Instance>();
+                        if (inst != nullptr) {
+                            Value property;
+                            if (inst->fields.find(name.asString(), property)) {
+                                stack.pop(); // instance
+                                stack.push(property);
+                            } else {
+                                runtimeError("Undefined property {}.", name);
+                                return InterpretResultCode::RUNTIME_ERROR;
+                            }
+                        }
+                    }
+                } break;
+                case OpCode::SET_PROPERTY:
+                case OpCode::SET_PROPERTY_16: {
+                    Value instance = stack.peekN(1);
+                    if (instance.isObject() == false ||
+                        instance.asObject()->hasType(ObjectType::INSTANCE) == false)
+                    {
+                        runtimeError("Only instances have fields.");
+                        return InterpretResultCode::RUNTIME_ERROR;
+                    }
+
+                    Value name = opCode == OpCode::SET_PROPERTY
+                                     ? readConstant()
+                                     : readConstant16();
+                    if (name.isString()) {
+                        Instance* inst = instance.asObject()->as<Instance>();
+                        if (inst != nullptr) {
+                            inst->fields.insert(name.asString(), stack.peek());
+                            Value val = stack.pop();
+                            stack.pop();
+                            stack.push(val);
+                        }
+                    }
+                } break;
                 default: {
                     runtimeError("Unknown opcode");
                     return InterpretResultCode::RUNTIME_ERROR;

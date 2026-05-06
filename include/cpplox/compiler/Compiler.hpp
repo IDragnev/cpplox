@@ -136,6 +136,7 @@ namespace cpplox {
         void string(bool canAssign);
         void and_(bool canAssign);
         void or_(bool canAssign);
+        void dot(bool canAssign);
 
     private:
         std::string source = "";

@@ -58,6 +58,7 @@ namespace cpplox {
             rules[as_index(TokenType::LESS)]          = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::COMPARISON, };
             rules[as_index(TokenType::AND)]           = ParseRule{                               .infix = &Compiler::and_,   .infixPrec = OpPrecedence::AND, };
             rules[as_index(TokenType::OR)]            = ParseRule{                               .infix = &Compiler::or_,    .infixPrec = OpPrecedence::OR, };
+            rules[as_index(TokenType::DOT)]           = ParseRule{                               .infix = &Compiler::dot,    .infixPrec = OpPrecedence::CALL, };
             rules[as_index(TokenType::NUMBER)]        = ParseRule{ .prefix = &Compiler::number, };
             rules[as_index(TokenType::TRUE)]          = ParseRule{ .prefix = &Compiler::literal, };
             rules[as_index(TokenType::FALSE)]         = ParseRule{ .prefix = &Compiler::literal, };
@@ -872,6 +873,25 @@ namespace cpplox {
         parsePrecedence(OpPrecedence::OR);
 
         patchJump(endJmp);
+    }
+
+    void Compiler::dot(bool canAssign) {
+        consumeTokenErr(TokenType::IDENTIFIER,
+                        "Expected property name after '.'");
+
+        std::size_t idx = 0;
+        makeConstant(Value(String(parser.previous.lexeme)), true, idx);
+
+        if (canAssign && match(TokenType::EQUAL)) {
+            expression();
+            emitIntegerInstruction(OpCode::SET_PROPERTY,
+                                   OpCode::SET_PROPERTY_16,
+                                   idx);
+        } else {
+            emitIntegerInstruction(OpCode::GET_PROPERTY,
+                                   OpCode::GET_PROPERTY_16,
+                                   idx);
+        }
     }
 
     bool Compiler::match(TokenType type) {

@@ -45,5 +45,9 @@ namespace cpplox {
         CLOSE_UPVALUE,
         MAKE_CLASS,
         MAKE_CLASS_16,
+        SET_PROPERTY,
+        SET_PROPERTY_16,
+        GET_PROPERTY,
+        GET_PROPERTY_16,
     };
 }
