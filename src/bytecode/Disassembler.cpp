@@ -162,6 +162,12 @@ namespace cpplox {
             case OpCode::CLOSE_UPVALUE: {
                 return simpleInstruction("CLOSE_UPVALUE", offset);
             } break;
+            case OpCode::MAKE_CLASS: {
+                return integerInstruction("MAKE_CLASS", chunk, offset);
+            } break;
+            case OpCode::MAKE_CLASS_16: {
+                return integer16Instruction("MAKE_CLASS_16", chunk, offset);
+            } break;
             default: {
                 println("Unknown opcode '{}'",
                         static_cast<std::uint8_t>(opCode));

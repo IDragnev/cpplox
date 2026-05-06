@@ -7,6 +7,7 @@ namespace cpplox {
         FUNCTION,
         CLOSURE,
         UPVALUE,
+        CLASS,
     };
 
     template <typename T>

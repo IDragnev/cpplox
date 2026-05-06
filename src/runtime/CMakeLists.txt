@@ -7,10 +7,12 @@ set(CPPLOX_RUNTIME_SOURCE
   ${RUNTIME_HEADERS_DIR}/Upvalue.hpp
   ${RUNTIME_HEADERS_DIR}/GCVisitor.hpp
   ${RUNTIME_HEADERS_DIR}/GC.hpp
+  ${RUNTIME_HEADERS_DIR}/Class.hpp
 
   Function.cpp
   Closure.cpp
   Upvalue.cpp
+  Class.cpp
   GC.cpp
 )
 

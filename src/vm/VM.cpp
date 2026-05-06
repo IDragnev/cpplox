@@ -6,6 +6,7 @@
 #include "cpplox/runtime/Function.hpp"
 #include "cpplox/runtime/Closure.hpp"
 #include "cpplox/runtime/Upvalue.hpp"
+#include "cpplox/runtime/Class.hpp"
 #include "cpplox/runtime/GC.hpp"
 #include "cpplox/log/Log.hpp"
 #include "cpplox/core/Algorithm.hpp"
@@ -340,6 +341,21 @@ namespace cpplox {
                     stack.popN(popCnt);
                     stack.push(result);
                 } break;
+                case OpCode::MAKE_CLASS:
+                case OpCode::MAKE_CLASS_16: {
+                    Value name = opCode == OpCode::MAKE_CLASS
+                                    ? readConstant()
+                                    : readConstant16();
+                    if (name.isString()) {
+                        Class* classObj = makeObject<Class>(name.asString());
+                        if (classObj != nullptr) {
+                            stack.push(Value(classObj));
+                        }
+                        else {
+                            return InterpretResultCode::RUNTIME_ERROR;
+                        }
+                    }
+                } break;
                 default: {
                     runtimeError("Unknown opcode");
                     return InterpretResultCode::RUNTIME_ERROR;
@@ -359,6 +375,10 @@ namespace cpplox {
                 case ObjectType::FUNCTION: {
                     const Function* fun = obj->as<Function>();
                     println("<fun {}:{}>", fun->name, fun->arity);
+                } break;
+                case ObjectType::CLASS: {
+                    const Class* classObj = obj->as<Class>();
+                    println("<class {}>", classObj->name);
                 } break;
                 case ObjectType::CLOSURE: {
                     const Closure* closure = obj->as<Closure>();
@@ -545,6 +565,9 @@ namespace cpplox {
             } break;
             case ObjectType::UPVALUE: {
                 objSize = sizeof(Upvalue);
+            } break;
+            case ObjectType::CLASS: {
+                objSize = sizeof(Class);
             } break;
         }
 

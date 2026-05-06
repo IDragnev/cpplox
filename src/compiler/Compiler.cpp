@@ -373,13 +373,30 @@ namespace cpplox {
     }
 
     void Compiler::declaration() {
-        if (match(TokenType::FUN)) {
+        if (match(TokenType::CLASS)) {
+            classDeclaration();
+        } else if (match(TokenType::FUN)) {
             funDeclaration();
         } else if (match(TokenType::VAR)) {
             varDeclaration();
         } else {
             statement();
         }
+    }
+
+    void Compiler::classDeclaration() {
+        consumeTokenErr(TokenType::IDENTIFIER, "Expected class name");
+
+        std::size_t idx = 0;
+        makeConstant(Value(String(parser.previous.lexeme)),
+                         true,
+                         idx);
+        declareVariable(parser.previous);
+        emitIntegerInstruction(OpCode::MAKE_CLASS, OpCode::MAKE_CLASS_16, idx);
+        defineVariable(idx);
+
+        consumeTokenErr(TokenType::LEFT_BRACE, "Expected '{' after class name");
+        consumeTokenErr(TokenType::RIGHT_BRACE, "Expected '}' after class body");
     }
 
     void Compiler::funDeclaration() {
