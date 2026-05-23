@@ -57,6 +57,7 @@ namespace cpplox {
         bool callValue(Value& v, std::uint8_t argc);
         bool call(Closure* f, std::uint8_t argc);
         void printValue(const Value& v) const;
+        void defineMethod(const String& name);
 
         Upvalue* captureUpvalue(std::size_t offset);
         void closeUpvalues(std::size_t offset);

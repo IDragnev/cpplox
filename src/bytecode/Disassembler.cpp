@@ -180,6 +180,12 @@ namespace cpplox {
             case OpCode::GET_PROPERTY_16: {
                 return constant16Instruction("GET_PROPERTY_16", chunk, offset);
             } break;
+            case OpCode::METHOD: {
+                return constantInstruction("METHOD", chunk, offset);
+            } break;
+            case OpCode::METHOD_16: {
+                return constant16Instruction("METHOD_16", chunk, offset);
+            } break;
             default: {
                 println("Unknown opcode '{}'",
                         static_cast<std::uint8_t>(opCode));

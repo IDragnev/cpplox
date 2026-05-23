@@ -6,5 +6,11 @@ namespace cpplox {
         , name(name)
     {}
 
-    void Class::trace(gc::Visitor&) {}
+    void Class::trace(gc::Visitor& v) {
+        methods.forEachValue([&v](Value& val) {
+            if (val.isObject()) {
+                v.visit(val.asObject());
+            }
+        });
+    }
 }

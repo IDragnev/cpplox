@@ -2,6 +2,7 @@
 
 #include "cpplox/runtime/Object.hpp"
 #include "cpplox/core/String.hpp"
+#include "cpplox/core/ValueMap.hpp"
 
 namespace cpplox {
     class Class : public Object {
@@ -13,5 +14,6 @@ namespace cpplox {
         void trace(gc::Visitor& v) override;
 
         const String name;
+        ValueMap methods;
     };
 }

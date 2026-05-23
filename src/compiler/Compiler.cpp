@@ -387,17 +387,37 @@ namespace cpplox {
 
     void Compiler::classDeclaration() {
         consumeTokenErr(TokenType::IDENTIFIER, "Expected class name");
+        const Token className = parser.previous;
+
+        std::size_t idx = 0;
+        makeConstant(Value(String(className.lexeme)), true, idx);
+        declareVariable(className);
+        emitIntegerInstruction(OpCode::MAKE_CLASS, OpCode::MAKE_CLASS_16, idx);
+        defineVariable(idx);
+
+        namedVariable(className, false);
+        consumeTokenErr(TokenType::LEFT_BRACE, "Expected '{{' after class name");
+        while (peek(TokenType::RIGHT_BRACE) == false &&
+               peek(TokenType::EOF_TOKEN) == false)
+        {
+            method();
+        }
+        consumeTokenErr(TokenType::RIGHT_BRACE, "Expected '}}' after class body");
+        emitOpCode(OpCode::POP);
+    }
+
+    void Compiler::method() {
+        consumeTokenErr(TokenType::IDENTIFIER, "Expected method name");
 
         std::size_t idx = 0;
         makeConstant(Value(String(parser.previous.lexeme)),
                          true,
                          idx);
-        declareVariable(parser.previous);
-        emitIntegerInstruction(OpCode::MAKE_CLASS, OpCode::MAKE_CLASS_16, idx);
-        defineVariable(idx);
 
-        consumeTokenErr(TokenType::LEFT_BRACE, "Expected '{' after class name");
-        consumeTokenErr(TokenType::RIGHT_BRACE, "Expected '}' after class body");
+        auto type = FunctionType::FUNCTION;
+        function(type, parser.previous);
+
+        emitIntegerInstruction(OpCode::METHOD, OpCode::METHOD_16, idx);
     }
 
     void Compiler::funDeclaration() {
@@ -447,7 +467,7 @@ namespace cpplox {
         consumeTokenErr(TokenType::RIGHT_PAREN,
                         "Expected ')' after parameters");
         consumeTokenErr(TokenType::LEFT_BRACE,
-                        "Expected '{' before function body");
+                        "Expected '{{' before function body");
         block();
         emitReturn();
 

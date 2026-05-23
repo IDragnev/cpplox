@@ -357,6 +357,15 @@ namespace cpplox {
                         }
                     }
                 } break;
+                case OpCode::METHOD:
+                case OpCode::METHOD_16: {
+                    Value name = opCode == OpCode::METHOD
+                                    ? readConstant()
+                                    : readConstant16();
+                    if (name.isString()) {
+                        defineMethod(name.asString());
+                    }
+                } break;
                 case OpCode::GET_PROPERTY:
                 case OpCode::GET_PROPERTY_16: {
                     Value name = opCode == OpCode::GET_PROPERTY
@@ -542,6 +551,20 @@ namespace cpplox {
 
             openUpvalues = openUpvalues->next;
         }
+    }
+
+    void VM::defineMethod(const String& name) {
+        Value& method = stack.peek();
+        Value& classObj = stack.peekN(1);
+
+        if (classObj.isObject() && method.isObject()) {
+            Class* c = classObj.asObject()->as<Class>();
+            if (c != nullptr) {
+                c->methods.insert(name, method);
+            }
+        }
+
+        stack.pop();
     }
 
     template <NumberBinaryOp Op>

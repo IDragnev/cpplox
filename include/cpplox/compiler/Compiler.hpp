@@ -105,6 +105,7 @@ namespace cpplox {
         // statement parsers
         void declaration();
         void classDeclaration();
+        void method();
         void funDeclaration();
         void function(FunctionType type, const Token& name);
         void varDeclaration();

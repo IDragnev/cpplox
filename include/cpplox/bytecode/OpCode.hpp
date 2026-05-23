@@ -49,5 +49,7 @@ namespace cpplox {
         SET_PROPERTY_16,
         GET_PROPERTY,
         GET_PROPERTY_16,
+        METHOD,
+        METHOD_16,
     };
 }
