@@ -486,7 +486,18 @@ namespace cpplox {
                     if (klass != nullptr) {
                         Instance* inst = makeObject<Instance>(klass);
                         if (inst != nullptr) {
-                            stack.push(Value(inst));
+                            stack.at(stack.size() - argc - 1) = Value(inst);
+                            Value initializer;
+                            if (klass->methods.find(classInitKey, initializer)) {
+                                return call(
+                                    initializer.asObject()->as<Closure>(),
+                                    argc);
+                            } else if (argc > 0) {
+                                runtimeError("Expected 0 arguments but got {}",
+                                             argc);
+                                return false;
+                            }
+
                             return true;
                         }
                         else {

@@ -77,5 +77,6 @@ namespace cpplox {
         std::uint64_t nextGC = 1024 * 1024;
         Upvalue* openUpvalues = nullptr;
         String error = "";
+        String classInitKey = "init";
     };
 } // namespace cpplox

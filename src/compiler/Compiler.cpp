@@ -151,9 +151,10 @@ namespace cpplox {
         fr.locals.reserve(MAX_LOCALS);
         fr.upvalues.reserve(MAX_UPVALUES);
 
+        const bool method = t == FunctionType::METHOD || t == FunctionType::INITIALIZER;
         // reserved for the function being compiled
         fr.locals.insertBack(Local{
-            .name = Token{.lexeme = t == FunctionType::METHOD ? "this" : ""},
+            .name = Token{.lexeme = method ? "this" : ""},
             .depth = 0,
             .initialized = true,
             .captured = false,
@@ -421,7 +422,9 @@ namespace cpplox {
                          true,
                          idx);
 
-        auto type = FunctionType::METHOD;
+        const auto type = parser.previous.lexeme == "init"
+                              ? FunctionType::INITIALIZER
+                              : FunctionType::METHOD;
         function(type, parser.previous);
 
         emitIntegerInstruction(OpCode::METHOD, OpCode::METHOD_16, idx);
@@ -668,6 +671,11 @@ namespace cpplox {
         if (match(TokenType::SEMICOLON)) {
             emitReturn();
         } else {
+            if (frame.funType == FunctionType::INITIALIZER) {
+                compileError(parser.previous,
+                             "Can't return a value from an initializer");
+            }
+
             expression();
             consumeTokenErr(TokenType::SEMICOLON, "Expected ';' after return");
             emitOpCode(OpCode::RETURN);
@@ -1048,7 +1056,13 @@ namespace cpplox {
     }
 
     void Compiler::emitReturn() {
-        emitOpCode(OpCode::NIL);
+        if (frame.funType != FunctionType::INITIALIZER) {
+            emitOpCode(OpCode::NIL);
+        } else {
+            emitIntegerInstruction(OpCode::READ_LOCAL,
+                                   OpCode::READ_LOCAL_16,
+                                   0);
+        }
         emitOpCode(OpCode::RETURN);
     }
 

@@ -25,7 +25,12 @@ namespace cpplox {
         struct Frame;
         enum class OpPrecedence;
 
-        enum class FunctionType { SCRIPT, FUNCTION, METHOD };
+        enum class FunctionType {
+            SCRIPT,
+            FUNCTION,
+            METHOD,
+            INITIALIZER,
+        };
 
         struct Local {
             Token name;
