@@ -59,6 +59,7 @@ namespace cpplox {
             rules[as_index(TokenType::AND)]           = ParseRule{                               .infix = &Compiler::and_,   .infixPrec = OpPrecedence::AND, };
             rules[as_index(TokenType::OR)]            = ParseRule{                               .infix = &Compiler::or_,    .infixPrec = OpPrecedence::OR, };
             rules[as_index(TokenType::DOT)]           = ParseRule{                               .infix = &Compiler::dot,    .infixPrec = OpPrecedence::CALL, };
+            rules[as_index(TokenType::THIS)]          = ParseRule{ .prefix = &Compiler::_this, };
             rules[as_index(TokenType::NUMBER)]        = ParseRule{ .prefix = &Compiler::number, };
             rules[as_index(TokenType::TRUE)]          = ParseRule{ .prefix = &Compiler::literal, };
             rules[as_index(TokenType::FALSE)]         = ParseRule{ .prefix = &Compiler::literal, };
@@ -152,7 +153,7 @@ namespace cpplox {
 
         // reserved for the function being compiled
         fr.locals.insertBack(Local{
-            .name = Token{},
+            .name = Token{.lexeme = t == FunctionType::METHOD ? "this" : ""},
             .depth = 0,
             .initialized = true,
             .captured = false,
@@ -395,6 +396,10 @@ namespace cpplox {
         emitIntegerInstruction(OpCode::MAKE_CLASS, OpCode::MAKE_CLASS_16, idx);
         defineVariable(idx);
 
+        auto oldClass = enclosingClass;
+        enclosingClass.null = false;
+        enclosingClass.parent = &oldClass;
+
         namedVariable(className, false);
         consumeTokenErr(TokenType::LEFT_BRACE, "Expected '{{' after class name");
         while (peek(TokenType::RIGHT_BRACE) == false &&
@@ -404,6 +409,8 @@ namespace cpplox {
         }
         consumeTokenErr(TokenType::RIGHT_BRACE, "Expected '}}' after class body");
         emitOpCode(OpCode::POP);
+
+        enclosingClass = oldClass;
     }
 
     void Compiler::method() {
@@ -414,7 +421,7 @@ namespace cpplox {
                          true,
                          idx);
 
-        auto type = FunctionType::FUNCTION;
+        auto type = FunctionType::METHOD;
         function(type, parser.previous);
 
         emitIntegerInstruction(OpCode::METHOD, OpCode::METHOD_16, idx);
@@ -912,6 +919,14 @@ namespace cpplox {
                                    OpCode::GET_PROPERTY_16,
                                    idx);
         }
+    }
+
+    void Compiler::_this(bool) {
+        if (enclosingClass.null) {
+            compileError(parser.previous, "Can't use 'this' outside of class");
+        }
+
+        variable(false);
     }
 
     bool Compiler::match(TokenType type) {

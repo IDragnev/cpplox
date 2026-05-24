@@ -474,6 +474,13 @@ namespace cpplox {
                         return call(fun, argc);
                     }
                 } break;
+                case ObjectType::BOUND_METHOD: {
+                    BoundMethod* bm = v.asObject()->as<BoundMethod>();
+                    if (bm != nullptr) {
+                        stack.at(stack.size() - argc - 1) = bm->receiver;
+                        return call(bm->method, argc);
+                    }
+                } break;
                 case ObjectType::CLASS: {
                     Class* klass = v.asObject()->as<Class>();
                     if (klass != nullptr) {

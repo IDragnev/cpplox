@@ -25,7 +25,7 @@ namespace cpplox {
         struct Frame;
         enum class OpPrecedence;
 
-        enum class FunctionType { SCRIPT, FUNCTION };
+        enum class FunctionType { SCRIPT, FUNCTION, METHOD };
 
         struct Local {
             Token name;
@@ -138,6 +138,7 @@ namespace cpplox {
         void and_(bool canAssign);
         void or_(bool canAssign);
         void dot(bool canAssign);
+        void _this(bool canAssign);
 
     private:
         std::string source = "";
@@ -156,6 +157,10 @@ namespace cpplox {
             Vector<Upvalue> upvalues;
             std::uint16_t scopeDepth = 0;
         } frame;
+        struct CompilerClass {
+            CompilerClass* parent = nullptr;
+            bool null = true;
+        } enclosingClass;
         Vector<Object*> gcObjects;
         DiagnosticEngine* diagnostics = nullptr;
     };
