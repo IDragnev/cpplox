@@ -9,12 +9,14 @@ set(CPPLOX_RUNTIME_SOURCE
   ${RUNTIME_HEADERS_DIR}/GC.hpp
   ${RUNTIME_HEADERS_DIR}/Class.hpp
   ${RUNTIME_HEADERS_DIR}/Instance.hpp
+  ${RUNTIME_HEADERS_DIR}/BoundMethod.hpp
 
   Function.cpp
   Closure.cpp
   Upvalue.cpp
   Class.cpp
   Instance.cpp
+  BoundMethod.cpp
   GC.cpp
 )
 

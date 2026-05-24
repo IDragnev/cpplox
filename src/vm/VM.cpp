@@ -8,6 +8,7 @@
 #include "cpplox/runtime/Upvalue.hpp"
 #include "cpplox/runtime/Class.hpp"
 #include "cpplox/runtime/Instance.hpp"
+#include "cpplox/runtime/BoundMethod.hpp"
 #include "cpplox/runtime/GC.hpp"
 #include "cpplox/log/Log.hpp"
 #include "cpplox/core/Algorithm.hpp"
@@ -387,8 +388,11 @@ namespace cpplox {
                                 stack.pop(); // instance
                                 stack.push(property);
                             } else {
-                                runtimeError("Undefined property {}.", name);
-                                return InterpretResultCode::RUNTIME_ERROR;
+                                const bool bound =
+                                    bindMethod(inst->klass, name.asString());
+                                if (bound == false) {
+                                    return InterpretResultCode::RUNTIME_ERROR;
+                                }
                             }
                         }
                     }
@@ -449,6 +453,12 @@ namespace cpplox {
                     println("<fun {}:{}>",
                             closure->function->name,
                             closure->function->arity);
+                } break;
+                case ObjectType::BOUND_METHOD: {
+                    const BoundMethod* method = obj->as<BoundMethod>();
+                    println("<fun {}:{}>",
+                            method->method->function->name,
+                            method->method->function->arity);
                 } break;
                 case ObjectType::UPVALUE: { } break;
             }
@@ -567,6 +577,25 @@ namespace cpplox {
         stack.pop();
     }
 
+    bool VM::bindMethod(Class* klass, const String& name) {
+        Value method;
+        bool found = klass->methods.find(name, method);
+        if (found == false) {
+            runtimeError("Undefined property '{}'.", name);
+            return false;
+        }
+
+        Closure* cl = method.asObject()->as<Closure>();
+        BoundMethod* bm = makeObject<BoundMethod>(stack.peek(), cl);
+        if (bm != nullptr) {
+            stack.pop();
+            stack.push(Value(bm));
+            return true;
+        }
+
+        return false;
+    }
+
     template <NumberBinaryOp Op>
     bool VM::numBinaryOp(const Op& op) {
         if (stack.peek().isNumber() && stack.peekN(1).isNumber()) {
@@ -667,6 +696,9 @@ namespace cpplox {
             } break;
             case ObjectType::INSTANCE: {
                 objSize = sizeof(Instance);
+            } break;
+            case ObjectType::BOUND_METHOD: {
+                objSize = sizeof(BoundMethod);
             } break;
         }
 

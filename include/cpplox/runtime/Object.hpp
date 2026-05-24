@@ -9,6 +9,7 @@ namespace cpplox {
         UPVALUE,
         CLASS,
         INSTANCE,
+        BOUND_METHOD,
     };
 
     template <typename T>

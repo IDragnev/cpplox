@@ -10,6 +10,7 @@ namespace cpplox {
     class Closure;
     class Object;
     class Upvalue;
+    class Class;
 
     enum class InterpretResultCode {
         OK,
@@ -58,6 +59,7 @@ namespace cpplox {
         bool call(Closure* f, std::uint8_t argc);
         void printValue(const Value& v) const;
         void defineMethod(const String& name);
+        bool bindMethod(Class* klass, const String& name);
 
         Upvalue* captureUpvalue(std::size_t offset);
         void closeUpvalues(std::size_t offset);
