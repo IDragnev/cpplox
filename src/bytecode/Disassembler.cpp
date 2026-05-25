@@ -186,6 +186,20 @@ namespace cpplox {
             case OpCode::METHOD_16: {
                 return constant16Instruction("METHOD_16", chunk, offset);
             } break;
+            case OpCode::INVOKE: {
+                const auto constant = chunk.code[offset + 1];
+                const auto count = chunk.code[offset + 2];
+                printInvokeInstruction("INVOKE", constant, count, chunk);
+                return offset + 3;
+            } break;
+            case OpCode::INVOKE_16: {
+                const auto a = chunk.code[offset + 1];
+                const auto b = chunk.code[offset + 2];
+                const auto constant = parseTwoByteInteger(a, b);
+                const auto count = chunk.code[offset + 3];
+                printInvokeInstruction("INVOKE_16", constant, count, chunk);
+                return offset + 4;
+            } break;
             default: {
                 println("Unknown opcode '{}'",
                         static_cast<std::uint8_t>(opCode));
@@ -244,12 +258,23 @@ namespace cpplox {
                                                 const Chunk& chunk,
                                                 std::size_t constIndex) const {
         const Value& v = chunk.constants[constIndex];
-        println("{:<16} {:>4} '{}'", name, constIndex, v);
+        println("{:<16} {:>5} '{}'", name, constIndex, v);
     }
 
     void Disassembler::printIntegerInstruction(const char* name,
                                                std::size_t operand) const {
-        println("{:<16} {:>4}", name, operand);
+        println("{:<16} {:>5}", name, operand);
+    }
+
+    void Disassembler::printInvokeInstruction(const char* name,
+                                              std::size_t constant,
+                                              std::size_t argc,
+                                              const Chunk& chunk) const {
+        println("{:<16} {:<5} {:>5} '{}'",
+                name,
+                constant,
+                argc,
+                chunk.constants[constant]);
     }
 
     std::size_t Disassembler::closureUpvalues(const Chunk& chunk,

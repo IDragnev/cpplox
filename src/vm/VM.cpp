@@ -420,6 +420,19 @@ namespace cpplox {
                         }
                     }
                 } break;
+                case OpCode::INVOKE:
+                case OpCode::INVOKE_16: {
+                    Value name = opCode == OpCode::INVOKE
+                                     ? readConstant()
+                                     : readConstant16();
+                    const auto argc = readByte();
+                    if (name.isString()) {
+                        if (invoke(name.asString(), argc) == false) {
+                            return InterpretResultCode::RUNTIME_ERROR;
+                        }
+                        frame = &frames.back();
+                    }
+                } break;
                 default: {
                     runtimeError("Unknown opcode");
                     return InterpretResultCode::RUNTIME_ERROR;
@@ -463,6 +476,36 @@ namespace cpplox {
                 case ObjectType::UPVALUE: { } break;
             }
         }
+    }
+
+    bool VM::invoke(const String& name, std::uint8_t argc) {
+        Value instance = stack.peekN(argc);
+        if (instance.isObject()) {
+            Instance* inst = instance.asObject()->as<Instance>();
+            if (inst != nullptr) {
+                Value field;
+                if (inst->fields.find(name, field)) {
+                    stack.peekN(argc) = field;
+                    return callValue(field, argc);
+                } else {
+                    return invokeFromClass(inst->klass, name, argc);
+                }
+            }
+        }
+
+        runtimeError("Only instances have properties.");
+        return false;
+    }
+
+    bool
+    VM::invokeFromClass(Class* klass, const String& methodName, std::uint8_t argc) {
+        Value method;
+        if (klass->methods.find(methodName, method)) {
+            return call(method.asObject()->as<Closure>(), argc);
+        }
+
+        runtimeError("Undefined property '{}'.", methodName);
+        return false;
     }
 
     bool VM::callValue(Value& v, std::uint8_t argc) {

@@ -922,6 +922,10 @@ namespace cpplox {
             emitIntegerInstruction(OpCode::SET_PROPERTY,
                                    OpCode::SET_PROPERTY_16,
                                    idx);
+        } else if (match(TokenType::LEFT_PAREN)) {
+            const auto count = argList();
+            emitIntegerInstruction(OpCode::INVOKE, OpCode::INVOKE_16, idx);
+            emitByte(static_cast<std::uint8_t>(count));
         } else {
             emitIntegerInstruction(OpCode::GET_PROPERTY,
                                    OpCode::GET_PROPERTY_16,

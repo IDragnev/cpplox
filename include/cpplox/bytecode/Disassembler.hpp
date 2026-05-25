@@ -33,6 +33,10 @@ namespace cpplox {
                                       std::size_t constIndex) const;
         void printIntegerInstruction(const char* name,
                                      std::size_t operand) const;
+        void printInvokeInstruction(const char* name,
+                                    std::size_t constant,
+                                    std::size_t argc,
+                                    const Chunk& chunk) const;
         std::size_t closureUpvalues(const Chunk& chunk,
                                     std::size_t offset) const;
     };

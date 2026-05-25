@@ -51,5 +51,7 @@ namespace cpplox {
         GET_PROPERTY_16,
         METHOD,
         METHOD_16,
+        INVOKE,
+        INVOKE_16,
     };
 }
