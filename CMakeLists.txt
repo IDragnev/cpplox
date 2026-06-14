@@ -18,9 +18,9 @@ if(CMAKE_BUILD_TYPE MATCHES RELEASE)
 endif()
 
 option(CPPLOX_TREAT_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
-option(CPPLOX_DEBUG_TRACE_EXECUTION "Trace the interpreter execution" ON)
-option(CPPLOX_DEBUG_LOG_GC "Stress test the garbace collector" ON)
-option(CPPLOX_DEBUG_STRESS_GC "Stress test the garbace collector" ON)
+option(CPPLOX_DEBUG_TRACE_EXECUTION "Trace the interpreter execution" OFF)
+option(CPPLOX_DEBUG_LOG_GC "Trace the garbage collector" OFF)
+option(CPPLOX_DEBUG_STRESS_GC "Stress test the garbage collector" OFF)
 
 if(CPPLOX_DEBUG_TRACE_EXECUTION)
   add_compile_definitions(CPPLOX_DEBUG_TRACE_EXECUTION)
