@@ -476,6 +476,9 @@ namespace cpplox {
             return;
         }
 
+        Loop oldLoop = std::move(loop);
+        loop.null = true;
+
         Frame oldFrame = std::move(frame);
         frame = Frame{};
         initFrame(frame, fun, type, &oldFrame);
@@ -511,6 +514,8 @@ namespace cpplox {
         Frame closureFrame = std::move(frame);
         frame = std::move(oldFrame);
         emitClosure(fun, closureFrame);
+
+        loop = std::move(oldLoop);
     }
 
     void Compiler::varDeclaration() {
