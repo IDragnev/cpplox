@@ -61,7 +61,6 @@ namespace cpplox {
             rules[as_index(TokenType::OR)]            = ParseRule{                               .infix = &Compiler::or_,    .infixPrec = OpPrecedence::OR, };
             rules[as_index(TokenType::DOT)]           = ParseRule{                               .infix = &Compiler::dot,    .infixPrec = OpPrecedence::CALL, };
             rules[as_index(TokenType::THIS)]          = ParseRule{ .prefix = &Compiler::_this, };
-            rules[as_index(TokenType::BREAK)]         = ParseRule{ .prefix = &Compiler::_break, };
             rules[as_index(TokenType::SUPER)]         = ParseRule{ .prefix = &Compiler::super, };
             rules[as_index(TokenType::NUMBER)]        = ParseRule{ .prefix = &Compiler::number, };
             rules[as_index(TokenType::TRUE)]          = ParseRule{ .prefix = &Compiler::literal, };
@@ -590,6 +589,8 @@ namespace cpplox {
             whileStatement();
         } else if (match(TokenType::FOR)) {
             forStatement();
+        } else if (match(TokenType::BREAK)) {
+            breakStatement();
         } else if (match(TokenType::RETURN)) {
             returnStatement();
         } else if (match(TokenType::LEFT_BRACE)) {
@@ -600,7 +601,18 @@ namespace cpplox {
             expressionStatement();
         }
     }
-    
+
+    void Compiler::breakStatement() {
+        if (loop.null) {
+            compileError(parser.previous, "Can't use 'break' outside of loop");
+        }
+
+        consumeTokenErr(TokenType::SEMICOLON, "Expected ';' after 'break'");
+
+        std::size_t jmp = emitJump(OpCode::JMP);
+        loop.breaksToPatch.insertBack(jmp);
+    }
+
     void Compiler::block() {
         while (peek(TokenType::EOF_TOKEN) == false &&
                peek(TokenType::RIGHT_BRACE) == false)
@@ -983,15 +995,6 @@ namespace cpplox {
         }
 
         variable(false);
-    }
-
-    void Compiler::_break(bool) {
-        if (loop.null) {
-            compileError(parser.previous, "Can't use 'break' outside of loop");
-        }
-
-        std::size_t jmp = emitJump(OpCode::JMP);
-        loop.breaksToPatch.insertBack(jmp);
     }
 
     void Compiler::super(bool) {

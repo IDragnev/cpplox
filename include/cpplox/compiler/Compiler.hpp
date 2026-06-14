@@ -125,6 +125,7 @@ namespace cpplox {
         void block();
         void printStatement();
         void expressionStatement();
+        void breakStatement();
 
         // expression parsers
         static ParseRule getParseRule(TokenType t);
@@ -144,7 +145,6 @@ namespace cpplox {
         void or_(bool canAssign);
         void dot(bool canAssign);
         void _this(bool canAssign);
-        void _break(bool canAssign);
         void super(bool canAssign);
 
     private:
