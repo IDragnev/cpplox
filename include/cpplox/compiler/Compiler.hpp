@@ -144,6 +144,7 @@ namespace cpplox {
         void or_(bool canAssign);
         void dot(bool canAssign);
         void _this(bool canAssign);
+        void super(bool canAssign);
 
     private:
         std::string source = "";
@@ -165,6 +166,7 @@ namespace cpplox {
         struct CompilerClass {
             CompilerClass* parent = nullptr;
             bool null = true;
+            bool hasSuperclass = false;
         } enclosingClass;
         Vector<Object*> gcObjects;
         DiagnosticEngine* diagnostics = nullptr;
