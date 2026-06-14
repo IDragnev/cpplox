@@ -237,6 +237,7 @@ namespace cpplox {
     TokenType Scanner::identifierType() const {
         switch (*start) {
             case 'a': return checkKeyword(1, "nd", TokenType::AND);
+            case 'b': return checkKeyword(1, "reak", TokenType::BREAK);
             case 'c': return checkKeyword(1, "lass", TokenType::CLASS);
             case 'e': return checkKeyword(1, "lse", TokenType::ELSE);
             case 'i': return checkKeyword(1, "f", TokenType::IF);

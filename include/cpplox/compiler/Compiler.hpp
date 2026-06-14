@@ -144,6 +144,7 @@ namespace cpplox {
         void or_(bool canAssign);
         void dot(bool canAssign);
         void _this(bool canAssign);
+        void _break(bool canAssign);
         void super(bool canAssign);
 
     private:
@@ -163,6 +164,10 @@ namespace cpplox {
             Vector<Upvalue> upvalues;
             std::uint16_t scopeDepth = 0;
         } frame;
+        struct Loop {
+            bool null = true;
+            Vector<std::size_t> breaksToPatch;
+        } loop;
         struct CompilerClass {
             CompilerClass* parent = nullptr;
             bool null = true;

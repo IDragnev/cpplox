@@ -40,6 +40,7 @@ namespace cpplox {
         NIL,
         OR,
         PRINT,
+        BREAK,
         RETURN,
         SUPER,
         THIS,

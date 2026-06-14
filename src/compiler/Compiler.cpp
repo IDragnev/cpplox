@@ -5,6 +5,7 @@
 #include "cpplox/runtime/Function.hpp"
 #include "cpplox/runtime/GC.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
+#include "cpplox/core/Algorithm.hpp"
 
 #include <limits>
 
@@ -60,6 +61,7 @@ namespace cpplox {
             rules[as_index(TokenType::OR)]            = ParseRule{                               .infix = &Compiler::or_,    .infixPrec = OpPrecedence::OR, };
             rules[as_index(TokenType::DOT)]           = ParseRule{                               .infix = &Compiler::dot,    .infixPrec = OpPrecedence::CALL, };
             rules[as_index(TokenType::THIS)]          = ParseRule{ .prefix = &Compiler::_this, };
+            rules[as_index(TokenType::BREAK)]         = ParseRule{ .prefix = &Compiler::_break, };
             rules[as_index(TokenType::SUPER)]         = ParseRule{ .prefix = &Compiler::super, };
             rules[as_index(TokenType::NUMBER)]        = ParseRule{ .prefix = &Compiler::number, };
             rules[as_index(TokenType::TRUE)]          = ParseRule{ .prefix = &Compiler::literal, };
@@ -623,6 +625,9 @@ namespace cpplox {
     }
 
     void Compiler::whileStatement() {
+        auto oldLoop = std::move(loop);
+        loop.null = false;
+
         const std::size_t loopStart = currentChunkCodeOffset();
 
         consumeTokenErr(TokenType::LEFT_PAREN, "Expected '(' after while");
@@ -635,10 +640,17 @@ namespace cpplox {
         emitLoop(loopStart);
 
         patchJump(exitJmp);
+        forEach(loop.breaksToPatch,
+                [this](std::size_t jmp) { patchJump(jmp); });
         emitOpCode(OpCode::POP);
+
+        loop = std::move(oldLoop);
     }
 
     void Compiler::forStatement() {
+        auto oldLoop = std::move(loop);
+        loop.null = false;
+
         beginScope();
 
         consumeTokenErr(TokenType::LEFT_PAREN, "Expected '(' after for");
@@ -677,12 +689,16 @@ namespace cpplox {
         statement();
         emitLoop(loopStart);
 
+        forEach(loop.breaksToPatch,
+                [this](std::size_t jmp) { patchJump(jmp); });
         if (hasCondition) {
             patchJump(exitJmp);
             emitOpCode(OpCode::POP); // condition
         }
 
         endScope();
+
+        loop = std::move(oldLoop);
     }
 
     void Compiler::returnStatement() {
@@ -962,6 +978,15 @@ namespace cpplox {
         }
 
         variable(false);
+    }
+
+    void Compiler::_break(bool) {
+        if (loop.null) {
+            compileError(parser.previous, "Can't use 'break' outside of loop");
+        }
+
+        std::size_t jmp = emitJump(OpCode::JMP);
+        loop.breaksToPatch.insertBack(jmp);
     }
 
     void Compiler::super(bool) {
