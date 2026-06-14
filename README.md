@@ -1,6 +1,13 @@
 # An interpreter for the Lox programming language.
 Lox is a dynamically typed language with syntax very close to that of C.
 
+## Build
+CMake options:
+- CPPLOX_TREAT_WARNINGS_AS_ERRORS - Treat compiler warnings as errors - ON by default
+- CPPLOX_DEBUG_TRACE_EXECUTION - Trace the interpreter execution - OFF by default
+- CPPLOX_DEBUG_LOG_GC - Trace the garbage collector - OFF by default
+- CPPLOX_DEBUG_STRESS_GC - Stress test the garbage collector - OFF by default
+
 ## Usage
 ```
 cpplox [path-to-script-file]
