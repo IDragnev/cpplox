@@ -60,6 +60,7 @@ namespace cpplox {
             rules[as_index(TokenType::OR)]            = ParseRule{                               .infix = &Compiler::or_,    .infixPrec = OpPrecedence::OR, };
             rules[as_index(TokenType::DOT)]           = ParseRule{                               .infix = &Compiler::dot,    .infixPrec = OpPrecedence::CALL, };
             rules[as_index(TokenType::THIS)]          = ParseRule{ .prefix = &Compiler::_this, };
+            rules[as_index(TokenType::SUPER)]         = ParseRule{ .prefix = &Compiler::super, };
             rules[as_index(TokenType::NUMBER)]        = ParseRule{ .prefix = &Compiler::number, };
             rules[as_index(TokenType::TRUE)]          = ParseRule{ .prefix = &Compiler::literal, };
             rules[as_index(TokenType::FALSE)]         = ParseRule{ .prefix = &Compiler::literal, };
@@ -401,6 +402,24 @@ namespace cpplox {
         enclosingClass.null = false;
         enclosingClass.parent = &oldClass;
 
+        if (match(TokenType::LESS)) {
+            consumeTokenErr(TokenType::IDENTIFIER, "Expected superclass name");
+            variable(false);
+            if (parser.previous.lexeme == className.lexeme) {
+                compileError(parser.previous, "A class can't inherit from itself");
+            }
+
+            beginScope();
+            addLocal(Token{
+                .lexeme = std::string_view("super"),
+            });
+            defineVariable(0);
+
+            namedVariable(className, false);
+            emitOpCode(OpCode::INHERIT);
+            enclosingClass.hasSuperclass = true;
+        }
+
         namedVariable(className, false);
         consumeTokenErr(TokenType::LEFT_BRACE, "Expected '{{' after class name");
         while (peek(TokenType::RIGHT_BRACE) == false &&
@@ -410,6 +429,10 @@ namespace cpplox {
         }
         consumeTokenErr(TokenType::RIGHT_BRACE, "Expected '}}' after class body");
         emitOpCode(OpCode::POP);
+
+        if (enclosingClass.hasSuperclass) {
+            endScope();
+        }
 
         enclosingClass = oldClass;
     }
@@ -939,6 +962,37 @@ namespace cpplox {
         }
 
         variable(false);
+    }
+
+    void Compiler::super(bool) {
+        if (enclosingClass.null) {
+            compileError(parser.previous,
+                         "Can't use 'super' outside of a class");
+        } else if (enclosingClass.hasSuperclass == false) {
+            compileError(parser.previous,
+                         "Can't use 'super' in a class with no superclass");
+        }
+
+        consumeTokenErr(TokenType::DOT, "Expected '.' after 'super'");
+        consumeTokenErr(TokenType::IDENTIFIER, "Expected superclass method name");
+
+        std::size_t idx = 0;
+        makeConstant(Value(String(parser.previous.lexeme)), true, idx);
+
+        namedVariable(Token{.lexeme = "this"}, false);
+        if (match(TokenType::LEFT_PAREN)) {
+            const unsigned argc = argList();
+            namedVariable(Token{.lexeme = "super"}, false);
+            emitIntegerInstruction(OpCode::SUPER_INVOKE,
+                                   OpCode::SUPER_INVOKE_16,
+                                   idx);
+            emitByte(static_cast<std::uint8_t>(argc));
+        } else {
+            namedVariable(Token{.lexeme = "super"}, false);
+            emitIntegerInstruction(OpCode::GET_SUPER,
+                                   OpCode::GET_SUPER_16,
+                                   idx);
+        }
     }
 
     bool Compiler::match(TokenType type) {

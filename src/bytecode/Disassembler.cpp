@@ -186,19 +186,26 @@ namespace cpplox {
             case OpCode::METHOD_16: {
                 return constant16Instruction("METHOD_16", chunk, offset);
             } break;
+            case OpCode::INHERIT: {
+                return simpleInstruction("INHERIT", offset);
+            } break;
+            case OpCode::GET_SUPER: {
+                return constantInstruction("GET_SUPER", chunk, offset);
+            } break;
+            case OpCode::GET_SUPER_16: {
+                return constant16Instruction("GET_SUPER_16", chunk, offset);
+            } break;
             case OpCode::INVOKE: {
-                const auto constant = chunk.code[offset + 1];
-                const auto count = chunk.code[offset + 2];
-                printInvokeInstruction("INVOKE", constant, count, chunk);
-                return offset + 3;
+                return invokeInstruction("INVOKE", chunk, offset);
             } break;
             case OpCode::INVOKE_16: {
-                const auto a = chunk.code[offset + 1];
-                const auto b = chunk.code[offset + 2];
-                const auto constant = parseTwoByteInteger(a, b);
-                const auto count = chunk.code[offset + 3];
-                printInvokeInstruction("INVOKE_16", constant, count, chunk);
-                return offset + 4;
+                return invoke16Instruction("INVOKE_16", chunk, offset);
+            } break;
+            case OpCode::SUPER_INVOKE: {
+                return invokeInstruction("SUPER_INVOKE", chunk, offset);
+            } break;
+            case OpCode::SUPER_INVOKE_16: {
+                return invoke16Instruction("SUPER_INVOKE_16", chunk, offset);
             } break;
             default: {
                 println("Unknown opcode '{}'",
@@ -275,6 +282,26 @@ namespace cpplox {
                 constant,
                 argc,
                 chunk.constants[constant]);
+    }
+
+    std::size_t Disassembler::invokeInstruction(const char* name,
+                                                const Chunk& chunk,
+                                                std::size_t offset) const {
+        const auto constant = chunk.code[offset + 1];
+        const auto count = chunk.code[offset + 2];
+        printInvokeInstruction(name, constant, count, chunk);
+        return offset + 3;
+    }
+
+    std::size_t Disassembler::invoke16Instruction(const char* name,
+                                                  const Chunk& chunk,
+                                                  std::size_t offset) const {
+        const auto a = chunk.code[offset + 1];
+        const auto b = chunk.code[offset + 2];
+        const auto constant = parseTwoByteInteger(a, b);
+        const auto count = chunk.code[offset + 3];
+        printInvokeInstruction(name, constant, count, chunk);
+        return offset + 4;
     }
 
     std::size_t Disassembler::closureUpvalues(const Chunk& chunk,

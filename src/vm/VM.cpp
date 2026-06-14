@@ -433,6 +433,54 @@ namespace cpplox {
                         frame = &frames.back();
                     }
                 } break;
+                case OpCode::INHERIT: {
+                    Value& subclass = stack.peek();
+                    Value& superclass = stack.peekN(1);
+
+                    if (superclass.isObject() == false ||
+                        superclass.asObject()->hasType(ObjectType::CLASS) == false)
+                    {
+                        runtimeError("Can only inherit classes.");
+                        return InterpretResultCode::RUNTIME_ERROR;
+                    }
+
+                    Class* subclassObj = subclass.asObject()->as<Class>();
+                    Class* superclassObj = superclass.asObject()->as<Class>();
+                    subclassObj->methods = superclassObj->methods;
+
+                    stack.pop(); // subclass
+                } break;
+                case OpCode::GET_SUPER:
+                case OpCode::GET_SUPER_16: {
+                    Value name = opCode == OpCode::GET_SUPER ? readConstant()
+                                                             : readConstant16();
+                    Value superclass = stack.pop();
+                    Class* super = superclass.asObject()->as<Class>();
+                    if (super != nullptr) {
+                        const bool bound = bindMethod(super, name.asString());
+                        if (bound == false) {
+                            return InterpretResultCode::RUNTIME_ERROR;
+                        }
+                    }
+                } break;
+                case OpCode::SUPER_INVOKE:
+                case OpCode::SUPER_INVOKE_16: {
+                    Value name = opCode == OpCode::SUPER_INVOKE
+                                     ? readConstant()
+                                     : readConstant16();
+                    const std::uint8_t argc = readByte();
+                    if (name.isString()) {
+                        Value super = stack.pop();
+                        Class* superClass = super.asObject()->as<Class>();
+                        if (superClass != nullptr) {
+                            bool ok = invokeFromClass(superClass, name.asString(), argc);
+                            if (ok == false) {
+                                return InterpretResultCode::RUNTIME_ERROR;
+                            }
+                            frame = &frames.back();
+                        }
+                    }
+                } break;
                 default: {
                     runtimeError("Unknown opcode");
                     return InterpretResultCode::RUNTIME_ERROR;

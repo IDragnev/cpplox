@@ -37,6 +37,12 @@ namespace cpplox {
                                     std::size_t constant,
                                     std::size_t argc,
                                     const Chunk& chunk) const;
+        std::size_t invokeInstruction(const char* name,
+                                      const Chunk& chunk,
+                                      std::size_t offset) const;
+        std::size_t invoke16Instruction(const char* name,
+                                        const Chunk& chunk,
+                                        std::size_t offset) const;
         std::size_t closureUpvalues(const Chunk& chunk,
                                     std::size_t offset) const;
     };

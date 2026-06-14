@@ -53,5 +53,10 @@ namespace cpplox {
         METHOD_16,
         INVOKE,
         INVOKE_16,
+        INHERIT,
+        GET_SUPER,
+        GET_SUPER_16,
+        SUPER_INVOKE,
+        SUPER_INVOKE_16,
     };
 }
