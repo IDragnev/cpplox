@@ -817,7 +817,9 @@ namespace cpplox {
     void VM::runGC() {
         traceGCRoots();
 
-        const auto before = bytesAllocated;
+#ifdef CPPLOX_DEBUG_LOG_GC
+const auto before = bytesAllocated;
+#endif CPPLOX_DEBUG_LOG_GC
 
         // todo: optimize with intrusive linked list
         forEach(gcObjects, [this](Object* &obj) {
