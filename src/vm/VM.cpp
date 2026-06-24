@@ -819,7 +819,7 @@ namespace cpplox {
 
 #ifdef CPPLOX_DEBUG_LOG_GC
 const auto before = bytesAllocated;
-#endif CPPLOX_DEBUG_LOG_GC
+#endif
 
         // todo: optimize with intrusive linked list
         forEach(gcObjects, [this](Object* &obj) {

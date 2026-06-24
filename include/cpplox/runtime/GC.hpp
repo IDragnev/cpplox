@@ -5,6 +5,7 @@
     #include "cpplox/log/Log.hpp"
 #endif
 
+#include <new>
 #include <utility>
 
 namespace cpplox::gc {

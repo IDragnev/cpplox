@@ -10,6 +10,7 @@ set(CPPLOX_CORE_SOURCE
   ${CORE_HEADERS_DIR}/VectorImpl.hpp
   ${CORE_HEADERS_DIR}/ValueStack.hpp
   ${CORE_HEADERS_DIR}/ValueMap.hpp
+  ${CORE_HEADERS_DIR}/Algorithm.hpp
 
   String.cpp
   Value.cpp
