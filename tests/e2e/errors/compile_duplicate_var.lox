@@ -1,0 +1,4 @@
+{
+    var a = 1;
+    var a = 2; // expect compile error: Variable with name 'a' already exists in this scope
+}

@@ -21,6 +21,7 @@ option(CPPLOX_TREAT_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
 option(CPPLOX_DEBUG_TRACE_EXECUTION "Trace the interpreter execution" OFF)
 option(CPPLOX_DEBUG_LOG_GC "Trace the garbage collector" OFF)
 option(CPPLOX_DEBUG_STRESS_GC "Stress test the garbage collector" OFF)
+option(BUILD_TESTING "Build tests" ON)
 
 if(CPPLOX_DEBUG_TRACE_EXECUTION)
   add_compile_definitions(CPPLOX_DEBUG_TRACE_EXECUTION)
@@ -46,12 +47,6 @@ endif()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # DEPENDENCIES
-FetchContent_Declare(doctest
-  GIT_REPOSITORY https://github.com/onqtam/doctest.git
-  GIT_TAG        v2.4.12
-)
-FetchContent_MakeAvailable(doctest)
-
 FetchContent_Declare(
     fmt
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
@@ -68,4 +63,8 @@ add_subdirectory(src/runtime)
 add_subdirectory(src/vm)
 add_subdirectory(src/compiler)
 add_subdirectory(app)
-add_subdirectory(tests)
+
+if(BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

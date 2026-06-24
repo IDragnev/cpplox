@@ -1,0 +1,9 @@
+var a = "hello";
+var b = " ";
+var c = "world";
+print a + b + c; // expect: "hello world"
+
+// Concatenation of empty strings.
+print "" + "abc"; // expect: "abc"
+print "abc" + ""; // expect: "abc"
+print "" + ""; // expect: ""

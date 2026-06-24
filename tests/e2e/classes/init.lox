@@ -1,0 +1,19 @@
+class Rect {
+    init(w, h) {
+        this.width = w;
+        this.height = h;
+    }
+
+    area() {
+        return this.width * this.height;
+    }
+}
+
+var r = Rect(3, 7);
+print r.width; // expect: 3
+print r.height; // expect: 7
+print r.area(); // expect: 21
+
+// init returns the instance itself.
+var r2 = Rect(5, 2);
+print r2.area(); // expect: 10

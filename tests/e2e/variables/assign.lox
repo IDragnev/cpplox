@@ -1,0 +1,6 @@
+var a = 1;
+print a; // expect: 1
+a = 2;
+print a; // expect: 2
+a = "now a string";
+print a; // expect: "now a string"

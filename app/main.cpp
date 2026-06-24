@@ -55,11 +55,12 @@ int main(int argc, const char* argv[]) {
         }
 
         const auto r = interpret(std::move(source), false, diagnostics, vm, compiler);
-        if (r.code != InterpretResultCode::OK) {
-            if (r.code == InterpretResultCode::RUNTIME_ERROR) {
-                cpplox::errorln("Runtime error: {}", r.error);
-            }
-            return 1;
+        if (r.code == InterpretResultCode::COMPILE_ERROR) {
+            return 65;
+        }
+        if (r.code == InterpretResultCode::RUNTIME_ERROR) {
+            cpplox::errorln("Runtime error: {}", r.error);
+            return 70;
         }
     } else {
         return 64;

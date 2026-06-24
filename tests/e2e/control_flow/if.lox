@@ -1,0 +1,19 @@
+if (true) print "yes"; // expect: "yes"
+
+if (false) print "bad";
+
+if (true) {
+    print "block true"; // expect: "block true"
+}
+
+if (false) {
+    print "nope";
+} else {
+    print "else branch"; // expect: "else branch"
+}
+
+// Truthiness: only nil and false are falsy.
+if (0) print "zero is truthy"; // expect: "zero is truthy"
+if ("") print "empty string is truthy"; // expect: "empty string is truthy"
+if (nil) print "bad";
+if (false) print "bad";

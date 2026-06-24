@@ -1,0 +1,21 @@
+class Nested {
+    method() {
+        print this; // expect: <Nested intance>
+    }
+}
+
+Nested().method();
+
+class Cake {
+    init(flavor) {
+        this.flavor = flavor;
+    }
+
+    taste() {
+        var result = "The " + this.flavor + " cake";
+        print result;
+    }
+}
+
+var cake = Cake("German chocolate");
+cake.taste(); // expect: "The German chocolate cake"

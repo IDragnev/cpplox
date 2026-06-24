@@ -1,0 +1,16 @@
+class Animal {
+    speak() {
+        print "...";
+    }
+}
+
+class Dog < Animal {
+    speak() {
+        print "Woof!";
+    }
+}
+
+class Cat < Animal {}
+
+Dog().speak(); // expect: "Woof!"
+Cat().speak(); // expect: "..."

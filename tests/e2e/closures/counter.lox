@@ -1,0 +1,18 @@
+fun makeCounter() {
+    var count = 0;
+    fun increment() {
+        count = count + 1;
+        print count;
+    }
+    return increment;
+}
+
+var counter = makeCounter();
+counter(); // expect: 1
+counter(); // expect: 2
+counter(); // expect: 3
+
+// A second counter is independent.
+var counter2 = makeCounter();
+counter2(); // expect: 1
+counter();  // expect: 4

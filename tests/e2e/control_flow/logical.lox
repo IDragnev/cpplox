@@ -1,0 +1,18 @@
+// 'and' short-circuits: returns first falsy or last value.
+print false and 1; // expect: false
+print true and 1; // expect: 1
+print 1 and 2; // expect: 2
+print nil and "bad"; // expect: nil
+
+// 'or' short-circuits: returns first truthy or last value.
+print false or 1; // expect: 1
+print true or "bad"; // expect: true
+print nil or "ok"; // expect: "ok"
+print nil or false; // expect: false
+
+// Not.
+print !true; // expect: false
+print !false; // expect: true
+print !nil; // expect: true
+print !0; // expect: false
+print !""; // expect: false

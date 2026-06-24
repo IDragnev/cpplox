@@ -1,0 +1,14 @@
+var a = 1;
+print a; // expect: 1
+
+var b = 2.5;
+print b; // expect: 2.5
+
+var c = "hello";
+print c; // expect: "hello"
+
+var d = true;
+print d; // expect: true
+
+var e = nil;
+print e; // expect: nil

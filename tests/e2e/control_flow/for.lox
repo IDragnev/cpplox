@@ -1,0 +1,17 @@
+for (var i = 0; i < 5; i = i + 1) {
+    print i;
+}
+// expect: 0
+// expect: 1
+// expect: 2
+// expect: 3
+// expect: 4
+
+// For loop with no variable declaration.
+var j = 10;
+for (; j > 7; j = j - 1) {
+    print j;
+}
+// expect: 10
+// expect: 9
+// expect: 8

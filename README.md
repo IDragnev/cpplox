@@ -7,6 +7,7 @@ CMake options:
 - CPPLOX_DEBUG_TRACE_EXECUTION - Trace the interpreter execution - OFF by default
 - CPPLOX_DEBUG_LOG_GC - Trace the garbage collector - OFF by default
 - CPPLOX_DEBUG_STRESS_GC - Stress test the garbage collector - OFF by default
+- BUILD_TESTING - Build tests (requires Python 3 for end-to-end tests) - ON by default
 
 ## Usage
 ```

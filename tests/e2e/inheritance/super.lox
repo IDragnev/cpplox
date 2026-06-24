@@ -1,0 +1,16 @@
+class Base {
+    greet() {
+        print "Hello from Base";
+    }
+}
+
+class Derived < Base {
+    greet() {
+        super.greet();
+        print "Hello from Derived";
+    }
+}
+
+Derived().greet();
+// expect: "Hello from Base"
+// expect: "Hello from Derived"
