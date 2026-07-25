@@ -1,0 +1,1 @@
+break; // expect compile error: Can't use 'break' outside of loop

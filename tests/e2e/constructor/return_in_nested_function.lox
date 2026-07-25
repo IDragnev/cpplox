@@ -1,0 +1,12 @@
+class Foo {
+    init() {
+        fun init() {
+            return "bar";
+        }
+        print init();
+    }
+}
+
+print Foo();
+// expect: "bar"
+// expect: <Foo intance>

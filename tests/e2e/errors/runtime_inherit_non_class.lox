@@ -1,0 +1,2 @@
+var NotAClass = "not a class";
+class Foo < NotAClass {} // expect runtime error: Can only inherit classes.
