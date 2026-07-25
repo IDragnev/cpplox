@@ -166,6 +166,7 @@ namespace cpplox {
         } frame;
         struct Loop {
             bool null = true;
+            std::uint16_t enclosingScopeDepth = 0;
             Vector<std::size_t> breaksToPatch;
         } loop;
         struct CompilerClass {

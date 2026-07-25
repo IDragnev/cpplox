@@ -1,0 +1,15 @@
+// Breaking out of a while loop closes captured locals.
+var g;
+var j = 0;
+
+while (j < 10) {
+    var y = j * 100;
+    fun grab() {
+        print y;
+    }
+    g = grab;
+    if (j == 3) break;
+    j = j + 1;
+}
+
+g(); // expect: 300

@@ -609,6 +609,28 @@ namespace cpplox {
 
         consumeTokenErr(TokenType::SEMICOLON, "Expected ';' after 'break'");
 
+        std::uint16_t popCount = 0;
+        for (std::size_t i = frame.locals.getCount(); i > 0; --i) {
+            const Local& loc = frame.locals[i - 1];
+            if (loc.depth <= loop.enclosingScopeDepth) {
+                break;
+            }
+            if (loc.captured) {
+                if (popCount > 0) {
+                    emitIntegerInstruction(OpCode::POP_N,
+                                           OpCode::POP_N_16,
+                                           popCount);
+                    popCount = 0;
+                }
+                emitOpCode(OpCode::CLOSE_UPVALUE);
+            } else {
+                ++popCount;
+            }
+        }
+        if (popCount > 0) {
+            emitIntegerInstruction(OpCode::POP_N, OpCode::POP_N_16, popCount);
+        }
+
         std::size_t jmp = emitJump(OpCode::JMP);
         loop.breaksToPatch.insertBack(jmp);
     }
@@ -644,6 +666,7 @@ namespace cpplox {
     void Compiler::whileStatement() {
         auto oldLoop = std::move(loop);
         loop.null = false;
+        loop.enclosingScopeDepth = frame.scopeDepth;
 
         const std::size_t loopStart = currentChunkCodeOffset();
 
@@ -657,9 +680,10 @@ namespace cpplox {
         emitLoop(loopStart);
 
         patchJump(exitJmp);
+        emitOpCode(OpCode::POP);
+
         forEach(loop.breaksToPatch,
                 [this](std::size_t jmp) { patchJump(jmp); });
-        emitOpCode(OpCode::POP);
 
         loop = std::move(oldLoop);
     }
@@ -667,6 +691,7 @@ namespace cpplox {
     void Compiler::forStatement() {
         auto oldLoop = std::move(loop);
         loop.null = false;
+        loop.enclosingScopeDepth = frame.scopeDepth;
 
         beginScope();
 
@@ -706,14 +731,15 @@ namespace cpplox {
         statement();
         emitLoop(loopStart);
 
-        forEach(loop.breaksToPatch,
-                [this](std::size_t jmp) { patchJump(jmp); });
         if (hasCondition) {
             patchJump(exitJmp);
             emitOpCode(OpCode::POP); // condition
         }
 
         endScope();
+
+        forEach(loop.breaksToPatch,
+                [this](std::size_t jmp) { patchJump(jmp); });
 
         loop = std::move(oldLoop);
     }
