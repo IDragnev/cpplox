@@ -49,3 +49,15 @@ add_test(
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 set_tests_properties(e2e_tests PROPERTIES TIMEOUT 120)
+
+add_test(
+    NAME e2e_tests_long_ops
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/e2e/test_runner.py
+            --interpreter $<TARGET_FILE:cpplox_exe>
+            -v
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
+set_tests_properties(e2e_tests_long_ops PROPERTIES
+    TIMEOUT 120
+    ENVIRONMENT "CPPLOX_FORCE_LONG_OPS=1"
+)

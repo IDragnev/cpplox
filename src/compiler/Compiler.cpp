@@ -88,6 +88,10 @@ namespace cpplox {
     {
     }
 
+    void Compiler::setOptions(const CompileOptions& opts) {
+        options = opts;
+    }
+
     CompileResult Compiler::replExpression(std::string src,
                                            DiagnosticEngine* engine) {
         bool initOk = init(std::move(src), engine);
@@ -1227,7 +1231,7 @@ namespace cpplox {
     void Compiler::emitIntegerInstruction(OpCode small,
                                           OpCode big,
                                           std::size_t operand) {
-        if (fitsOneByte(operand)) {
+        if (!options.forceLongInstructions && fitsOneByte(operand)) {
             emitOpCode(small);
             emitByte(static_cast<std::uint8_t>(operand));
         } else if (fitsTwoBytes(operand)) {

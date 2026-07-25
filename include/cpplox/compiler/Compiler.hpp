@@ -19,6 +19,10 @@ namespace cpplox {
         Vector<Object*> gcObjects;
     };
 
+    struct CompileOptions {
+        bool forceLongInstructions = false;
+    };
+
     class Compiler {
     private:
         struct ParseRule;
@@ -54,6 +58,8 @@ namespace cpplox {
 
         Compiler(const Compiler&) = delete;
         Compiler& operator=(const Compiler&) = delete;
+
+        void setOptions(const CompileOptions& opts);
 
         CompileResult compile(std::string src, DiagnosticEngine* engine);
         CompileResult replExpression(std::string src, DiagnosticEngine* engine);
@@ -179,5 +185,6 @@ namespace cpplox {
         } enclosingClass;
         Vector<Object*> gcObjects;
         DiagnosticEngine* diagnostics = nullptr;
+        CompileOptions options;
     };
 } // namespace cpplox

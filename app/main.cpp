@@ -4,6 +4,7 @@
 #include "cpplox/vm/VM.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -23,6 +24,17 @@ public:
     }
 };
 
+bool hasEnvVar(const char* name) {
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4996)
+#endif
+    return std::getenv(name) != nullptr;
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+}
+
 bool isASCII(const std::string& str);
 
 InterpretResult interpret(std::string source,
@@ -38,6 +50,9 @@ int main(int argc, const char* argv[]) {
 
     DiagnosticEngine diagnostics(std::make_unique<DiagnosticLogger>());
     Compiler compiler;
+    compiler.setOptions({
+        .forceLongInstructions = hasEnvVar("CPPLOX_FORCE_LONG_OPS"),
+    });
     VM vm;
 
     if (argc == 1) {
