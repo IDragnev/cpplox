@@ -1,0 +1,15 @@
+// Continue in a for loop closes captured locals.
+var closures;
+
+for (var i = 0; i < 4; i = i + 1) {
+    var x = i * 10;
+    fun capture() {
+        print x;
+    }
+    if (i == 1) {
+        closures = capture;
+        continue;
+    }
+}
+
+closures(); // expect: 10

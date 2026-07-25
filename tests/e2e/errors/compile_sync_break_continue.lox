@@ -1,0 +1,5 @@
+// Parser recovers at 'break' and 'continue' keywords after syntax errors.
+( + // expect compile error: Expected expression.
+break; // expect compile error: Can't use 'break' outside of loop.
+( + // expect compile error: Expected expression.
+continue; // expect compile error: Can't use 'continue' outside of loop.

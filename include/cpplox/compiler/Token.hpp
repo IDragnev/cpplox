@@ -41,6 +41,7 @@ namespace cpplox {
         OR,
         PRINT,
         BREAK,
+        CONTINUE,
         RETURN,
         SUPER,
         THIS,

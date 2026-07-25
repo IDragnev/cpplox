@@ -126,6 +126,7 @@ namespace cpplox {
         void printStatement();
         void expressionStatement();
         void breakStatement();
+        void continueStatement();
 
         // expression parsers
         static ParseRule getParseRule(TokenType t);
@@ -167,6 +168,8 @@ namespace cpplox {
         struct Loop {
             bool null = true;
             std::uint16_t enclosingScopeDepth = 0;
+            std::size_t continueTarget = 0;
+            std::uint16_t continueScopeDepth = 0;
             Vector<std::size_t> breaksToPatch;
         } loop;
         struct CompilerClass {

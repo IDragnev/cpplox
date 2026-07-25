@@ -216,6 +216,8 @@ namespace cpplox {
                 case TokenType::IF:
                 case TokenType::WHILE:
                 case TokenType::PRINT:
+                case TokenType::BREAK:
+                case TokenType::CONTINUE:
                 case TokenType::RETURN: {
                     return;
                 } break;
@@ -591,6 +593,8 @@ namespace cpplox {
             forStatement();
         } else if (match(TokenType::BREAK)) {
             breakStatement();
+        } else if (match(TokenType::CONTINUE)) {
+            continueStatement();
         } else if (match(TokenType::RETURN)) {
             returnStatement();
         } else if (match(TokenType::LEFT_BRACE)) {
@@ -635,6 +639,38 @@ namespace cpplox {
         loop.breaksToPatch.insertBack(jmp);
     }
 
+    void Compiler::continueStatement() {
+        if (loop.null) {
+            compileError(parser.previous, "Can't use 'continue' outside of loop");
+        }
+
+        consumeTokenErr(TokenType::SEMICOLON, "Expected ';' after 'continue'");
+
+        std::uint16_t popCount = 0;
+        for (std::size_t i = frame.locals.getCount(); i > 0; --i) {
+            const Local& loc = frame.locals[i - 1];
+            if (loc.depth <= loop.continueScopeDepth) {
+                break;
+            }
+            if (loc.captured) {
+                if (popCount > 0) {
+                    emitIntegerInstruction(OpCode::POP_N,
+                                           OpCode::POP_N_16,
+                                           popCount);
+                    popCount = 0;
+                }
+                emitOpCode(OpCode::CLOSE_UPVALUE);
+            } else {
+                ++popCount;
+            }
+        }
+        if (popCount > 0) {
+            emitIntegerInstruction(OpCode::POP_N, OpCode::POP_N_16, popCount);
+        }
+
+        emitLoop(loop.continueTarget);
+    }
+
     void Compiler::block() {
         while (peek(TokenType::EOF_TOKEN) == false &&
                peek(TokenType::RIGHT_BRACE) == false)
@@ -669,6 +705,8 @@ namespace cpplox {
         loop.enclosingScopeDepth = frame.scopeDepth;
 
         const std::size_t loopStart = currentChunkCodeOffset();
+        loop.continueTarget = loopStart;
+        loop.continueScopeDepth = frame.scopeDepth;
 
         consumeTokenErr(TokenType::LEFT_PAREN, "Expected '(' after while");
         expression();
@@ -727,6 +765,9 @@ namespace cpplox {
             loopStart = increment;
             patchJump(bodyJmp);
         }
+
+        loop.continueTarget = loopStart;
+        loop.continueScopeDepth = frame.scopeDepth;
 
         statement();
         emitLoop(loopStart);

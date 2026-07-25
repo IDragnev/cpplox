@@ -1,0 +1,42 @@
+// Full for with continue.
+for (var i = 0; i < 5; i = i + 1) {
+    if (i == 2) continue;
+    print i;
+}
+// expect: 0
+// expect: 1
+// expect: 3
+// expect: 4
+
+// No initializer.
+var j = 0;
+for (; j < 5; j = j + 1) {
+    if (j == 2) continue;
+    print j;
+}
+// expect: 0
+// expect: 1
+// expect: 3
+// expect: 4
+
+// No increment, manual increment before continue.
+for (var k = 0; k < 5;) {
+    k = k + 1;
+    if (k == 3) continue;
+    print k;
+}
+// expect: 1
+// expect: 2
+// expect: 4
+// expect: 5
+
+// No condition, continue with break to exit.
+for (var n = 0;; n = n + 1) {
+    if (n == 5) break;
+    if (n == 2) continue;
+    print n;
+}
+// expect: 0
+// expect: 1
+// expect: 3
+// expect: 4

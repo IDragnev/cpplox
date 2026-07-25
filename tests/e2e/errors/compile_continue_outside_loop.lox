@@ -1,0 +1,1 @@
+continue; // expect compile error: Can't use 'continue' outside of loop

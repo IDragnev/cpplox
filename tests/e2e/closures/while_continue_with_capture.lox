@@ -1,0 +1,17 @@
+// Continue in a while loop closes captured locals.
+var closures;
+var i = 0;
+
+while (i < 4) {
+    var x = i * 100;
+    fun capture() {
+        print x;
+    }
+    i = i + 1;
+    if (i == 2) {
+        closures = capture;
+        continue;
+    }
+}
+
+closures(); // expect: 100

@@ -238,7 +238,14 @@ namespace cpplox {
         switch (*start) {
             case 'a': return checkKeyword(1, "nd", TokenType::AND);
             case 'b': return checkKeyword(1, "reak", TokenType::BREAK);
-            case 'c': return checkKeyword(1, "lass", TokenType::CLASS);
+            case 'c': {
+                if (current - start > 1) {
+                    switch (*(start + 1)) {
+                        case 'l': return checkKeyword(2, "ass", TokenType::CLASS);
+                        case 'o': return checkKeyword(2, "ntinue", TokenType::CONTINUE);
+                    }
+                }
+            } break;
             case 'e': return checkKeyword(1, "lse", TokenType::ELSE);
             case 'i': return checkKeyword(1, "f", TokenType::IF);
             case 'n': return checkKeyword(1, "il", TokenType::NIL);
