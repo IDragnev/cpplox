@@ -1,0 +1,467 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "windows-msvc",
+      "displayName": "Windows / MSVC",
+      "inherits": "base",
+      "generator": "Visual Studio 17 2022",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-clangcl",
+      "displayName": "Windows / clang-cl",
+      "inherits": "base",
+      "generator": "Visual Studio 17 2022",
+      "toolset": "ClangCL",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "linux-gcc",
+      "displayName": "Linux / GCC",
+      "inherits": "base",
+      "generator": "Ninja Multi-Config",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "g++"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "linux-clang",
+      "displayName": "Linux / Clang",
+      "inherits": "base",
+      "generator": "Ninja Multi-Config",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang++"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "macos-appleclang",
+      "displayName": "macOS / Apple Clang",
+      "inherits": "base",
+      "generator": "Ninja Multi-Config",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+
+    {
+      "name": "diagnostics",
+      "hidden": true,
+      "cacheVariables": {
+        "CPPLOX_DEBUG_LOG_GC": "ON",
+        "CPPLOX_DEBUG_TRACE_EXECUTION": "ON",
+        "CPPLOX_DEBUG_STRESS_GC": "ON"
+      }
+    },
+    {
+      "name": "windows-msvc-diag",
+      "displayName": "Windows / MSVC (diagnostics)",
+      "inherits": ["diagnostics", "windows-msvc"]
+    },
+    {
+      "name": "linux-gcc-diag",
+      "displayName": "Linux / GCC (diagnostics)",
+      "inherits": ["diagnostics", "linux-gcc"]
+    },
+    {
+      "name": "macos-appleclang-diag",
+      "displayName": "macOS / Apple Clang (diagnostics)",
+      "inherits": ["diagnostics", "macos-appleclang"]
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-only",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "linux-only",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "macos-only",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+
+    {
+      "name": "windows-msvc-debug",
+      "inherits": "windows-only",
+      "configurePreset": "windows-msvc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-msvc-release",
+      "inherits": "windows-only",
+      "configurePreset": "windows-msvc",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-msvc-relwithdebinfo",
+      "inherits": "windows-only",
+      "configurePreset": "windows-msvc",
+      "configuration": "RelWithDebInfo"
+    },
+
+    {
+      "name": "windows-clangcl-debug",
+      "inherits": "windows-only",
+      "configurePreset": "windows-clangcl",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-clangcl-release",
+      "inherits": "windows-only",
+      "configurePreset": "windows-clangcl",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-clangcl-relwithdebinfo",
+      "inherits": "windows-only",
+      "configurePreset": "windows-clangcl",
+      "configuration": "RelWithDebInfo"
+    },
+
+    {
+      "name": "linux-gcc-debug",
+      "inherits": "linux-only",
+      "configurePreset": "linux-gcc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-gcc-release",
+      "inherits": "linux-only",
+      "configurePreset": "linux-gcc",
+      "configuration": "Release"
+    },
+    {
+      "name": "linux-gcc-relwithdebinfo",
+      "inherits": "linux-only",
+      "configurePreset": "linux-gcc",
+      "configuration": "RelWithDebInfo"
+    },
+
+    {
+      "name": "linux-clang-debug",
+      "inherits": "linux-only",
+      "configurePreset": "linux-clang",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-clang-release",
+      "inherits": "linux-only",
+      "configurePreset": "linux-clang",
+      "configuration": "Release"
+    },
+    {
+      "name": "linux-clang-relwithdebinfo",
+      "inherits": "linux-only",
+      "configurePreset": "linux-clang",
+      "configuration": "RelWithDebInfo"
+    },
+
+    {
+      "name": "macos-appleclang-debug",
+      "inherits": "macos-only",
+      "configurePreset": "macos-appleclang",
+      "configuration": "Debug"
+    },
+    {
+      "name": "macos-appleclang-release",
+      "inherits": "macos-only",
+      "configurePreset": "macos-appleclang",
+      "configuration": "Release"
+    },
+    {
+      "name": "macos-appleclang-relwithdebinfo",
+      "inherits": "macos-only",
+      "configurePreset": "macos-appleclang",
+      "configuration": "RelWithDebInfo"
+    },
+
+    {
+      "name": "windows-msvc-diag-debug",
+      "inherits": "windows-only",
+      "configurePreset": "windows-msvc-diag",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-gcc-diag-debug",
+      "inherits": "linux-only",
+      "configurePreset": "linux-gcc-diag",
+      "configuration": "Debug"
+    },
+    {
+      "name": "macos-appleclang-diag-debug",
+      "inherits": "macos-only",
+      "configurePreset": "macos-appleclang-diag",
+      "configuration": "Debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "windows-only",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "linux-only",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "macos-only",
+      "hidden": true,
+      "output": { "outputOnFailure": true },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+
+    {
+      "name": "windows-msvc-debug",
+      "inherits": "windows-only",
+      "configurePreset": "windows-msvc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-msvc-release",
+      "inherits": "windows-only",
+      "configurePreset": "windows-msvc",
+      "configuration": "Release"
+    },
+
+    {
+      "name": "windows-clangcl-debug",
+      "inherits": "windows-only",
+      "configurePreset": "windows-clangcl",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-clangcl-release",
+      "inherits": "windows-only",
+      "configurePreset": "windows-clangcl",
+      "configuration": "Release"
+    },
+
+    {
+      "name": "linux-gcc-debug",
+      "inherits": "linux-only",
+      "configurePreset": "linux-gcc",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-gcc-release",
+      "inherits": "linux-only",
+      "configurePreset": "linux-gcc",
+      "configuration": "Release"
+    },
+
+    {
+      "name": "linux-clang-debug",
+      "inherits": "linux-only",
+      "configurePreset": "linux-clang",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-clang-release",
+      "inherits": "linux-only",
+      "configurePreset": "linux-clang",
+      "configuration": "Release"
+    },
+
+    {
+      "name": "macos-appleclang-debug",
+      "inherits": "macos-only",
+      "configurePreset": "macos-appleclang",
+      "configuration": "Debug"
+    },
+    {
+      "name": "macos-appleclang-release",
+      "inherits": "macos-only",
+      "configurePreset": "macos-appleclang",
+      "configuration": "Release"
+    },
+
+    {
+      "name": "diagnostics",
+      "hidden": true,
+      "filter": { "exclude": { "name": "e2e_tests" } }
+    },
+    {
+      "name": "windows-msvc-diag-debug",
+      "inherits": ["diagnostics", "windows-only"],
+      "configurePreset": "windows-msvc-diag",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-gcc-diag-debug",
+      "inherits": ["diagnostics", "linux-only"],
+      "configurePreset": "linux-gcc-diag",
+      "configuration": "Debug"
+    },
+    {
+      "name": "macos-appleclang-diag-debug",
+      "inherits": ["diagnostics", "macos-only"],
+      "configurePreset": "macos-appleclang-diag",
+      "configuration": "Debug"
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "windows-msvc-debug",
+      "steps": [
+        { "type": "configure", "name": "windows-msvc" },
+        { "type": "build", "name": "windows-msvc-debug" },
+        { "type": "test", "name": "windows-msvc-debug" }
+      ]
+    },
+    {
+      "name": "windows-msvc-release",
+      "steps": [
+        { "type": "configure", "name": "windows-msvc" },
+        { "type": "build", "name": "windows-msvc-release" },
+        { "type": "test", "name": "windows-msvc-release" }
+      ]
+    },
+    {
+      "name": "windows-clangcl-debug",
+      "steps": [
+        { "type": "configure", "name": "windows-clangcl" },
+        { "type": "build", "name": "windows-clangcl-debug" },
+        { "type": "test", "name": "windows-clangcl-debug" }
+      ]
+    },
+    {
+      "name": "windows-clangcl-release",
+      "steps": [
+        { "type": "configure", "name": "windows-clangcl" },
+        { "type": "build", "name": "windows-clangcl-release" },
+        { "type": "test", "name": "windows-clangcl-release" }
+      ]
+    },
+    {
+      "name": "linux-gcc-debug",
+      "steps": [
+        { "type": "configure", "name": "linux-gcc" },
+        { "type": "build", "name": "linux-gcc-debug" },
+        { "type": "test", "name": "linux-gcc-debug" }
+      ]
+    },
+    {
+      "name": "linux-gcc-release",
+      "steps": [
+        { "type": "configure", "name": "linux-gcc" },
+        { "type": "build", "name": "linux-gcc-release" },
+        { "type": "test", "name": "linux-gcc-release" }
+      ]
+    },
+    {
+      "name": "linux-clang-debug",
+      "steps": [
+        { "type": "configure", "name": "linux-clang" },
+        { "type": "build", "name": "linux-clang-debug" },
+        { "type": "test", "name": "linux-clang-debug" }
+      ]
+    },
+    {
+      "name": "linux-clang-release",
+      "steps": [
+        { "type": "configure", "name": "linux-clang" },
+        { "type": "build", "name": "linux-clang-release" },
+        { "type": "test", "name": "linux-clang-release" }
+      ]
+    },
+    {
+      "name": "macos-appleclang-debug",
+      "steps": [
+        { "type": "configure", "name": "macos-appleclang" },
+        { "type": "build", "name": "macos-appleclang-debug" },
+        { "type": "test", "name": "macos-appleclang-debug" }
+      ]
+    },
+    {
+      "name": "macos-appleclang-release",
+      "steps": [
+        { "type": "configure", "name": "macos-appleclang" },
+        { "type": "build", "name": "macos-appleclang-release" },
+        { "type": "test", "name": "macos-appleclang-release" }
+      ]
+    },
+    {
+      "name": "windows-msvc-diag-debug",
+      "steps": [
+        { "type": "configure", "name": "windows-msvc-diag" },
+        { "type": "build", "name": "windows-msvc-diag-debug" },
+        { "type": "test", "name": "windows-msvc-diag-debug" }
+      ]
+    },
+    {
+      "name": "linux-gcc-diag-debug",
+      "steps": [
+        { "type": "configure", "name": "linux-gcc-diag" },
+        { "type": "build", "name": "linux-gcc-diag-debug" },
+        { "type": "test", "name": "linux-gcc-diag-debug" }
+      ]
+    },
+    {
+      "name": "macos-appleclang-diag-debug",
+      "steps": [
+        { "type": "configure", "name": "macos-appleclang-diag" },
+        { "type": "build", "name": "macos-appleclang-diag-debug" },
+        { "type": "test", "name": "macos-appleclang-diag-debug" }
+      ]
+    }
+  ]
+}

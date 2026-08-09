@@ -1,22 +1,23 @@
 # An interpreter for the Lox programming language.
 Lox is a dynamically typed language with syntax very close to that of C.
 
-## Build
-CMake options:
-- CPPLOX_TREAT_WARNINGS_AS_ERRORS - Treat compiler warnings as errors - ON by default
-- CPPLOX_DEBUG_TRACE_EXECUTION - Trace the interpreter execution - OFF by default
-- CPPLOX_DEBUG_LOG_GC - Trace the garbage collector - OFF by default
-- CPPLOX_DEBUG_STRESS_GC - Stress test the garbage collector - OFF by default
-- BUILD_TESTING - Build tests (requires Python 3 for end-to-end tests) - ON by default
-
-## Usage
 ```
-cpplox [path-to-script-file]
-```
+class Greeter {
+    init(name) { this.name = name; }
+    greet() { print "Hello, " + this.name + "!"; }
+}
 
-You can use the interpreter in [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) mode or by running a script file.  
-- Running the interpreter with no argument loads it in REPL mode. To exit the REPL type *:q*.
-- Running the interpreter with a path to a script loads the script and tries to execute it.
+fun repeat(times, action) {
+    for (var i = 0; i < times; i = i + 1) {
+        action();
+    }
+}
+
+var greeter = Greeter("world");
+repeat(2, greeter.greet);
+// "Hello, world!"
+// "Hello, world!"
+```
 
 ## Types
 - **bool** - values can be *true* and *false*
@@ -189,3 +190,61 @@ C().f();
 // "B"
 // "A"
 ```
+
+## Build
+The supported toolchains are described in `CMakePresets.json`, which requires **CMake 3.25** or newer.
+
+Configure, build and run the tests in a single command:
+```
+cmake --workflow --preset windows-msvc-debug
+```
+
+Or one step at a time:
+```
+cmake --preset windows-msvc
+cmake --build --preset windows-msvc-release
+ctest --preset windows-msvc-release
+```
+
+Presets are named `<os>-<compiler>-<config>`:
+
+| Configure preset | Compiler | Build and test presets |
+| --- | --- | --- |
+| `windows-msvc` | MSVC | `windows-msvc-<config>` |
+| `windows-clangcl` | clang-cl (Visual Studio) | `windows-clangcl-<config>` |
+| `linux-gcc` | GCC | `linux-gcc-<config>` |
+| `linux-clang` | Clang | `linux-clang-<config>` |
+| `macos-appleclang` | Apple Clang | `macos-appleclang-<config>` |
+
+`<config>` is `debug`, `release` or `relwithdebinfo` when building, and `debug` or `release` when testing. All of them are multi-configuration builds, so a configure preset only has to be run once and the configuration is chosen when building. Each preset gets its own build tree under `build/`. The Linux and macOS presets use the *Ninja Multi-Config* generator and need `ninja` on the `PATH`.
+
+Only the presets matching the host operating system are usable; `cmake --list-presets all` shows them.
+
+For debugging the interpreter itself there are `windows-msvc-diag`, `linux-gcc-diag` and `macos-appleclang-diag`, which turn on the GC log, the execution trace and the GC stress test, with `<os>-<compiler>-diag-debug` for building and testing. They skip the end-to-end tests, whose expected output does not account for the extra logging.
+
+### Building without presets
+Presets are a convenience. The project itself only requires **CMake 3.14**, so it can be configured by hand:
+```
+cmake -S . -B build -G "Visual Studio 17 2022"
+cmake --build build --config Release
+ctest --test-dir build -C Release
+```
+
+With a single-configuration generator the build type is chosen when configuring instead:
+```
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+ctest --test-dir build
+```
+
+The project options are declared at the top of the root `CMakeLists.txt` and are set with `-D`, for example `-DBUILD_TESTING=OFF`. Building the tests is on by default and the end-to-end tests need Python 3.
+
+## Usage
+```
+cpplox [path-to-script-file]
+```
+
+You can use the interpreter in [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) mode or by running a script file.  
+- Running the interpreter with no argument loads it in REPL mode. To exit the REPL type *:q*.
+- Running the interpreter with a path to a script loads the script and tries to execute it.
+
