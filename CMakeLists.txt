@@ -13,10 +13,6 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     "MinSizeRel" "RelWithDebInfo")
 endif()
 
-if(CMAKE_BUILD_TYPE MATCHES RELEASE)
-  add_definitions(-DNDEBUG)
-endif()
-
 option(CPPLOX_TREAT_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" ON)
 option(CPPLOX_DEBUG_TRACE_EXECUTION "Trace the interpreter execution" OFF)
 option(CPPLOX_DEBUG_LOG_GC "Trace the garbage collector" OFF)
