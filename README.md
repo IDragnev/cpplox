@@ -13,10 +13,14 @@ fun repeat(times, action) {
     }
 }
 
+var start = clock();
+
 var greeter = Greeter("world");
 repeat(2, greeter.greet);
 // "Hello, world!"
 // "Hello, world!"
+
+print clock() - start; // the milliseconds the greetings took
 ```
 
 ## Types
@@ -61,6 +65,23 @@ fun f() {}
 print a; // 10
 print f; // <fun f:0>
 
+```
+
+### Native functions
+Native functions are built into the interpreter rather than written in Lox, and are defined as globals before a script runs, so they are always available. Apart from that they are ordinary values - they can be printed, passed to other functions or stored in variables and fields.
+
+The only one for now is `clock`, which takes no arguments and returns the whole number of milliseconds since the interpreter started. It is meant for measuring how long a piece of code takes, by subtracting two readings:
+```
+print clock; // <native fun clock:0>
+
+var start = clock();
+for (var i = 0; i < 1000000; i = i + 1) { }
+print clock() - start; // the milliseconds the loop took
+```
+Declaring a global with the same name shadows the native for the rest of the run:
+```
+var clock = 10;
+print clock; // 10
 ```
 
 ### Truthiness

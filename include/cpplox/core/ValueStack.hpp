@@ -25,6 +25,7 @@ namespace cpplox {
         std::size_t size() const { return stack.getCount(); }
 
         const Value* data() const { return stack.data(); }
+        Value* data() { return stack.data(); }
 
     private:
         Vector<Value> stack;

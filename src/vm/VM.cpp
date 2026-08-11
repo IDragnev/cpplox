@@ -9,15 +9,23 @@
 #include "cpplox/runtime/Class.hpp"
 #include "cpplox/runtime/Instance.hpp"
 #include "cpplox/runtime/BoundMethod.hpp"
+#include "cpplox/runtime/NativeFunction.hpp"
+#include "cpplox/runtime/Natives.hpp"
 #include "cpplox/runtime/GC.hpp"
 #include "cpplox/log/Log.hpp"
 #include "cpplox/core/Algorithm.hpp"
 #include "cpplox/core/Format.hpp"
 
 #include <iterator>
+#include <span>
+#include <type_traits>
 #include <fmt/format.h>
 
 namespace cpplox {
+    VM::VM() {
+        defineNatives();
+    }
+
     VM::~VM() {
         // ok for now, will be managed by the runtime GC
         forEach(gcObjects, [](Object* o) {
@@ -69,6 +77,29 @@ namespace cpplox {
             bytesAllocated += objectSize(o);
         });
         objects.clear();
+    }
+
+    void VM::defineNatives() {
+        defineNative<Clock>();
+    }
+
+    template <typename T>
+    bool VM::defineNative() {
+        static_assert(std::is_base_of_v<NativeFunction, T>,
+                      "Natives must derive from NativeFunction");
+        static_assert(sizeof(T) == sizeof(NativeFunction),
+                      "Natives must not add data members - the GC accounts "
+                      "for them with sizeof(NativeFunction)");
+
+        // Insert into the globals right away - they are the only root keeping
+        // the native alive when the next allocation triggers a collection.
+        T* native = makeObject<T>();
+        if (native == nullptr) {
+            return false;
+        }
+        globals.insert(native->name, Value(native));
+
+        return true;
     }
 
     InterpretResultCode VM::run() {
@@ -521,6 +552,10 @@ namespace cpplox {
                             method->method->function->name,
                             method->method->function->arity);
                 } break;
+                case ObjectType::NATIVE_FUNCTION: {
+                    const NativeFunction* fun = obj->as<NativeFunction>();
+                    println("<native fun {}:{}>", fun->name, fun->arity);
+                } break;
                 case ObjectType::UPVALUE: { } break;
             }
         }
@@ -570,6 +605,12 @@ namespace cpplox {
                     if (bm != nullptr) {
                         stack.at(stack.size() - argc - 1) = bm->receiver;
                         return call(bm->method, argc);
+                    }
+                } break;
+                case ObjectType::NATIVE_FUNCTION: {
+                    NativeFunction* fun = v.asObject()->as<NativeFunction>();
+                    if (fun != nullptr) {
+                        return callNative(fun, argc);
                     }
                 } break;
                 case ObjectType::CLASS: {
@@ -623,6 +664,31 @@ namespace cpplox {
         disassembler.disassembleChunk(f->function->chunk,
                                       f->function->name.c_str());
 #endif
+
+        return true;
+    }
+
+    bool VM::callNative(NativeFunction* f, std::uint8_t argc) {
+        if (f->arity != argc) {
+            runtimeError("Invalid argument count. Expected {}, found {}.",
+                         f->arity,
+                         argc);
+            return false;
+        }
+
+        Value result;
+        const std::span<Value> args(stack.data() + (stack.size() - argc), argc);
+        if (f->call(args, result) == false) {
+            if (result.isString()) {
+                runtimeError("{}", result.asString());
+            } else {
+                runtimeError("Error in native function '{}'.", f->name);
+            }
+            return false;
+        }
+
+        stack.popN(static_cast<std::size_t>(argc) + 1);
+        stack.push(std::move(result));
 
         return true;
     }
@@ -808,6 +874,9 @@ namespace cpplox {
             } break;
             case ObjectType::BOUND_METHOD: {
                 objSize = sizeof(BoundMethod);
+            } break;
+            case ObjectType::NATIVE_FUNCTION: {
+                objSize = sizeof(NativeFunction);
             } break;
         }
 

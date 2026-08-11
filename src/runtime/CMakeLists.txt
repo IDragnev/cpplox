@@ -10,6 +10,8 @@ set(CPPLOX_RUNTIME_SOURCE
   ${RUNTIME_HEADERS_DIR}/Class.hpp
   ${RUNTIME_HEADERS_DIR}/Instance.hpp
   ${RUNTIME_HEADERS_DIR}/BoundMethod.hpp
+  ${RUNTIME_HEADERS_DIR}/NativeFunction.hpp
+  ${RUNTIME_HEADERS_DIR}/Natives.hpp
 
   Function.cpp
   Closure.cpp
@@ -17,6 +19,8 @@ set(CPPLOX_RUNTIME_SOURCE
   Class.cpp
   Instance.cpp
   BoundMethod.cpp
+  NativeFunction.cpp
+  Natives.cpp
   GC.cpp
 )
 

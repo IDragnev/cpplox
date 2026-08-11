@@ -11,6 +11,7 @@ namespace cpplox {
     class Object;
     class Upvalue;
     class Class;
+    class NativeFunction;
 
     enum class InterpretResultCode {
         OK,
@@ -35,7 +36,7 @@ namespace cpplox {
         };
 
     public:
-        VM() = default;
+        VM();
         ~VM();
 
         VM(const VM&) = delete;
@@ -46,6 +47,9 @@ namespace cpplox {
     private:
         InterpretResultCode run();
         void addObjects(Vector<Object*>&& objects);
+        void defineNatives();
+        template <typename T>
+        bool defineNative();
         template <typename T, typename... Args>
         T* makeObject(Args&&... args);
         static std::size_t objectSize(Object* o);
@@ -59,6 +63,7 @@ namespace cpplox {
         bool invokeFromClass(Class* klass, const String& method, std::uint8_t argc);
         bool callValue(Value& v, std::uint8_t argc);
         bool call(Closure* f, std::uint8_t argc);
+        bool callNative(NativeFunction* f, std::uint8_t argc);
         void printValue(const Value& v) const;
         void defineMethod(const String& name);
         bool bindMethod(Class* klass, const String& name);
