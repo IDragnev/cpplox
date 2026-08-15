@@ -129,7 +129,6 @@ namespace cpplox {
         void forStatement();
         void returnStatement();
         void block();
-        void printStatement();
         void expressionStatement();
         void breakStatement();
         void continueStatement();

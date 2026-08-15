@@ -4,7 +4,7 @@ Lox is a dynamically typed language with syntax very close to that of C.
 ```
 class Greeter {
     init(name) { this.name = name; }
-    greet() { print "Hello, " + this.name + "!"; }
+    greet() { print("Hello, " + this.name + "!"); }
 }
 
 fun repeat(times, action) {
@@ -20,7 +20,7 @@ repeat(2, greeter.greet);
 // "Hello, world!"
 // "Hello, world!"
 
-print clock() - start; // the milliseconds the greetings took
+print(clock() - start); // the milliseconds the greetings took
 ```
 
 ## Types
@@ -62,50 +62,62 @@ You can inspect values by printing them:
 ```
 var a = 10;
 fun f() {}
-print a; // 10
-print f; // <fun f:0>
+print(a); // 10
+print(f); // <fun f:0>
 
 ```
 
 ### Native functions
 Native functions are built into the interpreter rather than written in Lox, and are defined as globals before a script runs, so they are always available. Apart from that they are ordinary values - they can be printed, passed to other functions or stored in variables and fields.
 
-The only one for now is `clock`, which takes no arguments and returns the whole number of milliseconds since the interpreter started. It is meant for measuring how long a piece of code takes, by subtracting two readings:
+There are two of them. `print` writes a single value to standard output followed by a newline, and returns *nil*:
 ```
-print clock; // <native fun clock:0>
+print("hello"); // "hello"
+print(print);   // <native fun print:1>
+```
+`clock` takes no arguments and returns the whole number of milliseconds since the interpreter started. It is meant for measuring how long a piece of code takes, by subtracting two readings:
+```
+print(clock); // <native fun clock:0>
 
 var start = clock();
 for (var i = 0; i < 1000000; i = i + 1) { }
-print clock() - start; // the milliseconds the loop took
+print(clock() - start); // the milliseconds the loop took
 ```
 Declaring a global with the same name shadows the native for the rest of the run:
 ```
 var clock = 10;
-print clock; // 10
+print(clock); // 10
+```
+That applies to `print` as well, which then leaves you with no way to print anything - including the REPL's echo of bare expressions, which is itself a call to the global `print`:
+```
+var print = 10;
+print(1); // runtime error: Can only call functions and classes.
 ```
 
 ### Truthiness
 **nil** and **false** are falsey, everything else is truthy:
 ```
-if (0) { print "true"; } // prints "true"
-if (nil) { print "oh no"; } else { print "phew"; } // prints "phew"
+if (0) { print("true"); } // prints "true"
+if (nil) { print("oh no"); } else { print("phew"); } // prints "phew"
 ```
 
 ### Control flow
 #### if
 The else branch is optional but you can only have one else branch (no else if).
 ```
+var a = true;
+
 // else is optional
 if (a) {
-    print "yes";
+    print("yes");
 }
 
 // if and else
 if (a) {
-    print "yes";
+    print("yes");
 }
 else {
-    print "no";
+    print("no");
 }
 ```
 
@@ -125,7 +137,7 @@ Lox has *while* and *for* loops. Their syntax is like in C.
 ```
 var a = 10;
 while (a > 0) {
-    print a;
+    print(a);
     a = a - 1;
 }
 
@@ -134,25 +146,25 @@ while (true) {
     if (a <= 0) {
         break;
     }
-    print a;
+    print(a);
     a = a - 1;
 }
 
 for (var a = 10; a > 0; a = a - 1) {
-    print a;
+    print(a);
 }
 ```
 
 #### Logical operators
 Lox uses *!* for negation and the keywords *and* and *or* for the corresponding logical operators. They short circuit:
 ```
-print !true; // false
+print(!true); // false
 
 var a = false or "true" or 1 or 2;
-print a; // "true";
+print(a); // "true";
 
 var b = true and 1 and nil and 1;
-print b; // nil
+print(b); // nil
 ```
 
 #### Classes and instances
@@ -168,39 +180,39 @@ print b; // nil
 Example:
 ```
 class Empty {
-    print_field() { print this.later; }
+    print_field() { print(this.later); }
 }
 var e = Empty();
 e.later = "hello";
-e.print_field(); // hello
-print e.later; // hello
+e.print_field(); // "hello"
+print(e.later); // "hello"
 
 class Person {
     init(name) { this.name = name; }
-    sayName() { print this.name; }
+    sayName() { print(this.name); }
 }
 
 var jane = Person("Jane");
-jane.sayName(); // Jane
+jane.sayName(); // "Jane"
 
 // classes can be stored in variables
 var p = Person;
 
 var bill = p("Bill");
 bill.sayName = jane.sayName;
-bill.sayName(); // Jane again - functions are first-class and methods bind their instance
+bill.sayName(); // "Jane" again - functions are first-class and methods bind their instance
 ```
 
 Inheritance:
 ```
 class A {
-    f() { print "A"; }
+    f() { print("A"); }
 }
 
 class B < A {
     // overrides the inherited method 'f'
     f() {
-        print "B";
+        print("B");
         super.f();
     }
 }
@@ -266,6 +278,6 @@ cpplox [path-to-script-file]
 ```
 
 You can use the interpreter in [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) mode or by running a script file.  
-- Running the interpreter with no argument loads it in REPL mode. To exit the REPL type *:q*.
+- Running the interpreter with no argument loads it in REPL mode. To exit the REPL type *:q*. A bare expression is echoed, so `1 + 1` prints `2`; adding a semicolon makes it an ordinary statement, which prints nothing.
 - Running the interpreter with a path to a script loads the script and tries to execute it.
 

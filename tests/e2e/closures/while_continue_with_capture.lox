@@ -5,7 +5,7 @@ var i = 0;
 while (i < 4) {
     var x = i * 100;
     fun capture() {
-        print x;
+        print(x);
     }
     i = i + 1;
     if (i == 2) {

@@ -1,13 +1,13 @@
 class Base {
     greet() {
-        print "Hello from Base";
+        print("Hello from Base");
     }
 }
 
 class Derived < Base {
     greet() {
         super.greet();
-        print "Hello from Derived";
+        print("Hello from Derived");
     }
 }
 

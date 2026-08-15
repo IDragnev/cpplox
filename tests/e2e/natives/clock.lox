@@ -1,14 +1,14 @@
-print clock; // expect: <native fun clock:0>
+print(clock); // expect: <native fun clock:0>
 
 var start = clock();
-print start >= 0; // expect: true
+print(start >= 0); // expect: true
 
 // Time never goes backwards.
-print clock() >= start; // expect: true
+print(clock() >= start); // expect: true
 
 // Natives are ordinary values.
 fun twice(f) {
     f();
     return f();
 }
-print twice(clock) >= start; // expect: true
+print(twice(clock) >= start); // expect: true

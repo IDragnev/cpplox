@@ -2,17 +2,17 @@ fun f() {
     return;
 }
 
-print f(); // expect: nil
+print(f()); // expect: nil
 
 fun g() {
     return nil;
 }
 
-print g(); // expect: nil
+print(g()); // expect: nil
 
 // Implicit nil return.
 fun h() {
     var x = 1;
 }
 
-print h(); // expect: nil
+print(h()); // expect: nil

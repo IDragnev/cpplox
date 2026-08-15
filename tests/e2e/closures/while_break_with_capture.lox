@@ -5,7 +5,7 @@ var j = 0;
 while (j < 10) {
     var y = j * 100;
     fun grab() {
-        print y;
+        print(y);
     }
     g = grab;
     if (j == 3) break;

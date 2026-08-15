@@ -1,6 +1,6 @@
 class Nested {
     method() {
-        print this; // expect: <Nested intance>
+        print(this); // expect: <Nested intance>
     }
 }
 
@@ -13,7 +13,7 @@ class Cake {
 
     taste() {
         var result = "The " + this.flavor + " cake";
-        print result;
+        print(result);
     }
 }
 

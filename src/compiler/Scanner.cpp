@@ -250,7 +250,6 @@ namespace cpplox {
             case 'i': return checkKeyword(1, "f", TokenType::IF);
             case 'n': return checkKeyword(1, "il", TokenType::NIL);
             case 'o': return checkKeyword(1, "r", TokenType::OR);
-            case 'p': return checkKeyword(1, "rint", TokenType::PRINT);
             case 'r': return checkKeyword(1, "eturn", TokenType::RETURN);
             case 's': return checkKeyword(1, "uper", TokenType::SUPER);
             case 'v': return checkKeyword(1, "ar", TokenType::VAR);

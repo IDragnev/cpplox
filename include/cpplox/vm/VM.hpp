@@ -64,7 +64,6 @@ namespace cpplox {
         bool callValue(Value& v, std::uint8_t argc);
         bool call(Closure* f, std::uint8_t argc);
         bool callNative(NativeFunction* f, std::uint8_t argc);
-        void printValue(const Value& v) const;
         void defineMethod(const String& name);
         bool bindMethod(Class* klass, const String& name);
 

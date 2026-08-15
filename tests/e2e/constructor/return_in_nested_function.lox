@@ -3,10 +3,10 @@ class Foo {
         fun init() {
             return "bar";
         }
-        print init();
+        print(init());
     }
 }
 
-print Foo();
+print(Foo());
 // expect: "bar"
 // expect: <Foo intance>

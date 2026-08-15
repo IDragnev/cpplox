@@ -1,2 +1,2 @@
 class Foo {}
-print Foo; // expect: <class Foo>
+print(Foo); // expect: <class Foo>

@@ -9,4 +9,11 @@ namespace cpplox {
 
         bool call(std::span<Value> args, Value& result) override;
     };
+
+    class Print : public NativeFunction {
+    public:
+        Print() : NativeFunction("print", 1) {}
+
+        bool call(std::span<Value> args, Value& result) override;
+    };
 }

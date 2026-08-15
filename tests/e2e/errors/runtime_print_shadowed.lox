@@ -1,0 +1,3 @@
+// print is an ordinary global, so it can be shadowed like any other native.
+var print = 10;
+print(1); // expect runtime error: Can only call functions and classes.

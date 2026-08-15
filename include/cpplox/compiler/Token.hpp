@@ -39,7 +39,6 @@ namespace cpplox {
         IF,
         NIL,
         OR,
-        PRINT,
         BREAK,
         CONTINUE,
         RETURN,

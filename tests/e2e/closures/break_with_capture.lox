@@ -4,7 +4,7 @@ var f;
 for (var i = 0; i < 10; i = i + 1) {
     var x = i * 10;
     fun capture() {
-        print x;
+        print(x);
     }
     f = capture;
     if (i == 2) break;

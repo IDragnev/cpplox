@@ -1,7 +1,7 @@
 fun outer() {
     var x = "outside";
     fun inner() {
-        print x;
+        print(x);
     }
     return inner;
 }

@@ -20,7 +20,6 @@ namespace cpplox {
         SUBTRACT,
         MULTIPLY,
         DIVIDE,
-        PRINT,
         POP,
         POP_N,
         POP_N_16,

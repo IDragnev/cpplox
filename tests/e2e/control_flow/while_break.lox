@@ -2,7 +2,7 @@
 var i = 0;
 while (i < 10) {
     if (i == 3) break;
-    print i;
+    print(i);
     i = i + 1;
 }
 // expect: 0
@@ -10,4 +10,4 @@ while (i < 10) {
 // expect: 2
 
 // Code after the loop still runs.
-print "after"; // expect: "after"
+print("after"); // expect: "after"

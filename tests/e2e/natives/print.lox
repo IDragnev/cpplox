@@ -1,0 +1,13 @@
+print(print); // expect: <native fun print:1>
+
+// print returns nil, so the outer call prints the inner call's result.
+print(print(1));
+// expect: 1
+// expect: nil
+
+// Natives are ordinary values.
+fun apply(f, arg) {
+    return f(arg);
+}
+print(apply(print, "hello")); // expect: "hello"
+// expect: nil

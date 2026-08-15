@@ -1,12 +1,12 @@
 class Animal {
     speak() {
-        print "...";
+        print("...");
     }
 }
 
 class Dog < Animal {
     speak() {
-        print "Woof!";
+        print("Woof!");
     }
 }
 

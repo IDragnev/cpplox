@@ -2,7 +2,7 @@ fun makeCounter() {
     var count = 0;
     fun increment() {
         count = count + 1;
-        print count;
+        print(count);
     }
     return increment;
 }

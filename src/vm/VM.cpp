@@ -80,6 +80,7 @@ namespace cpplox {
     }
 
     void VM::defineNatives() {
+        defineNative<Print>();
         defineNative<Clock>();
     }
 
@@ -211,10 +212,6 @@ namespace cpplox {
                 } break;
                 case OpCode::NIL: {
                     stack.push(Value::nil());
-                } break;
-                case OpCode::PRINT: {
-                    printValue(stack.peek());
-                    stack.pop();
                 } break;
                 case OpCode::POP: {
                     stack.pop();
@@ -519,45 +516,6 @@ namespace cpplox {
             }
 
 #undef BINARY_OP
-        }
-    }
-
-    void VM::printValue(const Value& v) const {
-        if (v.isObject() == false) {
-            println("{}", v);
-        } else {
-            const Object* obj = v.asObject();
-            switch (obj->type()) {
-                case ObjectType::FUNCTION: {
-                    const Function* fun = obj->as<Function>();
-                    println("<fun {}:{}>", fun->name, fun->arity);
-                } break;
-                case ObjectType::CLASS: {
-                    const Class* classObj = obj->as<Class>();
-                    println("<class {}>", classObj->name);
-                } break;
-                case ObjectType::INSTANCE: {
-                    const Instance* instance = obj->as<Instance>();
-                    println("<{} intance>", instance->klass->name);
-                } break;
-                case ObjectType::CLOSURE: {
-                    const Closure* closure = obj->as<Closure>();
-                    println("<fun {}:{}>",
-                            closure->function->name,
-                            closure->function->arity);
-                } break;
-                case ObjectType::BOUND_METHOD: {
-                    const BoundMethod* method = obj->as<BoundMethod>();
-                    println("<fun {}:{}>",
-                            method->method->function->name,
-                            method->method->function->arity);
-                } break;
-                case ObjectType::NATIVE_FUNCTION: {
-                    const NativeFunction* fun = obj->as<NativeFunction>();
-                    println("<native fun {}:{}>", fun->name, fun->arity);
-                } break;
-                case ObjectType::UPVALUE: { } break;
-            }
         }
     }
 

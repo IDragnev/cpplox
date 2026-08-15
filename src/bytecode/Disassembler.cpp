@@ -116,9 +116,6 @@ namespace cpplox {
             case OpCode::NIL: {
                 return simpleInstruction("NIL", offset);
             } break;
-            case OpCode::PRINT: {
-                return simpleInstruction("PRINT", offset);
-            } break;
             case OpCode::POP: {
                 return simpleInstruction("POP", offset);
             } break;

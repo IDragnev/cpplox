@@ -97,8 +97,15 @@ namespace cpplox {
         bool initOk = init(std::move(src), engine);
         if (initOk) {
             advance();
+            namedVariable(Token{
+                .type = TokenType::IDENTIFIER,
+                .lexeme = "print",
+                },
+                false
+            );
             expression();
-            emitOpCode(OpCode::PRINT);
+            emitOpCode(OpCode::CALL);
+            emitByte(1);
             emitReturn();
         }
 
@@ -219,7 +226,6 @@ namespace cpplox {
                 case TokenType::FOR:
                 case TokenType::IF:
                 case TokenType::WHILE:
-                case TokenType::PRINT:
                 case TokenType::BREAK:
                 case TokenType::CONTINUE:
                 case TokenType::RETURN: {
@@ -587,9 +593,7 @@ namespace cpplox {
     }
 
     void Compiler::statement() {
-        if (match(TokenType::PRINT)) {
-            printStatement();
-        } else if (match(TokenType::IF)) {
+        if (match(TokenType::IF)) {
             ifStatement();
         } else if (match(TokenType::WHILE)) {
             whileStatement();
@@ -807,12 +811,6 @@ namespace cpplox {
             consumeTokenErr(TokenType::SEMICOLON, "Expected ';' after return");
             emitOpCode(OpCode::RETURN);
         }
-    }
-
-    void Compiler::printStatement() {
-        expression();
-        consumeTokenErr(TokenType::SEMICOLON, "Expected ';' after expression");
-        emitOpCode(OpCode::PRINT);
     }
 
     void Compiler::expressionStatement() {
