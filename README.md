@@ -70,10 +70,15 @@ print(f); // <fun f:0>
 ### Native functions
 Native functions are built into the interpreter rather than written in Lox, and are defined as globals before a script runs, so they are always available. Apart from that they are ordinary values - they can be printed, passed to other functions or stored in variables and fields.
 
-There are two of them. `print` writes a single value to standard output followed by a newline, and returns *nil*:
+There are two of them. `print` writes its arguments to standard output, one per line, and returns *nil*. It accepts any number of them, which is why its arity shows as `*`; calling it with none still writes a single blank line:
 ```
-print("hello"); // "hello"
-print(print);   // <native fun print:1>
+print("hello");   // "hello"
+print(1, true, nil);
+// 1
+// true
+// nil
+print();          // an empty line
+print(print);     // <native fun print:*>
 ```
 `clock` takes no arguments and returns the whole number of milliseconds since the interpreter started. It is meant for measuring how long a piece of code takes, by subtracting two readings:
 ```

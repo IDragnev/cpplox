@@ -1,7 +1,7 @@
 #include "cpplox/runtime/NativeFunction.hpp"
 
 namespace cpplox {
-    NativeFunction::NativeFunction(const String& name, unsigned arity)
+    NativeFunction::NativeFunction(const String& name, Arity arity)
         : Object(NativeFunction::TYPE)
         , name(name)
         , arity(arity)

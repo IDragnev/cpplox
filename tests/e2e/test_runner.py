@@ -7,6 +7,7 @@ expectations.
 
 Expectation comment formats (placed anywhere in a .lox file):
     // expect: <value>                    -- expected stdout line (in order)
+    // expect empty line                  -- expected blank stdout line (in order)
     // expect runtime error: <message>    -- expected runtime-error substring on stderr
     // expect compile error: <message>    -- expected compile-error on stderr
                                              (line number inferred from comment position)
@@ -32,6 +33,9 @@ EXIT_COMPILE_ERROR = 65
 EXIT_RUNTIME_ERROR = 70
 
 EXPECT_OUTPUT = re.compile(r"// expect: (.*)")
+# A blank expected line cannot be written as "// expect: " - the trailing space
+# does not survive editors that trim it.
+EXPECT_EMPTY_LINE = re.compile(r"// expect empty line")
 EXPECT_RUNTIME_ERR = re.compile(r"// expect runtime error: (.*)")
 EXPECT_COMPILE_ERR = re.compile(r"// expect compile error: (.*)")
 NONTEST = re.compile(r"// nontest")
@@ -70,6 +74,9 @@ def parse_expectations(filepath: Path) -> Expectations:
             if NONTEST.search(line):
                 exp.skip = True
                 return exp
+
+            if EXPECT_EMPTY_LINE.search(line):
+                exp.stdout_lines.append("")
 
             m = EXPECT_OUTPUT.search(line)
             if m:

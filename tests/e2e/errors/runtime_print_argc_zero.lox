@@ -1,1 +1,0 @@
-print(); // expect runtime error: Invalid argument count. Expected 1, found 0.

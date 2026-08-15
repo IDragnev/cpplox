@@ -627,9 +627,9 @@ namespace cpplox {
     }
 
     bool VM::callNative(NativeFunction* f, std::uint8_t argc) {
-        if (f->arity != argc) {
+        if (f->arity.accepts(argc) == false) {
             runtimeError("Invalid argument count. Expected {}, found {}.",
-                         f->arity,
+                         f->arity.exact(),
                          argc);
             return false;
         }

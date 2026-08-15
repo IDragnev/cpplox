@@ -9,4 +9,4 @@ class Foo {
 
 print(Foo());
 // expect: "bar"
-// expect: <Foo intance>
+// expect: <Foo instance>
