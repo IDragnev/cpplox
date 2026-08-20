@@ -262,7 +262,7 @@ namespace cpplox {
                                                 const Chunk& chunk,
                                                 std::size_t constIndex) const {
         const Value& v = chunk.constants[constIndex];
-        println("{:<16} {:>5} '{}'", name, constIndex, v);
+        println("{:<16} {:>5} {:?}", name, constIndex, v);
     }
 
     void Disassembler::printIntegerInstruction(const char* name,
@@ -274,7 +274,7 @@ namespace cpplox {
                                               std::size_t constant,
                                               std::size_t argc,
                                               const Chunk& chunk) const {
-        println("{:<16} {:<5} {:>5} '{}'",
+        println("{:<16} {:<5} {:>5} {:?}",
                 name,
                 constant,
                 argc,

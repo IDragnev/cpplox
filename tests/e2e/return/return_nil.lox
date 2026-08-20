@@ -1,18 +1,16 @@
+// A bare return gives nil.
 fun f() {
     return;
 }
-
-print(f()); // expect: nil
+assert(f() == nil);
 
 fun g() {
     return nil;
 }
+assert(g() == nil);
 
-print(g()); // expect: nil
-
-// Implicit nil return.
+// So does falling off the end.
 fun h() {
     var x = 1;
 }
-
-print(h()); // expect: nil
+assert(h() == nil);

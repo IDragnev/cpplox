@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """End-to-end test runner for cpplox.
 
-Discovers .lox files, parses expectation comments, runs the cpplox
-interpreter, and validates stdout/stderr/exit-code against those
-expectations.
+Discovers .lox files, runs each one under the cpplox interpreter, and checks
+the exit code plus any expectations the file declares in comments.
 
-Expectation comment formats (placed anywhere in a .lox file):
+Most tests check themselves. They call the assert native, print nothing, and
+declare no expectations, so passing means exiting 0 with empty stdout. A failed
+assertion aborts the run with exit 70 and reports its message on stderr, which
+this runner surfaces as the failure. Write those tests in Lox and keep them out
+of the expectation formats below.
+
+The expectation comments are for the two things a script cannot assert about
+itself: what the interpreter writes to stdout, and the errors that stop it from
+running. They may appear anywhere in a file.
+
     // expect: <value>                    -- expected stdout line (in order)
     // expect empty line                  -- expected blank stdout line (in order)
     // expect runtime error: <message>    -- expected runtime-error substring on stderr
@@ -42,6 +50,10 @@ NONTEST = re.compile(r"// nontest")
 ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*m")
 
 TIMEOUT_SECONDS = 5
+
+# Enough for a runtime error and the call stack under it. A deeper trace is
+# truncated rather than allowed to bury the other failures of the run.
+STDERR_EXCERPT_LINES = 15
 
 
 @dataclass
@@ -94,6 +106,26 @@ def parse_expectations(filepath: Path) -> Expectations:
     return exp
 
 
+def describe_exit(expected: int, actual: int) -> str:
+    """Say what an unexpected exit code means, rather than just reporting it.
+
+    The common case is a self-checking test that was expected to succeed, where
+    the exit code is not the interesting part - the stderr under it is.
+    """
+    if expected == EXIT_SUCCESS:
+        if actual == EXIT_RUNTIME_ERROR:
+            return "Stopped on a runtime error, most likely a failed assertion:"
+        if actual == EXIT_COMPILE_ERROR:
+            return "Failed to compile:"
+        return f"Exited with {actual}, expected success:"
+
+    wanted = "a compile error" if expected == EXIT_COMPILE_ERROR else "a runtime error"
+    if actual == EXIT_SUCCESS:
+        return f"Expected {wanted}, but the script succeeded."
+
+    return f"Expected {wanted} (exit {expected}), got exit {actual}:"
+
+
 def run_test(interpreter: Path, filepath: Path, exp: Expectations) -> TestResult:
     """Run *filepath* under *interpreter* and validate against *exp*."""
     result = TestResult(path=str(filepath), passed=True)
@@ -126,31 +158,30 @@ def run_test(interpreter: Path, filepath: Path, exp: Expectations) -> TestResult
 
     if proc.returncode != expected_exit:
         result.passed = False
-        result.failures.append(
-            f"Exit code: expected {expected_exit}, got {proc.returncode}"
-        )
-        for line in actual_stderr.strip().splitlines()[:5]:
-            result.failures.append(f"  stderr: {line}")
+        result.failures.append(describe_exit(expected_exit, proc.returncode))
+        excerpt = actual_stderr.strip().splitlines()
+        for line in excerpt[:STDERR_EXCERPT_LINES]:
+            result.failures.append(f"  {line}")
+        if len(excerpt) > STDERR_EXCERPT_LINES:
+            omitted = len(excerpt) - STDERR_EXCERPT_LINES
+            result.failures.append(f"  ... {omitted} more stderr lines")
 
+    # Every line is accounted for in both directions, so a test that declares no
+    # expectations is also a test that the script writes nothing.
     expected_lines = exp.stdout_lines
-    if len(actual_stdout) != len(expected_lines):
-        result.passed = False
-        result.failures.append(
-            f"Stdout line count: expected {len(expected_lines)}, "
-            f"got {len(actual_stdout)}"
-        )
     for i, expected in enumerate(expected_lines):
-        actual = actual_stdout[i] if i < len(actual_stdout) else "<missing>"
-        if i >= len(actual_stdout) or actual_stdout[i] != expected:
+        if i >= len(actual_stdout):
+            result.passed = False
+            result.failures.append(f"Stdout line {i + 1}: missing '{expected}'")
+        elif actual_stdout[i] != expected:
             result.passed = False
             result.failures.append(
-                f"  Stdout line {i + 1}: expected '{expected}', got '{actual}'"
+                f"Stdout line {i + 1}: expected '{expected}', "
+                f"got '{actual_stdout[i]}'"
             )
     for i in range(len(expected_lines), len(actual_stdout)):
         result.passed = False
-        result.failures.append(
-            f"  Stdout line {i + 1}: unexpected '{actual_stdout[i]}'"
-        )
+        result.failures.append(f"Stdout line {i + 1}: unexpected '{actual_stdout[i]}'")
 
     for lineno, message in exp.compile_errors:
         needle = f"Compile error on line {lineno}: {message}"

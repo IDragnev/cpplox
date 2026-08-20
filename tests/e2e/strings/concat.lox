@@ -1,9 +1,13 @@
 var a = "hello";
 var b = " ";
 var c = "world";
-print(a + b + c); // expect: "hello world"
+assert(a + b + c == "hello world");
 
 // Concatenation of empty strings.
-print("" + "abc"); // expect: "abc"
-print("abc" + ""); // expect: "abc"
-print("" + ""); // expect: ""
+assert("" + "abc" == "abc");
+assert("abc" + "" == "abc");
+assert("" + "" == "");
+
+// Concatenation builds a new string rather than changing its operands.
+assert(a == "hello");
+assert(c == "world");

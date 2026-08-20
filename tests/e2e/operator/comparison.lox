@@ -1,0 +1,24 @@
+// Numbers are ordered by <, <=, > and >=. Each operator gets a case on either
+// side of the boundary plus the equal case, where the two strict and the two
+// inclusive operators disagree.
+
+assert(1 < 2);
+assert((1 < 1) == false);
+assert((2 < 1) == false);
+
+assert(1 <= 2);
+assert(1 <= 1);
+assert((2 <= 1) == false);
+
+assert(2 > 1);
+assert((1 > 1) == false);
+assert((1 > 2) == false);
+
+assert(2 >= 1);
+assert(1 >= 1);
+assert((1 >= 2) == false);
+
+// Ordering works on fractions and negatives too.
+assert(-1 < 0);
+assert(1.5 > 1.25);
+assert(-2 <= -2);

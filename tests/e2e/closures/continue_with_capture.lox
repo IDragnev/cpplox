@@ -1,15 +1,15 @@
 // Continue in a for loop closes captured locals.
-var closures;
+var closure;
 
 for (var i = 0; i < 4; i = i + 1) {
     var x = i * 10;
     fun capture() {
-        print(x);
+        return x;
     }
     if (i == 1) {
-        closures = capture;
+        closure = capture;
         continue;
     }
 }
 
-closures(); // expect: 10
+assert(closure() == 10, "the closure kept the value from the skipped iteration");

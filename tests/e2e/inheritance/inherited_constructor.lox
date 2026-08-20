@@ -4,11 +4,13 @@ class A {
     }
 
     test() {
-        print(this.field);
+        return this.field;
     }
 }
 
+// A subclass without its own init inherits the superclass constructor.
 class B < A {}
 
 var b = B("value");
-b.test(); // expect: "value"
+assert(b.test() == "value");
+assert(b.field == "value");

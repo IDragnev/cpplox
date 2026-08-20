@@ -3,9 +3,10 @@ var f;
 {
     var local = "local";
     fun f_() {
-        print(local);
+        return local;
     }
     f = f_;
 }
 
-f(); // expect: "local"
+// The block has ended, but the captured local is still reachable.
+assert(f() == "local");

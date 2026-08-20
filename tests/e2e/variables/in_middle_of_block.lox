@@ -1,10 +1,12 @@
+// A declaration takes effect from its own statement onwards, so later
+// declarations can read the earlier ones.
 {
     var a = "a";
-    print(a); // expect: "a"
+    assert(a == "a");
     var b = a + " b";
-    print(b); // expect: "a b"
+    assert(b == "a b");
     var c = a + " c";
-    print(c); // expect: "a c"
+    assert(c == "a c");
     var d = b + " d";
-    print(d); // expect: "a b d"
+    assert(d == "a b d");
 }

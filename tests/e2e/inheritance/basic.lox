@@ -1,16 +1,18 @@
 class Animal {
     speak() {
-        print("...");
+        return "...";
     }
 }
 
 class Dog < Animal {
     speak() {
-        print("Woof!");
+        return "Woof!";
     }
 }
 
 class Cat < Animal {}
 
-Dog().speak(); // expect: "Woof!"
-Cat().speak(); // expect: "..."
+// An override wins, and a subclass without one inherits the method.
+assert(Dog().speak() == "Woof!");
+assert(Cat().speak() == "...");
+assert(Animal().speak() == "...");

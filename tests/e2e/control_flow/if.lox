@@ -1,19 +1,26 @@
-if (true) print("yes"); // expect: "yes"
+var trace = "";
 
-if (false) print("bad");
+if (true) trace = trace + "yes,";
+if (false) trace = trace + "bad,";
 
 if (true) {
-    print("block true"); // expect: "block true"
+    trace = trace + "block true,";
 }
 
 if (false) {
-    print("nope");
+    trace = trace + "bad,";
 } else {
-    print("else branch"); // expect: "else branch"
+    trace = trace + "else branch,";
 }
 
-// Truthiness: only nil and false are falsy.
-if (0) print("zero is truthy"); // expect: "zero is truthy"
-if ("") print("empty string is truthy"); // expect: "empty string is truthy"
-if (nil) print("bad");
-if (false) print("bad");
+assert(trace == "yes,block true,else branch,", trace);
+
+// Truthiness: only nil and false are falsey, so a zero and an empty string
+// both take the branch.
+trace = "";
+if (0) trace = trace + "zero,";
+if ("") trace = trace + "empty string,";
+if (nil) trace = trace + "bad,";
+if (false) trace = trace + "bad,";
+
+assert(trace == "zero,empty string,", trace);

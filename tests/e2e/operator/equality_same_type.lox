@@ -1,0 +1,33 @@
+// Values of the same type compare by value, and a != b is the negation of
+// a == b, so every case appears with both operators.
+
+assert(nil == nil);
+assert((nil != nil) == false);
+
+assert(true == true);
+assert((true != true) == false);
+assert((true == false) == false);
+assert(true != false);
+assert((false == true) == false);
+assert(false != true);
+assert(false == false);
+assert((false != false) == false);
+
+assert(1 == 1);
+assert((1 != 1) == false);
+assert((1 == 2) == false);
+assert(1 != 2);
+assert(1.5 == 1.5);
+assert(-0 == 0);
+
+assert("str" == "str");
+assert(("str" != "str") == false);
+assert(("str" == "ing") == false);
+assert("str" != "ing");
+assert("" == "");
+assert("a" != "b");
+
+// Equality compares contents, not identity, so a computed string equals a
+// literal with the same characters.
+var built = "he" + "llo";
+assert(built == "hello");

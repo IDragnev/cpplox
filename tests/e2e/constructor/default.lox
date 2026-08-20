@@ -1,4 +1,6 @@
 class Foo {}
 
+// A class without init is still callable and produces an instance.
 var foo = Foo();
-print(foo); // expect: <Foo instance>
+assert(type(foo) == "instance");
+assert(str(foo) == "<Foo instance>");

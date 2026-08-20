@@ -1,0 +1,9 @@
+// * and / bind tighter than + and -.
+assert(2 + 3 * 4 == 14);
+assert(20 - 3 * 4 == 8);
+assert(2 + 6 / 3 == 4);
+assert(2 - 6 / 3 == 0);
+
+// Parentheses override the default grouping.
+assert(2 * (6 - (2 + 2)) == 4);
+assert((2 + 3) * 4 == 20);

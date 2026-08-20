@@ -1,9 +1,10 @@
 class Foo {
     bar(arg) {
-        print(arg);
+        return arg;
     }
 }
 
+// A method can be pulled off an instance and called later.
 var bar = Foo().bar;
-print("got method"); // expect: "got method"
-bar("arg"); // expect: "arg"
+assert(type(bar) == "function");
+assert(bar("arg") == "arg");

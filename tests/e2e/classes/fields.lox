@@ -3,4 +3,13 @@ class Pair {}
 var pair = Pair();
 pair.first = 1;
 pair.second = 2;
-print(pair.first + pair.second); // expect: 3
+assert(pair.first + pair.second == 3);
+
+// Fields can be reassigned and are per instance.
+pair.first = 10;
+assert(pair.first == 10);
+
+var other = Pair();
+other.first = 100;
+assert(pair.first == 10, "the other instance kept its own field");
+assert(other.first == 100);

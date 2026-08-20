@@ -1,42 +1,37 @@
-// Full for with continue.
+// Continue skips the rest of the body and proceeds to the increment, whichever
+// of the for clauses are present.
+
+// Full for.
+var trace = "";
 for (var i = 0; i < 5; i = i + 1) {
     if (i == 2) continue;
-    print(i);
+    trace = trace + str(i);
 }
-// expect: 0
-// expect: 1
-// expect: 3
-// expect: 4
+assert(trace == "0134", "full for: " + trace);
 
 // No initializer.
+trace = "";
 var j = 0;
 for (; j < 5; j = j + 1) {
     if (j == 2) continue;
-    print(j);
+    trace = trace + str(j);
 }
-// expect: 0
-// expect: 1
-// expect: 3
-// expect: 4
+assert(trace == "0134", "no initializer: " + trace);
 
-// No increment, manual increment before continue.
+// No increment, so the body advances the variable before continuing.
+trace = "";
 for (var k = 0; k < 5;) {
     k = k + 1;
     if (k == 3) continue;
-    print(k);
+    trace = trace + str(k);
 }
-// expect: 1
-// expect: 2
-// expect: 4
-// expect: 5
+assert(trace == "1245", "no increment: " + trace);
 
-// No condition, continue with break to exit.
+// No condition, so break is the only way out.
+trace = "";
 for (var n = 0;; n = n + 1) {
     if (n == 5) break;
     if (n == 2) continue;
-    print(n);
+    trace = trace + str(n);
 }
-// expect: 0
-// expect: 1
-// expect: 3
-// expect: 4
+assert(trace == "0134", "no condition: " + trace);

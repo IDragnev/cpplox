@@ -1,27 +1,25 @@
+// Two closures over the same local share one variable, so an assignment made
+// through one is visible through the other.
 var f;
 var g;
 
 {
     var local = "local";
     fun f_() {
-        print(local);
+        var seen = local;
         local = "after f";
-        print(local);
+        return seen;
     }
     f = f_;
 
     fun g_() {
-        print(local);
+        var seen = local;
         local = "after g";
-        print(local);
+        return seen;
     }
     g = g_;
 }
 
-f();
-// expect: "local"
-// expect: "after f"
-
-g();
-// expect: "after f"
-// expect: "after g"
+assert(f() == "local");
+assert(g() == "after f");
+assert(f() == "after g");

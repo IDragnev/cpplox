@@ -1,8 +1,11 @@
+// Until the shadowing declaration is reached, the name still refers to the
+// outer variable.
 {
     var a = "outer";
     {
-        print(a); // expect: "outer"
+        assert(a == "outer");
         var a = "inner";
-        print(a); // expect: "inner"
+        assert(a == "inner");
     }
+    assert(a == "outer");
 }

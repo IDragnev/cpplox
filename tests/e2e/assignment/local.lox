@@ -1,10 +1,9 @@
 {
     var a = "before";
-    print(a); // expect: "before"
-
     a = "after";
-    print(a); // expect: "after"
+    assert(a == "after");
 
-    print(a = "arg"); // expect: "arg"
-    print(a); // expect: "arg"
+    // Assignment is an expression that evaluates to the assigned value.
+    assert((a = "arg") == "arg");
+    assert(a == "arg");
 }

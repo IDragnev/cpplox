@@ -9,17 +9,31 @@
 namespace cpplox {
     class Arity {
     public:
-        static Arity exactly(unsigned count) { return Arity(count, false); }
-        static Arity any() { return Arity(0, true); }
+        static Arity exactly(unsigned count) { return Arity(count, count, false); }
+        static Arity between(unsigned min, unsigned max) {
+            return Arity(min, max, false);
+        }
+        static Arity any() { return Arity(0, 0, true); }
 
-        bool accepts(unsigned argc) const { return _any || argc == _exact; }
+        bool accepts(unsigned argc) const {
+            return _any || (argc >= _min && argc <= _max);
+        }
         bool isAny() const { return _any; }
-        unsigned exact() const { return _exact; }
+        bool isExact() const { return _any == false && _min == _max; }
+
+        unsigned min() const { return _min; }
+        unsigned max() const { return _max; }
+        unsigned exact() const { return _min; }
 
     private:
-        Arity(unsigned exact, bool any) : _exact(exact), _any(any) {}
+        Arity(unsigned min, unsigned max, bool any)
+            : _min(min)
+            , _max(max)
+            , _any(any)
+        {}
 
-        unsigned _exact;
+        unsigned _min;
+        unsigned _max;
         bool _any;
     };
 

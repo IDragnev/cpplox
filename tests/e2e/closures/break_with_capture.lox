@@ -4,10 +4,10 @@ var f;
 for (var i = 0; i < 10; i = i + 1) {
     var x = i * 10;
     fun capture() {
-        print(x);
+        return x;
     }
     f = capture;
     if (i == 2) break;
 }
 
-f(); // expect: 20
+assert(f() == 20, "the closure kept the value from the iteration that broke");

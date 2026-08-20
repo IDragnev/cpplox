@@ -1,3 +1,4 @@
+// Redeclaring a global replaces it rather than being an error.
 var a = "1";
 var a = "2";
-print(a); // expect: "2"
+assert(a == "2");

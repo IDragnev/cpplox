@@ -1,3 +1,6 @@
+// The loop variable of a for statement lives for the whole loop, so every
+// closure sees its final value. A local declared in the body is fresh each
+// iteration, so each closure keeps its own.
 var f1;
 var f2;
 var f3;
@@ -5,8 +8,7 @@ var f3;
 for (var i = 1; i < 4; i = i + 1) {
     var j = i;
     fun f() {
-        print(i);
-        print(j);
+        return str(i) + ":" + str(j);
     }
 
     if (j == 1) f1 = f;
@@ -14,12 +16,6 @@ for (var i = 1; i < 4; i = i + 1) {
     else f3 = f;
 }
 
-f1();
-// expect: 4
-// expect: 1
-f2();
-// expect: 4
-// expect: 2
-f3();
-// expect: 4
-// expect: 3
+assert(f1() == "4:1", f1());
+assert(f2() == "4:2", f2());
+assert(f3() == "4:3", f3());

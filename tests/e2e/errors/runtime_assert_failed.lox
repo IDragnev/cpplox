@@ -1,0 +1,2 @@
+// A failing assert aborts the run with a default message.
+assert(1 == 2); // expect runtime error: Assertion failed.

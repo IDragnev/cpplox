@@ -1,3 +1,4 @@
+// Return leaves the function from inside a loop, discarding the loop's locals.
 fun f() {
     while (true) {
         var i = "i";
@@ -5,4 +6,4 @@ fun f() {
     }
 }
 
-print(f()); // expect: "i"
+assert(f() == "i");

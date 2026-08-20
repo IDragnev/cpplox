@@ -1,16 +1,18 @@
+var trace = "";
+
 class Base {
     greet() {
-        print("Hello from Base");
+        trace = trace + "Base,";
     }
 }
 
 class Derived < Base {
     greet() {
         super.greet();
-        print("Hello from Derived");
+        trace = trace + "Derived,";
     }
 }
 
+// super runs the overridden method, and the override continues afterwards.
 Derived().greet();
-// expect: "Hello from Base"
-// expect: "Hello from Derived"
+assert(trace == "Base,Derived,", trace);

@@ -1,13 +1,15 @@
 // Break exits the loop immediately.
+var trace = "";
 var i = 0;
 while (i < 10) {
     if (i == 3) break;
-    print(i);
+    trace = trace + str(i);
     i = i + 1;
 }
-// expect: 0
-// expect: 1
-// expect: 2
+
+assert(trace == "012", trace);
+assert(i == 3, "break left the counter where it was");
 
 // Code after the loop still runs.
-print("after"); // expect: "after"
+var afterLoop = true;
+assert(afterLoop);

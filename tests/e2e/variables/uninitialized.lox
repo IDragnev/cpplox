@@ -1,2 +1,4 @@
+// A declaration without an initializer gives nil.
 var a;
-print(a); // expect: nil
+assert(a == nil);
+assert(type(a) == "nil");

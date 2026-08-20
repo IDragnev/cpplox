@@ -1,0 +1,42 @@
+// str renders a value the way print writes it, and returns a string.
+assert(type(str(1)) == "string");
+
+assert(str("hi") == "hi");
+assert(str("") == "");
+assert("got " + str("hi") == "got hi");
+
+assert(str(nil) == "nil");
+assert(str(true) == "true");
+assert(str(false) == "false");
+
+// Numbers are doubles, but whole values render without a fractional part.
+assert(str(0) == "0");
+assert(str(123) == "123");
+assert(str(987654) == "987654");
+assert(str(123.456) == "123.456");
+assert(str(-0.001) == "-0.001");
+
+// Negative zero keeps its sign.
+assert(str(-0) == "-0");
+assert(str(3 - 5) == "-2");
+
+// Objects render with their kind and name. Functions and methods also show
+// their arity.
+fun f() {}
+fun g(a, b) {}
+class Foo {
+    bar() {}
+}
+var foo = Foo();
+
+assert(str(f) == "<fun f:0>");
+assert(str(g) == "<fun g:2>");
+assert(str(Foo) == "<class Foo>");
+assert(str(foo) == "<Foo instance>");
+assert(str(foo.bar) == "<fun bar:0>");
+
+// Natives show their arity too: a fixed count, a range, or * for any number.
+assert(str(clock) == "<native fun clock:0>");
+assert(str(str) == "<native fun str:1>");
+assert(str(assert) == "<native fun assert:1-2>");
+assert(str(print) == "<native fun print:*>");

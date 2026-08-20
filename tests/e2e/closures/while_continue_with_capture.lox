@@ -1,17 +1,17 @@
 // Continue in a while loop closes captured locals.
-var closures;
+var closure;
 var i = 0;
 
 while (i < 4) {
     var x = i * 100;
     fun capture() {
-        print(x);
+        return x;
     }
     i = i + 1;
     if (i == 2) {
-        closures = capture;
+        closure = capture;
         continue;
     }
 }
 
-closures(); // expect: 100
+assert(closure() == 100, "the closure kept the value from the skipped iteration");

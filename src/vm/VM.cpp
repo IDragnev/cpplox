@@ -82,6 +82,9 @@ namespace cpplox {
     void VM::defineNatives() {
         defineNative<Print>();
         defineNative<Clock>();
+        defineNative<Str>();
+        defineNative<Type>();
+        defineNative<Assert>();
     }
 
     template <typename T>
@@ -628,9 +631,17 @@ namespace cpplox {
 
     bool VM::callNative(NativeFunction* f, std::uint8_t argc) {
         if (f->arity.accepts(argc) == false) {
-            runtimeError("Invalid argument count. Expected {}, found {}.",
-                         f->arity.exact(),
-                         argc);
+            if (f->arity.isExact()) {
+                runtimeError("Invalid argument count. Expected {}, found {}.",
+                             f->arity.exact(),
+                             argc);
+            } else {
+                runtimeError(
+                    "Invalid argument count. Expected {} to {}, found {}.",
+                    f->arity.min(),
+                    f->arity.max(),
+                    argc);
+            }
             return false;
         }
 

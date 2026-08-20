@@ -1,7 +1,5 @@
-// print takes any number of arguments, so its arity shows as * instead of a
-// number.
-print(print); // expect: <native fun print:*>
-print(clock); // expect: <native fun clock:0>
+// This is the only test that matches standard output, because writing to it is
+// what print does. The rendering of each value type is covered by str.lox.
 
 // One value per line.
 print(1); // expect: 1
@@ -14,31 +12,24 @@ print(1, 2, 3);
 print();
 // expect empty line
 
-// Every value type, in a single call.
-fun f() {}
-class Foo {
-    bar() {}
-}
-var foo = Foo();
-print(1, "text", true, false, nil, f, Foo, foo, foo.bar);
-// expect: 1
-// expect: "text"
-// expect: true
-// expect: false
-// expect: nil
-// expect: <fun f:0>
-// expect: <class Foo>
-// expect: <Foo instance>
-// expect: <fun bar:0>
-
 // print returns nil, so the outer call prints the inner call's result.
 print(print(1));
 // expect: 1
 // expect: nil
 
+// Values are written the way str renders them, which means strings arrive
+// without quotes.
+print("text"); // expect: text
+print(str("text")); // expect: text
+print(""); // expect empty line
+
+class Foo {}
+print(Foo()); // expect: <Foo instance>
+
 // Natives are ordinary values.
 fun apply(fn, arg) {
     return fn(arg);
 }
-print(apply(print, "hello")); // expect: "hello"
+print(apply(print, "hello"));
+// expect: hello
 // expect: nil

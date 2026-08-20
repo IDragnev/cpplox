@@ -1,8 +1,12 @@
+// Return leaves the method immediately, so the statement after it never runs.
+var reachedEnd = false;
+
 class Foo {
     method() {
         return "ok";
-        print("bad");
+        reachedEnd = true;
     }
 }
 
-print(Foo().method()); // expect: "ok"
+assert(Foo().method() == "ok");
+assert(reachedEnd == false);

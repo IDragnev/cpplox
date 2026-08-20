@@ -6,36 +6,44 @@
 
 template <>
 struct fmt::formatter<cpplox::Value> {
-    fmt::formatter<std::string_view> spec;
+    bool debug = false;
 
     constexpr auto parse(fmt::format_parse_context& ctx) {
-        return spec.parse(ctx);
+        auto it = ctx.begin();
+        if (it != ctx.end() && *it == '?') {
+            debug = true;
+            ++it;
+        }
+        if (it != ctx.end() && *it != '}') {
+            throw fmt::format_error("invalid format spec for Value");
+        }
+
+        return it;
     }
 
     template <typename FormatContext>
     auto format(const cpplox::Value& v, FormatContext& ctx) const {
         switch (v.internalType()) {
             case cpplox::ValueType::NIL: {
-                return spec.format(std::string_view("nil"), ctx);
+                return fmt::format_to(ctx.out(), "nil");
             } break;
             case cpplox::ValueType::BOOL: {
-                return fmt::formatter<bool>{}.format(v.asBoolean(), ctx);
+                return fmt::format_to(ctx.out(), "{}", v.asBoolean());
             } break;
             case cpplox::ValueType::NUMBER: {
-                return fmt::formatter<double>{}.format(v.asNumber(), ctx);
+                return fmt::format_to(ctx.out(), "{}", v.asNumber());
             } break;
             case cpplox::ValueType::STRING: {
-                std::string s = fmt::format("\"{}\"", v.asString());
-                return spec.format(std::string_view(s), ctx);
+                return debug ? fmt::format_to(ctx.out(), "{:?}", v.asString())
+                             : fmt::format_to(ctx.out(), "{}", v.asString());
             } break;
             case cpplox::ValueType::OBJECT: {
-                std::string s =
-                    fmt::format("<obj {}>",
-                                static_cast<const void*>(v.asObject()));
-                return spec.format(std::string_view(s), ctx);
+                return fmt::format_to(ctx.out(),
+                                      "<obj {}>",
+                                      static_cast<const void*>(v.asObject()));
             } break;
         }
 
-        return spec.format(std::string_view("<invalid>"), ctx);
+        return fmt::format_to(ctx.out(), "<invalid>");
     }
 };

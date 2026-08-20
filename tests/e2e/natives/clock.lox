@@ -1,14 +1,14 @@
-print(clock); // expect: <native fun clock:0>
-
+// A reading is a count of milliseconds, so it is a number and never negative.
 var start = clock();
-print(start >= 0); // expect: true
+assert(type(start) == "number");
+assert(start >= 0);
 
 // Time never goes backwards.
-print(clock() >= start); // expect: true
+assert(clock() >= start);
 
 // Natives are ordinary values.
 fun twice(f) {
     f();
     return f();
 }
-print(twice(clock) >= start); // expect: true
+assert(twice(clock) >= start);

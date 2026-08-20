@@ -1,15 +1,20 @@
+var trace = "";
+
 class Foo {
     init(arg) {
-        print("Foo.init(" + arg + ")");
+        trace = trace + "init(" + arg + ")";
         this.field = "init";
     }
 }
 
-var foo = Foo("one"); // expect: "Foo.init(one)"
+var foo = Foo("one");
+assert(trace == "init(one)", trace);
+
 foo.field = "field";
 
-var foo2 = foo.init("two"); // expect: "Foo.init(two)"
-print(foo2); // expect: <Foo instance>
-
-// init() reinitializes the same instance, not a new one.
-print(foo.field); // expect: "init"
+// Calling init directly reinitializes the same instance rather than making a
+// new one.
+var foo2 = foo.init("two");
+assert(trace == "init(one)init(two)", trace);
+assert(foo2 == foo);
+assert(foo.field == "init", "the field was reset by the second init");

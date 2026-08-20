@@ -10,10 +10,11 @@ class Rect {
 }
 
 var r = Rect(3, 7);
-print(r.width); // expect: 3
-print(r.height); // expect: 7
-print(r.area()); // expect: 21
+assert(r.width == 3);
+assert(r.height == 7);
+assert(r.area() == 21);
 
 // init returns the instance itself.
 var r2 = Rect(5, 2);
-print(r2.area()); // expect: 10
+assert(type(r2) == "instance");
+assert(r2.area() == 10);

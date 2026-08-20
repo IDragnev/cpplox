@@ -1,10 +1,16 @@
-print(!true); // expect: false
-print(!false); // expect: true
-print(!!true); // expect: true
+// ! negates truthiness and always yields a bool. Only nil and false are
+// falsey, so everything else negates to false.
 
-print(!123); // expect: false
-print(!0); // expect: false
+assert(!true == false);
+assert(!false == true);
+assert(!!true == true);
+assert(!!false == false);
 
-print(!nil); // expect: true
+assert(!nil == true);
 
-print(!""); // expect: false
+assert(!123 == false);
+assert(!0 == false);
+assert(!"" == false);
+assert(!"text" == false);
+
+assert(type(!0) == "bool");

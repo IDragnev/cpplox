@@ -5,11 +5,11 @@ var j = 0;
 while (j < 10) {
     var y = j * 100;
     fun grab() {
-        print(y);
+        return y;
     }
     g = grab;
     if (j == 3) break;
     j = j + 1;
 }
 
-g(); // expect: 300
+assert(g() == 300, "the closure kept the value from the iteration that broke");

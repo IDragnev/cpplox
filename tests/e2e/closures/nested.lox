@@ -1,3 +1,5 @@
+// A closure reaches locals from every enclosing function, not just the
+// immediate one.
 var f;
 
 fun f1() {
@@ -7,9 +9,7 @@ fun f1() {
         fun f3() {
             var c = "c";
             fun f4() {
-                print(a);
-                print(b);
-                print(c);
+                return a + b + c;
             }
             f = f4;
         }
@@ -19,7 +19,4 @@ fun f1() {
 }
 f1();
 
-f();
-// expect: "a"
-// expect: "b"
-// expect: "c"
+assert(f() == "abc");

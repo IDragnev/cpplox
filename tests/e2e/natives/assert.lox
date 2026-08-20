@@ -1,0 +1,24 @@
+// A truthy condition passes and returns nil.
+assert(true);
+assert(assert(true) == nil);
+
+// Everything except nil and false is truthy, including values a language with
+// implicit conversions would reject.
+assert(1);
+assert(0);
+assert("text");
+assert("");
+assert(clock);
+
+// The optional second argument does not change the outcome when the condition
+// holds.
+assert(true, "never reported");
+
+// Conditions are ordinary expressions.
+var a = 2;
+assert(a * 3 == 6, "expected 6, got " + str(a * 3));
+
+fun isEven(n) {
+    return n == 4;
+}
+assert(isEven(4));

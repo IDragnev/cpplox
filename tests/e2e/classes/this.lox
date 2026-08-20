@@ -1,10 +1,13 @@
 class Nested {
     method() {
-        print(this); // expect: <Nested instance>
+        return this;
     }
 }
 
-Nested().method();
+// this is the instance the method was called on, not a copy of it.
+var nested = Nested();
+assert(nested.method() == nested);
+assert(str(nested.method()) == "<Nested instance>");
 
 class Cake {
     init(flavor) {
@@ -12,10 +15,9 @@ class Cake {
     }
 
     taste() {
-        var result = "The " + this.flavor + " cake";
-        print(result);
+        return "The " + this.flavor + " cake";
     }
 }
 
 var cake = Cake("German chocolate");
-cake.taste(); // expect: "The German chocolate cake"
+assert(cake.taste() == "The German chocolate cake");

@@ -1,0 +1,37 @@
+assert(type(nil) == "nil");
+
+assert(type(true) == "bool");
+assert(type(false) == "bool");
+
+assert(type(0) == "number");
+assert(type(-1.5) == "number");
+
+assert(type("") == "string");
+assert(type("text") == "string");
+
+// A number and its rendering are different types, which is the distinction
+// print cannot show now that strings are unquoted.
+assert(type(1) == "number");
+assert(type("1") == "string");
+assert(type(str(1)) == "string");
+
+fun f() {}
+class Foo {
+    bar() {}
+}
+var foo = Foo();
+
+assert(type(f) == "function");
+assert(type(Foo) == "class");
+assert(type(foo) == "instance");
+
+// A method reference is a function, matching how it renders.
+assert(type(foo.bar) == "function");
+
+assert(type(clock) == "native function");
+assert(type(print) == "native function");
+
+// The argument is evaluated first, so this reports the result type.
+assert(type(clock()) == "number");
+assert(type(1 + 1) == "number");
+assert(type(1 == 1) == "bool");

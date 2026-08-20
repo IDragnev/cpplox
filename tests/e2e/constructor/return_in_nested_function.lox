@@ -1,12 +1,14 @@
+// A local function named init inside a constructor is an ordinary function,
+// so returning from it does not return from the constructor.
 class Foo {
     init() {
         fun init() {
             return "bar";
         }
-        print(init());
+        this.nested = init();
     }
 }
 
-print(Foo());
-// expect: "bar"
-// expect: <Foo instance>
+var foo = Foo();
+assert(foo.nested == "bar");
+assert(type(foo) == "instance");

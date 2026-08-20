@@ -17,8 +17,8 @@ var start = clock();
 
 var greeter = Greeter("world");
 repeat(2, greeter.greet);
-// "Hello, world!"
-// "Hello, world!"
+// Hello, world!
+// Hello, world!
 
 print(clock() - start); // the milliseconds the greetings took
 ```
@@ -70,25 +70,60 @@ print(f); // <fun f:0>
 ### Native functions
 Native functions are built into the interpreter rather than written in Lox, and are defined as globals before a script runs, so they are always available. Apart from that they are ordinary values - they can be printed, passed to other functions or stored in variables and fields.
 
-There are two of them. `print` writes its arguments to standard output, one per line, and returns *nil*. It accepts any number of them, which is why its arity shows as `*`; calling it with none still writes a single blank line:
+| Native | Arguments | Result |
+| --- | --- | --- |
+| `print(...)` | any number | Writes each argument to standard output, one per line. Returns *nil*. |
+| `clock()` | none | The whole number of milliseconds since the interpreter started. |
+| `str(v)` | 1 | What `print` would write for *v*, as a string. |
+| `type(v)` | 1 | The name of *v*'s type, as a string. |
+| `assert(cond, msg)` | 1 or 2 | *nil* if *cond* is truthy. Otherwise stops the run with a runtime error. |
+
+Printing a native shows its arity, which is `*` when it accepts any number of arguments and a range when it accepts a few:
 ```
-print("hello");   // "hello"
+print(print);  // <native fun print:*>
+print(clock);  // <native fun clock:0>
+print(assert); // <native fun assert:1-2>
+```
+
+`print` writes one line per argument. Calling it with none still writes a single blank line:
+```
+print("hello"); // hello
 print(1, true, nil);
 // 1
 // true
 // nil
-print();          // an empty line
-print(print);     // <native fun print:*>
+print();        // an empty line
 ```
-`clock` takes no arguments and returns the whole number of milliseconds since the interpreter started. It is meant for measuring how long a piece of code takes, by subtracting two readings:
+`clock` is meant for measuring how long a piece of code takes, by subtracting two readings:
 ```
-print(clock); // <native fun clock:0>
-
 var start = clock();
 for (var i = 0; i < 1000000; i = i + 1) { }
 print(clock() - start); // the milliseconds the loop took
 ```
-Declaring a global with the same name shadows the native for the rest of the run:
+`str` renders a value the way `print` does, but hands it back instead of writing it. Since `+` only joins two strings or two numbers, it is what lets a value be built into a message:
+```
+var n = 3;
+print("got " + str(n)); // got 3
+print(str(nil) + str(true)); // niltrue
+```
+Strings come back unchanged, without the quotes a Lox literal would need. That makes `str` unable to tell a number from its own rendering, which is what `type` is for:
+```
+print(type(1));      // number
+print(type(str(1))); // string
+```
+Its answers are *nil*, *bool*, *number*, *string*, *function*, *native function*, *class* and *instance*.
+
+`assert` checks a condition and does nothing when it holds, so it reads as a statement about the code around it. When the condition is falsey the run stops with a runtime error, using the second argument as the message if there is one:
+```
+assert(1 + 1 == 2);
+assert(1 + 1 == 3); // runtime error: Assertion failed.
+
+var n = 3;
+assert(n == 2, "expected 2, got " + str(n)); // runtime error: expected 2, got 3
+```
+It is what the end-to-end tests are written with: a script that checks itself and exits with a failure has no output to compare against.
+
+Declaring a global with the same name shadows a native for the rest of the run:
 ```
 var clock = 10;
 print(clock); // 10
@@ -102,8 +137,8 @@ print(1); // runtime error: Can only call functions and classes.
 ### Truthiness
 **nil** and **false** are falsey, everything else is truthy:
 ```
-if (0) { print("true"); } // prints "true"
-if (nil) { print("oh no"); } else { print("phew"); } // prints "phew"
+if (0) { print("true"); } // prints true
+if (nil) { print("oh no"); } else { print("phew"); } // prints phew
 ```
 
 ### Control flow
@@ -166,7 +201,7 @@ Lox uses *!* for negation and the keywords *and* and *or* for the corresponding 
 print(!true); // false
 
 var a = false or "true" or 1 or 2;
-print(a); // "true";
+print(a); // true
 
 var b = true and 1 and nil and 1;
 print(b); // nil
@@ -189,8 +224,8 @@ class Empty {
 }
 var e = Empty();
 e.later = "hello";
-e.print_field(); // "hello"
-print(e.later); // "hello"
+e.print_field(); // hello
+print(e.later); // hello
 
 class Person {
     init(name) { this.name = name; }
@@ -198,14 +233,14 @@ class Person {
 }
 
 var jane = Person("Jane");
-jane.sayName(); // "Jane"
+jane.sayName(); // Jane
 
 // classes can be stored in variables
 var p = Person;
 
 var bill = p("Bill");
 bill.sayName = jane.sayName;
-bill.sayName(); // "Jane" again - functions are first-class and methods bind their instance
+bill.sayName(); // Jane again - functions are first-class and methods bind their instance
 ```
 
 Inheritance:
@@ -225,8 +260,8 @@ class B < A {
 class C < B { }
 
 C().f();
-// "B"
-// "A"
+// B
+// A
 ```
 
 ## Build

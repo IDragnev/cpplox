@@ -1,0 +1,3 @@
+// The second argument replaces the default message and is reported verbatim.
+var x = 3;
+assert(x == 2, "expected 2, got " + str(x)); // expect runtime error: expected 2, got 3

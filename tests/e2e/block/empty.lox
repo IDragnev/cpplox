@@ -4,4 +4,8 @@
 if (true) {}
 if (false) {} else {}
 
-print("ok"); // expect: "ok"
+// An empty block runs without disturbing the surrounding scope.
+var reached = false;
+{}
+reached = true;
+assert(reached);

@@ -1,4 +1,4 @@
-print(3 * 4); // expect: 12
-print(0 * 100); // expect: 0
-print(2.5 * 2); // expect: 5
-print(-3 * 4); // expect: -12
+assert(3 * 4 == 12);
+assert(0 * 100 == 0);
+assert(2.5 * 2 == 5);
+assert(-3 * 4 == -12);

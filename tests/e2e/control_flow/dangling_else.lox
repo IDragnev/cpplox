@@ -1,3 +1,10 @@
-// A dangling else binds to the right-most if.
-if (true) if (false) print("bad"); else print("good"); // expect: "good"
-if (false) if (true) print("bad"); else print("bad");
+// A dangling else binds to the nearest if, so the else belongs to the inner
+// one and runs when the inner condition is false.
+var taken = "none";
+if (true) if (false) taken = "bad"; else taken = "good";
+assert(taken == "good", taken);
+
+// When the outer condition is false neither branch of the inner if runs.
+taken = "none";
+if (false) if (true) taken = "bad"; else taken = "bad";
+assert(taken == "none", taken);

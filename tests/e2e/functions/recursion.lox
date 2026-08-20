@@ -3,8 +3,8 @@ fun fib(n) {
     return fib(n - 1) + fib(n - 2);
 }
 
-print(fib(0)); // expect: 0
-print(fib(1)); // expect: 1
-print(fib(2)); // expect: 1
-print(fib(5)); // expect: 5
-print(fib(10)); // expect: 55
+assert(fib(0) == 0);
+assert(fib(1) == 1);
+assert(fib(2) == 1);
+assert(fib(5) == 5);
+assert(fib(10) == 55);

@@ -1,2 +1,7 @@
 class Foo {}
-print(Foo); // expect: <class Foo>
+
+assert(type(Foo) == "class");
+assert(str(Foo) == "<class Foo>");
+
+// A class with no body can still be instantiated.
+assert(type(Foo()) == "instance");

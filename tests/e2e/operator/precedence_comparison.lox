@@ -1,0 +1,7 @@
+// Comparison binds tighter than equality, so the comparison is evaluated first
+// and its bool result is what gets compared.
+assert(false == 2 < 1);
+assert(false == 1 > 2);
+assert(false == 2 <= 1);
+assert(false == 1 >= 2);
+assert(true == 1 < 2);

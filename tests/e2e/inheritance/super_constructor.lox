@@ -1,16 +1,18 @@
+var trace = "";
+
 class Base {
     init(a, b) {
-        print("Base.init(" + a + ", " + b + ")");
+        trace = trace + "Base.init(" + a + ", " + b + ")";
     }
 }
 
 class Derived < Base {
     init() {
-        print("Derived.init()");
+        trace = trace + "Derived.init();";
         super.init("a", "b");
     }
 }
 
+// The subclass constructor runs first and chains to the superclass one.
 Derived();
-// expect: "Derived.init()"
-// expect: "Base.init(a, b)"
+assert(trace == "Derived.init();Base.init(a, b)", trace);

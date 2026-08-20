@@ -1,10 +1,16 @@
+var trace = "";
 var i = 0;
 while (i < 5) {
-    print(i);
+    trace = trace + str(i);
     i = i + 1;
 }
-// expect: 0
-// expect: 1
-// expect: 2
-// expect: 3
-// expect: 4
+
+assert(trace == "01234", trace);
+assert(i == 5, "the loop ran until the condition failed");
+
+// A condition that is false to begin with skips the body entirely.
+var ran = false;
+while (false) {
+    ran = true;
+}
+assert(ran == false, "the body never ran");

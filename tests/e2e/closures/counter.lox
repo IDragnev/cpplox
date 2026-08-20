@@ -2,17 +2,18 @@ fun makeCounter() {
     var count = 0;
     fun increment() {
         count = count + 1;
-        print(count);
+        return count;
     }
     return increment;
 }
 
+// The captured local persists across calls.
 var counter = makeCounter();
-counter(); // expect: 1
-counter(); // expect: 2
-counter(); // expect: 3
+assert(counter() == 1);
+assert(counter() == 2);
+assert(counter() == 3);
 
-// A second counter is independent.
+// A second counter closes over its own variable.
 var counter2 = makeCounter();
-counter2(); // expect: 1
-counter();  // expect: 4
+assert(counter2() == 1, "the new counter started from zero");
+assert(counter() == 4, "the first counter was unaffected");

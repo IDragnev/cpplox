@@ -1,12 +1,17 @@
+// A local declared inside a block shadows a captured variable only for the
+// rest of that block.
 {
     var foo = "closure";
+    var trace = "";
     fun f() {
         {
-            print(foo); // expect: "closure"
+            trace = trace + foo + ",";
             var foo = "shadow";
-            print(foo); // expect: "shadow"
+            trace = trace + foo + ",";
         }
-        print(foo); // expect: "closure"
+        trace = trace + foo;
     }
     f();
+
+    assert(trace == "closure,shadow,closure", trace);
 }

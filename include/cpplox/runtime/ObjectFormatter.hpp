@@ -46,11 +46,18 @@ struct fmt::formatter<cpplox::Object> : fmt::formatter<std::string_view> {
             } break;
             case cpplox::ObjectType::NATIVE_FUNCTION: {
                 const auto* fun = obj.as<cpplox::NativeFunction>();
-                text = fun->arity.isAny()
-                           ? fmt::format("<native fun {}:*>", fun->name)
-                           : fmt::format("<native fun {}:{}>",
-                                         fun->name,
-                                         fun->arity.exact());
+                if (fun->arity.isAny()) {
+                    text = fmt::format("<native fun {}:*>", fun->name);
+                } else if (fun->arity.isExact()) {
+                    text = fmt::format("<native fun {}:{}>",
+                                       fun->name,
+                                       fun->arity.exact());
+                } else {
+                    text = fmt::format("<native fun {}:{}-{}>",
+                                       fun->name,
+                                       fun->arity.min(),
+                                       fun->arity.max());
+                }
             } break;
             case cpplox::ObjectType::UPVALUE: {
                 // Internal - never reachable from a user-visible value.

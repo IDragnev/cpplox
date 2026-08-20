@@ -1,0 +1,28 @@
+// Lox never converts implicitly, so values of different types are never equal
+// no matter how similar they look. Each case appears with both operators.
+
+assert((true == 1) == false);
+assert(true != 1);
+assert((false == 0) == false);
+assert(false != 0);
+
+assert((0 == "0") == false);
+assert(0 != "0");
+assert((1 == "1") == false);
+assert(1 != "1");
+
+assert((true == "true") == false);
+assert(true != "true");
+assert((false == "false") == false);
+assert(false != "false");
+
+// An empty string and a zero are truthy, but that does not make them equal to
+// anything else.
+assert((false == "") == false);
+assert(false != "");
+assert((nil == false) == false);
+assert(nil != false);
+assert((nil == 0) == false);
+assert(nil != 0);
+assert((nil == "") == false);
+assert(nil != "");

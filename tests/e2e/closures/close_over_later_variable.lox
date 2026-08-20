@@ -1,10 +1,12 @@
+// A closure captures every enclosing local it names, regardless of the order
+// they were declared in or the order it reads them.
 fun f() {
     var a = "a";
     var b = "b";
     fun g() {
-        print(b); // expect: "b"
-        print(a); // expect: "a"
+        return b + a;
     }
-    g();
+    return g();
 }
-f();
+
+assert(f() == "ba");

@@ -1,22 +1,23 @@
 class Foo {
     inFoo() {
-        print("in foo");
+        return "in foo";
     }
 }
 
 class Bar < Foo {
     inBar() {
-        print("in bar");
+        return "in bar";
     }
 }
 
 class Baz < Bar {
     inBaz() {
-        print("in baz");
+        return "in baz";
     }
 }
 
+// Methods are found anywhere up the chain.
 var baz = Baz();
-baz.inFoo(); // expect: "in foo"
-baz.inBar(); // expect: "in bar"
-baz.inBaz(); // expect: "in baz"
+assert(baz.inFoo() == "in foo");
+assert(baz.inBar() == "in bar");
+assert(baz.inBaz() == "in baz");

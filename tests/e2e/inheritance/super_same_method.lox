@@ -1,16 +1,19 @@
+var trace = "";
+
 class Base {
     foo() {
-        print("Base.foo()");
+        trace = trace + "Base.foo(),";
     }
 }
 
 class Derived < Base {
     foo() {
-        print("Derived.foo()");
+        trace = trace + "Derived.foo(),";
         super.foo();
     }
 }
 
+// super.foo() reaches the superclass method rather than recursing into the
+// override with the same name.
 Derived().foo();
-// expect: "Derived.foo()"
-// expect: "Base.foo()"
+assert(trace == "Derived.foo(),Base.foo(),", trace);

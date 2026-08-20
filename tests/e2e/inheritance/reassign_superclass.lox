@@ -1,24 +1,25 @@
 class Base {
     method() {
-        print("Base.method()");
+        return "Base.method()";
     }
 }
 
 class Derived < Base {
     method() {
-        super.method();
+        return super.method();
     }
 }
 
 class OtherBase {
     method() {
-        print("OtherBase.method()");
+        return "OtherBase.method()";
     }
 }
 
 var derived = Derived();
-derived.method(); // expect: "Base.method()"
+assert(derived.method() == "Base.method()");
 
-// Reassigning the variable doesn't change the superclass.
+// The superclass is captured when the class is declared, so reassigning the
+// variable it came from does not change it.
 Base = OtherBase;
-derived.method(); // expect: "Base.method()"
+assert(derived.method() == "Base.method()");

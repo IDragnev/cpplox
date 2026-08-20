@@ -1,15 +1,15 @@
 fun greet(name) {
-    print("Hello, " + name + "!");
+    return "Hello, " + name + "!";
 }
-greet("World"); // expect: "Hello, World!"
+assert(greet("World") == "Hello, World!");
 
 fun add(a, b) {
     return a + b;
 }
-print(add(2, 3)); // expect: 5
+assert(add(2, 3) == 5);
 
-// Functions without explicit return give nil.
+// Functions without an explicit return give nil.
 fun noReturn() {
     var x = 1;
 }
-print(noReturn()); // expect: nil
+assert(noReturn() == nil);

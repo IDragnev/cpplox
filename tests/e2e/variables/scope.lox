@@ -1,18 +1,18 @@
 var a = "outer";
 {
     var a = "inner";
-    print(a); // expect: "inner"
+    assert(a == "inner");
 }
-print(a); // expect: "outer"
+assert(a == "outer", "the inner declaration did not outlive its block");
 
-// Nested scopes.
+// Nested scopes each shadow the one outside them.
 var x = 1;
 {
     var x = 2;
     {
         var x = 3;
-        print(x); // expect: 3
+        assert(x == 3);
     }
-    print(x); // expect: 2
+    assert(x == 2);
 }
-print(x); // expect: 1
+assert(x == 1);

@@ -1,8 +1,13 @@
 class Scone {
     topping(first, second) {
-        print("scone with " + first + " and " + second);
+        return "scone with " + first + " and " + second;
     }
 }
 
 var scone = Scone();
-scone.topping("berries", "cream"); // expect: "scone with berries and cream"
+assert(scone.topping("berries", "cream") == "scone with berries and cream");
+
+// A method is a callable value in its own right.
+assert(type(scone.topping) == "function");
+var topping = scone.topping;
+assert(topping("jam", "butter") == "scone with jam and butter");
