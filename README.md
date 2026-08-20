@@ -1,5 +1,5 @@
 # An interpreter for the Lox programming language.
-Lox is a dynamically typed language with syntax very close to that of C.
+Lox is a dynamically typed language with C-like syntax, from Robert Nystrom's [Crafting Interpreters](https://craftinginterpreters.com/). cpplox implements the book's bytecode interpreter and extends the language it defines, so the sections below describe cpplox's version of Lox rather than the book's.
 
 ```
 class Greeter {
@@ -441,6 +441,9 @@ That applies to `print` as well, which then leaves you with no way to print anyt
 var print = 10;
 print(1); // runtime error
 ```
+
+## How it works
+cpplox is a bytecode interpreter rather than a tree-walking one. A single-pass compiler emits bytecode straight from the token stream, with no AST in between, and a stack-based VM executes it. Runtime objects are freed by a mark-and-sweep collector. The `-diag` presets in [Build](#build) expose all three, turning on an instruction-by-instruction trace, a GC log, and a collection on every allocation.
 
 ## Build
 The supported toolchains are described in `CMakePresets.json`, which requires **CMake 3.25** or newer. [Getting started](#getting-started) has the single command that configures, builds and tests in one go; the same thing one step at a time is:
