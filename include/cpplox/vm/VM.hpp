@@ -5,6 +5,8 @@
 #include "cpplox/core/Vector.hpp"
 #include "cpplox/core/String.hpp"
 
+#include <cstdint>
+
 namespace cpplox {
     class Function;
     class Closure;

@@ -4,6 +4,7 @@
 #include "cpplox/core/Vector.hpp"
 #include "cpplox/core/Value.hpp"
 
+#include <cstdint>
 #include <string>
 
 namespace cpplox {
