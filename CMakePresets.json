@@ -10,7 +10,6 @@
       "name": "windows-msvc",
       "displayName": "Windows / MSVC",
       "inherits": "base",
-      "generator": "Visual Studio 17 2022",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -21,7 +20,6 @@
       "name": "windows-clangcl",
       "displayName": "Windows / clang-cl",
       "inherits": "base",
-      "generator": "Visual Studio 17 2022",
       "toolset": "ClangCL",
       "condition": {
         "type": "equals",

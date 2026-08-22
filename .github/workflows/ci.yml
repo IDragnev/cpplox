@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            configure-preset: windows-msvc
+            build-debug:   windows-msvc-debug
+            build-release: windows-msvc-release
+            test-debug:    windows-msvc-debug
+            test-release:  windows-msvc-release
+
+          - os: ubuntu-latest
+            configure-preset: linux-gcc
+            build-debug:   linux-gcc-debug
+            build-release: linux-gcc-release
+            test-debug:    linux-gcc-debug
+            test-release:  linux-gcc-release
+
+          - os: macos-latest
+            configure-preset: macos-appleclang
+            build-debug:   macos-appleclang-debug
+            build-release: macos-appleclang-release
+            test-debug:    macos-appleclang-debug
+            test-release:  macos-appleclang-release
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Ninja
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y ninja-build
+          else
+            brew install ninja
+          fi
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.configure-preset }}
+
+      - name: Build (Debug)
+        run: cmake --build --preset ${{ matrix.build-debug }}
+
+      - name: Test (Debug)
+        run: ctest --preset ${{ matrix.test-debug }}
+
+      - name: Build (Release)
+        run: cmake --build --preset ${{ matrix.build-release }}
+
+      - name: Test (Release)
+        run: ctest --preset ${{ matrix.test-release }}
