@@ -151,18 +151,12 @@ namespace cpplox {
 
     template <typename T>
     void Vector<T>::removeAt(std::size_t position) {
-        if (count == 0) {
-            return;
-        }
         if (position >= count) {
             return;
         }
 
-        if (position < count - 1) {
-            const std::size_t end = count - 1;
-            for (std::size_t i = position; i < end; ++i) {
-                items[i] = std::move(items[i + 1]);
-            }
+        for (std::size_t i = position + 1; i < count; ++i) {
+            items[i - 1] = std::move(items[i]);
         }
 
         --count;
