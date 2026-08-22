@@ -49,6 +49,9 @@ FetchContent_Declare(
     GIT_TAG 11.0.2
 )
 FetchContent_MakeAvailable(fmt)
+set_target_properties(fmt PROPERTIES
+    INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>"
+)
 
 # CPPLOX targets
 add_subdirectory(include/cpplox/log)
