@@ -49,7 +49,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 FetchContent_Declare(
     fmt
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-    GIT_TAG 11.0.2
+    GIT_TAG 11.1.4
 )
 FetchContent_MakeAvailable(fmt)
 set_target_properties(fmt PROPERTIES
