@@ -1,5 +1,7 @@
-# An interpreter for the Lox programming language.
-Lox is a dynamically typed language with C-like syntax, from Robert Nystrom's [Crafting Interpreters](https://craftinginterpreters.com/). cpplox implements the book's bytecode interpreter and extends the language it defines, so the sections below describe cpplox's version of Lox rather than the book's.
+# cpplox
+[![CI](https://github.com/IDragnev/cpplox/actions/workflows/ci.yml/badge.svg)](https://github.com/IDragnev/cpplox/actions)  
+
+An interpreter for the Lox programming language - a dynamically typed language with C-like syntax, from Robert Nystrom's [Crafting Interpreters](https://craftinginterpreters.com/). **cpplox** implements the book's bytecode interpreter and extends the language it defines, so the sections below describe **cpplox**'s version of Lox rather than the book's.
 
 ```
 class Greeter {
