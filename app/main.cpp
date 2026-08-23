@@ -48,7 +48,8 @@ bool readFile(const char* filename, std::string& result);
 int main(int argc, const char* argv[]) {
     std::locale::global(std::locale("en_US.UTF-8"));
 
-    DiagnosticEngine diagnostics(std::make_unique<DiagnosticLogger>());
+    DiagnosticLogger logger;
+    DiagnosticEngine diagnostics(&logger);
     Compiler compiler;
     compiler.setOptions({
         .forceLongInstructions = hasEnvVar("CPPLOX_FORCE_LONG_OPS"),

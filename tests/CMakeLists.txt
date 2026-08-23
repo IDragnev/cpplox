@@ -24,6 +24,7 @@ target_compile_options(core_test
 add_executable(compiler_test
   compiler/main.cpp
   compiler/Scanner.cpp
+  compiler/CompileErrors.cpp
 )
 target_link_libraries(compiler_test compiler doctest)
 target_compile_options(compiler_test

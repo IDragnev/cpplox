@@ -9,7 +9,8 @@ public:
     void consume(cpplox::Diagnostic&&) override {}
 };
 
-cpplox::DiagnosticEngine diag(std::make_unique<DiagnosticsIgnore>());
+DiagnosticsIgnore ignore;
+cpplox::DiagnosticEngine diag(&ignore);
 
 std::vector<cpplox::Token> scanAll(cpplox::Scanner& s) {
     std::vector<cpplox::Token> result;
