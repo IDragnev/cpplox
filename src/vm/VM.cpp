@@ -586,7 +586,7 @@ namespace cpplox {
                                     initializer.asObject()->as<Closure>(),
                                     argc);
                             } else if (argc > 0) {
-                                runtimeError("Expected 0 arguments but got {}",
+                                runtimeError("Expected 0 arguments but got {}.",
                                              argc);
                                 return false;
                             }

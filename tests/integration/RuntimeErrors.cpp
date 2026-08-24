@@ -194,7 +194,7 @@ Foo(1);)");
 
     REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
     REQUIRE(r.error.frames.getCount() == 1);
-    CHECK(r.error.msg == String("Expected 0 arguments but got 1"));
+    CHECK(r.error.msg == String("Expected 0 arguments but got 1."));
 }
 
 TEST_CASE("nested call stack trace") {
