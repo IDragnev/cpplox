@@ -1,2 +1,0 @@
-// assert takes one or two arguments, so the range is reported.
-assert(); // expect runtime error: Invalid argument count. Expected 1 to 2, found 0.

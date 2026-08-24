@@ -754,30 +754,20 @@ namespace cpplox {
         return false;
     }
 
-    // A simple wrapper so we don't expose fmt in the header
-    struct FmtBuffer {
-        fmt::memory_buffer buffer;
-    };
-
     template <typename... Args>
     void VM::runtimeError(std::string_view fmtStr, Args&&... args) {
-        FmtBuffer b;
-        b.buffer.reserve(512);
-
-        const std::size_t LINE_W = 60;
-        error.reserve((frames.getCount() + 1) * LINE_W);
-
-        fmt::vformat_to(std::back_inserter(b.buffer),
+        fmt::memory_buffer buf;
+        fmt::vformat_to(std::back_inserter(buf),
                         fmtStr,
                         fmt::make_format_args(args...));
-        error += std::string_view(b.buffer.data(), b.buffer.size());
-        b.buffer.clear();
+        error.msg = String(std::string_view(buf.data(), buf.size()));
 
-        appendCallStackInfo(b);
+        collectStackFrames();
     }
 
-    void VM::appendCallStackInfo(FmtBuffer& buf) {
-        buf.buffer.clear();
+    void VM::collectStackFrames() {
+        error.frames.clear();
+        error.frames.reserve(frames.getCount());
 
         for (std::size_t i = frames.getCount(); i > 0; --i) {
             const CallFrame& frame = frames[i - 1];
@@ -786,13 +776,12 @@ namespace cpplox {
             std::size_t instruction = frame.ip - chunk.code.data() - 1;
             if (instruction <= chunk.lines.getCount()) {
                 unsigned line = chunk.lines[instruction];
-
-                fmt::format_to(std::back_inserter(buf.buffer),
-                               "\n[line {}] in {}",
-                               line,
-                               i != 1 ? frame.closure->function->name : "script");
-                error += std::string_view(buf.buffer.data(), buf.buffer.size());
-                buf.buffer.clear();
+                String name = i != 1 ? frame.closure->function->name
+                                     : String("script");
+                error.frames.insertBack(StackFrame{
+                    .functionName = std::move(name),
+                    .line = line,
+                });
             }
         }
     }

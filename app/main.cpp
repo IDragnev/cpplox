@@ -19,10 +19,32 @@ using cpplox::DiagnosticEngine;
 
 class DiagnosticLogger : public DiagnosticConsumer {
 public:
+    explicit DiagnosticLogger(bool reportLines) : reportLines(reportLines) {}
+
     void consume(cpplox::Diagnostic&& d) override {
-        cpplox::errorln("Compile error on line {}: {}.", d.line, d.msg);
+        if (reportLines) {
+            cpplox::errorln("Compile error on line {}: {}.", d.line, d.msg);
+        } else {
+            cpplox::errorln("Compile error: {}.", d.msg);
+        }
     }
+    
+private:
+    bool reportLines;
 };
+
+void printRuntimeError(const cpplox::RuntimeError& err, bool reportLines) {
+    cpplox::error("Runtime error: {}", err.msg);
+    for (std::size_t i = 0; i < err.frames.getCount(); ++i) {
+        const auto& frame = err.frames[i];
+        if (reportLines) {
+            cpplox::error("\n[line {}] in {}", frame.line, frame.functionName);
+        } else {
+            cpplox::error("\nin {}", frame.functionName);
+        }
+    }
+    cpplox::errorln("");
+}
 
 bool hasEnvVar(const char* name) {
 #ifdef _MSC_VER
@@ -48,7 +70,8 @@ bool readFile(const char* filename, std::string& result);
 int main(int argc, const char* argv[]) {
     std::locale::global(std::locale("en_US.UTF-8"));
 
-    DiagnosticLogger logger;
+    const bool replMode = (argc == 1);
+    DiagnosticLogger logger(replMode == false);
     DiagnosticEngine diagnostics(&logger);
     Compiler compiler;
     compiler.setOptions({
@@ -75,7 +98,7 @@ int main(int argc, const char* argv[]) {
             return 65;
         }
         if (r.code == InterpretResultCode::RUNTIME_ERROR) {
-            cpplox::errorln("Runtime error: {}", r.error);
+            printRuntimeError(r.error, true);
             return 70;
         }
     } else {
@@ -100,7 +123,7 @@ void repl(DiagnosticEngine& e, VM& vm, Compiler& compiler) {
             if (isASCII(line)) {
                 const auto r = interpret(line, true, e, vm, compiler);
                 if (r.code == InterpretResultCode::RUNTIME_ERROR) {
-                    cpplox::errorln("Runtime error: {}", r.error);
+                    printRuntimeError(r.error, false);
                 }
             } else {
                 cpplox::errorln("Input error. Non-ascii charater found.");

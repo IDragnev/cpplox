@@ -15,6 +15,16 @@ namespace cpplox {
     class Class;
     class NativeFunction;
 
+    struct StackFrame {
+        String functionName;
+        unsigned line = 0;
+    };
+
+    struct RuntimeError {
+        String msg;
+        Vector<StackFrame> frames;
+    };
+
     enum class InterpretResultCode {
         OK,
         COMPILE_ERROR,
@@ -23,7 +33,7 @@ namespace cpplox {
 
     struct InterpretResult {
         InterpretResultCode code = InterpretResultCode::OK;
-        String error = "";
+        RuntimeError error;
     };
 
     template <typename Op>
@@ -74,7 +84,7 @@ namespace cpplox {
 
         template <typename... Args>
         void runtimeError(std::string_view fmtStr, Args&&... args);
-        void appendCallStackInfo(struct FmtBuffer& buf);
+        void collectStackFrames();
 
     private:
         ValueStack stack;
@@ -84,7 +94,7 @@ namespace cpplox {
         std::uint64_t bytesAllocated = 0;
         std::uint64_t nextGC = 1024 * 1024;
         Upvalue* openUpvalues = nullptr;
-        String error = "";
+        RuntimeError error;
         String classInitKey = "init";
     };
 } // namespace cpplox

@@ -1,2 +1,0 @@
-// nil is falsey, so this fails just as false would.
-assert(nil); // expect runtime error: Assertion failed.

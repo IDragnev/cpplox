@@ -24,10 +24,19 @@ target_compile_options(core_test
 add_executable(compiler_test
   compiler/main.cpp
   compiler/Scanner.cpp
-  compiler/CompileErrors.cpp
 )
 target_link_libraries(compiler_test compiler doctest)
 target_compile_options(compiler_test
+ PRIVATE ${CPPLOX_TARGET_WARNING_FLAGS}
+)
+
+add_executable(integration_test
+  integration/main.cpp
+  integration/CompileErrors.cpp
+  integration/RuntimeErrors.cpp
+)
+target_link_libraries(integration_test compiler vm doctest)
+target_compile_options(integration_test
  PRIVATE ${CPPLOX_TARGET_WARNING_FLAGS}
 )
 
@@ -43,6 +52,7 @@ target_compile_options(bytecode_test
 add_test(NAME core_test COMMAND core_test)
 add_test(NAME compiler_test COMMAND compiler_test)
 add_test(NAME bytecode_test COMMAND bytecode_test)
+add_test(NAME integration_test COMMAND integration_test)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(

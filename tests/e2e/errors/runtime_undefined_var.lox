@@ -1,1 +1,4 @@
+// Wiring check: the only runtime-error e2e test kept to verify that the full
+// path from source to stderr and a non-zero exit works end-to-end. All other
+// runtime errors are tested structurally in tests/integration/RuntimeErrors.cpp.
 print(x); // expect runtime error: Undefined variable 'x'.

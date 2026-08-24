@@ -1,4 +1,4 @@
 // Wiring check: the only compile-error e2e test kept to verify that the full
 // path from source to stderr and a non-zero exit works end-to-end. All other
-// compile errors are tested structurally in tests/compiler/CompileErrors.cpp.
+// compile errors are tested structurally in tests/integration/CompileErrors.cpp.
 break; // expect compile error: Can't use 'break' outside of loop
