@@ -1,10 +1,11 @@
 #pragma once
 
-#include <string>
+#include "cpplox/core/String.hpp"
+#include <cstddef>
 
 namespace cpplox {
     struct Diagnostic {
-        std::string msg;
+        String msg;
         std::size_t line = 0;
     };
 } // namespace cpplox

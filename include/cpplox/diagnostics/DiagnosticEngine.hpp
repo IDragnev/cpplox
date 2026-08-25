@@ -18,7 +18,7 @@ namespace cpplox {
         template <typename... Args>
         void report(std::size_t line, std::string_view fmtStr, Args&&... args) {
             consumer->consume(Diagnostic{
-                .msg = fmt::vformat(fmtStr, fmt::make_format_args(args...)),
+                .msg = String(fmt::vformat(fmtStr, fmt::make_format_args(args...))),
                 .line = line,
             });
         }
