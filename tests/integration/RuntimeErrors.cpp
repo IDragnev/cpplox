@@ -18,8 +18,7 @@ cpplox::InterpretResult runAndCollect(const char* src) {
     cpplox::Compiler compiler;
     cpplox::VM vm;
 
-    std::string source(src);
-    auto compiled = compiler.compile(std::move(source), &engine);
+    auto compiled = compiler.compile(src, &engine);
     REQUIRE(compiled.function != nullptr);
 
     return vm.interpret(compiled.function, std::move(compiled.gcObjects));

@@ -59,7 +59,7 @@ bool hasEnvVar(const char* name) {
 
 bool isASCII(const std::string& str);
 
-InterpretResult interpret(std::string source,
+InterpretResult interpret(std::string_view source,
                           bool repl,
                           DiagnosticEngine& e,
                           VM& vm,
@@ -93,7 +93,7 @@ int main(int argc, const char* argv[]) {
             return 1;
         }
 
-        const auto r = interpret(std::move(source), false, diagnostics, vm, compiler);
+        const auto r = interpret(source, false, diagnostics, vm, compiler);
         if (r.code == InterpretResultCode::COMPILE_ERROR) {
             return 65;
         }
@@ -134,7 +134,7 @@ void repl(DiagnosticEngine& e, VM& vm, Compiler& compiler) {
     }
 }
 
-InterpretResult interpret(std::string source,
+InterpretResult interpret(std::string_view source,
                           bool repl,
                           DiagnosticEngine& e,
                           VM& vm,
@@ -143,10 +143,10 @@ InterpretResult interpret(std::string source,
     if (repl) {
         compiled = compiler.replExpression(source, nullptr);
         if (compiled.error) {
-            compiled = compiler.compile(std::move(source), &e);
+            compiled = compiler.compile(source, &e);
         }
     } else {
-        compiled = compiler.compile(std::move(source), &e);
+        compiled = compiler.compile(source, &e);
     }
 
     InterpretResult r;

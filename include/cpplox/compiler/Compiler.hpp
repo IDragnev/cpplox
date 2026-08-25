@@ -5,7 +5,7 @@
 #include "cpplox/core/Value.hpp"
 
 #include <cstdint>
-#include <string>
+#include <string_view>
 
 namespace cpplox {
     class Function;
@@ -62,11 +62,11 @@ namespace cpplox {
 
         void setOptions(const CompileOptions& opts);
 
-        CompileResult compile(std::string src, DiagnosticEngine* engine);
-        CompileResult replExpression(std::string src, DiagnosticEngine* engine);
+        CompileResult compile(std::string_view src, DiagnosticEngine* engine);
+        CompileResult replExpression(std::string_view src, DiagnosticEngine* engine);
 
     private:
-        bool init(std::string&& source, DiagnosticEngine* engine);
+        bool init(std::string_view source, DiagnosticEngine* engine);
         void initFrame(Frame& frame, Function* f, FunctionType t, Frame* parent);
         CompileResult prepareResult(bool hadError);
         void cleanUp();
@@ -155,7 +155,6 @@ namespace cpplox {
         void super(bool canAssign);
 
     private:
-        std::string source = "";
         Scanner scanner;
         struct Parser {
             Token previous;

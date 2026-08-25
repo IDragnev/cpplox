@@ -4,6 +4,7 @@
 #include "cpplox/diagnostics/Diagnostic.hpp"
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 class DiagnosticsCollector : public cpplox::DiagnosticConsumer {
@@ -15,7 +16,7 @@ public:
     }
 };
 
-std::vector<cpplox::Diagnostic> compileAndCollect(const std::string& src) {
+std::vector<cpplox::Diagnostic> compileAndCollect(std::string_view src) {
     DiagnosticsCollector collector;
     cpplox::DiagnosticEngine engine(&collector);
     cpplox::Compiler compiler;
@@ -235,4 +236,12 @@ continue;)");
     CHECK(diags[2].line == 3);
     CHECK(diags[3].msg == "Can't use 'continue' outside of loop");
     CHECK(diags[3].line == 4);
+}
+
+TEST_CASE("null source") {
+    cpplox::Compiler compiler;
+    auto result = compiler.compile(std::string_view{}, nullptr);
+
+    CHECK(result.error == true);
+    CHECK(result.function == nullptr);
 }

@@ -83,8 +83,7 @@ namespace cpplox {
     }
 
     Compiler::Compiler()
-        : source("")
-        , scanner(source, nullptr)
+        : scanner("", nullptr)
     {
     }
 
@@ -92,9 +91,9 @@ namespace cpplox {
         options = opts;
     }
 
-    CompileResult Compiler::replExpression(std::string src,
+    CompileResult Compiler::replExpression(std::string_view src,
                                            DiagnosticEngine* engine) {
-        bool initOk = init(std::move(src), engine);
+        bool initOk = init(src, engine);
         if (initOk) {
             advance();
             namedVariable(Token{
@@ -119,8 +118,8 @@ namespace cpplox {
         return result;
     }
 
-    CompileResult Compiler::compile(std::string src, DiagnosticEngine* diag) {
-        bool initOk = init(std::move(src), diag);
+    CompileResult Compiler::compile(std::string_view src, DiagnosticEngine* diag) {
+        bool initOk = init(src, diag);
         if (initOk) {
             advance();
             do {
@@ -141,10 +140,13 @@ namespace cpplox {
         return result;
     }
 
-    bool Compiler::init(std::string&& compileSource, DiagnosticEngine* engine) {
-        source = std::move(compileSource);
+    bool Compiler::init(std::string_view compileSource, DiagnosticEngine* engine) {
+        if (compileSource.data() == nullptr) {
+            return false;
+        }
+
         diagnostics = engine;
-        scanner = Scanner(source, engine);
+        scanner = Scanner(compileSource, engine);
         gcObjects.reserve(256);
 
         Function* scriptFun = makeObject<Function>("<script>");
@@ -186,9 +188,8 @@ namespace cpplox {
     }
 
     void Compiler::cleanUp() {
-        source = "";
         diagnostics = nullptr;
-        scanner = Scanner(source, nullptr);
+        scanner = Scanner("", nullptr);
         parser = Parser{};
         frame = Frame{};
 
