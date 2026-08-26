@@ -126,6 +126,18 @@ void repl(DiagnosticEngine& e, VM& vm, Compiler& compiler) {
             break;
         }
 
+        while (!line.empty() && line.back() == '\\') {
+            line.pop_back();
+            if (cpplox::STDIN_IS_TERMINAL) {
+                cpplox::print(".. ");
+            }
+            std::string next;
+            std::getline(std::cin, next);
+            if (std::cin.eof()) break;
+            if (std::cin.fail()) break;
+            line += next;
+        }
+
         if (isASCII(line)) {
             const auto r = interpret(line, true, e, vm, compiler);
             if (r.code == InterpretResultCode::RUNTIME_ERROR) {

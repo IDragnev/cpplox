@@ -1,0 +1,10 @@
+// Backslash joins the next line into the current input.
+> fun add(a, b) {\
+>   return a + b;\
+> }
+> add(3, 4)
+7
+// Works for expressions too.
+> 10 +\
+> 20
+30
