@@ -107,6 +107,10 @@ int main(int argc, const char* argv[]) {
 }
 
 void repl(DiagnosticEngine& e, VM& vm, Compiler& compiler) {
+    if (cpplox::STDIN_IS_TERMINAL) {
+        cpplox::println("cpplox REPL. Type :q to exit.");
+    }
+
     std::string line = "";
 
     for (;;) {
