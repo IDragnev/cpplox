@@ -44,7 +44,7 @@ Run it with the path to a script, or with no argument at all:
 cpplox [path-to-script-file]
 ```
 - With a path, the script is loaded and executed.
-- With no argument the interpreter starts in [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) mode. To exit type *:q*. A bare expression is echoed, so `1 + 1` prints `2`; adding a semicolon makes it an ordinary statement, which prints nothing.
+- With no argument the interpreter starts in [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) mode. To exit type *:q*. A bare expression is echoed, so `1 + 1` prints `2`; adding a semicolon makes it an ordinary statement, which prints nothing. End a line with `\` to continue input on the next line.
 
 ## The language
 ### Types
