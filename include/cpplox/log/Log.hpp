@@ -1,5 +1,7 @@
 #pragma once
 
+#include "cpplox/core/Terminal.hpp"
+
 #include <fmt/base.h>
 #include <fmt/color.h>
 
@@ -16,10 +18,11 @@ namespace cpplox {
 
     template <typename... Args>
     void error(fmt::format_string<Args...> fmtStr, Args&&... args) {
-        fmt::print(stderr,
-                   fg(fmt::color::red),
-                   fmtStr,
-                   std::forward<Args>(args)...);
+        if (STDERR_IS_TERMINAL) {
+            fmt::print(stderr, fg(fmt::color::red), fmtStr, std::forward<Args>(args)...);
+        } else {
+            fmt::print(stderr, fmtStr, std::forward<Args>(args)...);
+        }
     }
     template <typename... Args>
     void errorln(fmt::format_string<Args...> fmtStr, Args&&... args) {

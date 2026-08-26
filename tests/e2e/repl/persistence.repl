@@ -1,0 +1,14 @@
+// Variables defined on one line are visible on subsequent lines.
+> var x = 10;
+> var y = 20;
+> x + y
+30
+// Functions persist across lines.
+> fun square(n) { return n * n; }
+> square(7)
+49
+// A class defined on one line can be instantiated later.
+> class Point { init(x, y) { this.x = x; this.y = y; } }
+> var p = Point(3, 4);
+> p.x + p.y
+7

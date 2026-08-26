@@ -1,0 +1,15 @@
+// Bare expressions are auto-printed by the REPL.
+> 1 + 2
+3
+> 10 * 5
+50
+> "hello"
+hello
+> true
+true
+> nil
+nil
+// Statements produce no output.
+> var x = 99;
+> x
+99

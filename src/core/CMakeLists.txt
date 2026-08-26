@@ -11,6 +11,7 @@ set(CPPLOX_CORE_SOURCE
   ${CORE_HEADERS_DIR}/ValueStack.hpp
   ${CORE_HEADERS_DIR}/ValueMap.hpp
   ${CORE_HEADERS_DIR}/Algorithm.hpp
+  ${CORE_HEADERS_DIR}/Terminal.hpp
 
   String.cpp
   Value.cpp

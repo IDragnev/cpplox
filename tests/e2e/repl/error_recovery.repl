@@ -1,0 +1,9 @@
+// A runtime error does not kill the REPL session.
+> var x = 10;
+> undefined_var // expect runtime error: Undefined variable 'undefined_var'.
+> x
+10
+// A compile error does not kill the REPL session.
+> break; // expect compile error: Can't use 'break' outside of loop
+> x + 5
+15

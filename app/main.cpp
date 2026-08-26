@@ -68,8 +68,6 @@ void repl(DiagnosticEngine& e, VM& vm, Compiler& c);
 bool readFile(const char* filename, std::string& result);
 
 int main(int argc, const char* argv[]) {
-    std::locale::global(std::locale("en_US.UTF-8"));
-
     const bool replMode = (argc == 1);
     DiagnosticLogger logger(replMode == false);
     DiagnosticEngine diagnostics(&logger);
@@ -112,24 +110,29 @@ void repl(DiagnosticEngine& e, VM& vm, Compiler& compiler) {
     std::string line = "";
 
     for (;;) {
-        cpplox::print("> ");
+        if (cpplox::STDIN_IS_TERMINAL) {
+            cpplox::print("> ");
+        }
 
         std::getline(std::cin, line);
-        if (std::cin.fail() == false) {
-            if (line == ":q") {
-                break;
-            }
+        if (std::cin.eof()) { break; }
+        if (std::cin.fail()) {
+            cpplox::errorln("Input error. Please try again.");
+            std::cin.clear();
+            continue;
+        }
 
-            if (isASCII(line)) {
-                const auto r = interpret(line, true, e, vm, compiler);
-                if (r.code == InterpretResultCode::RUNTIME_ERROR) {
-                    printRuntimeError(r.error, false);
-                }
-            } else {
-                cpplox::errorln("Input error. Non-ascii charater found.");
+        if (line == ":q") {
+            break;
+        }
+
+        if (isASCII(line)) {
+            const auto r = interpret(line, true, e, vm, compiler);
+            if (r.code == InterpretResultCode::RUNTIME_ERROR) {
+                printRuntimeError(r.error, false);
             }
         } else {
-            cpplox::errorln("Input error. Please try again.");
+            cpplox::errorln("Input error. Non-ascii charater found.");
         }
     }
 }
