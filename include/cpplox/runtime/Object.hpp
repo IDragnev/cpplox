@@ -37,6 +37,7 @@ namespace cpplox {
 
     public:
         bool isReachable = false;
+        Object* nextObject = nullptr;
 
     private:
         ObjectType _type;

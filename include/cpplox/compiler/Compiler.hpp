@@ -17,7 +17,7 @@ namespace cpplox {
     struct CompileResult {
         bool error = false;
         Function* function = nullptr;
-        Vector<Object*> gcObjects;
+        Object* gcObjects = nullptr;
     };
 
     struct CompileOptions {
@@ -182,7 +182,7 @@ namespace cpplox {
             bool null = true;
             bool hasSuperclass = false;
         } enclosingClass;
-        Vector<Object*> gcObjects;
+        Object* gcObjects = nullptr;
         DiagnosticEngine* diagnostics = nullptr;
         CompileOptions options;
     };

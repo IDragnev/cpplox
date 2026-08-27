@@ -147,7 +147,6 @@ namespace cpplox {
 
         diagnostics = engine;
         scanner = Scanner(compileSource, engine);
-        gcObjects.reserve(256);
 
         Function* scriptFun = makeObject<Function>("<script>");
         if (scriptFun != nullptr) {
@@ -180,8 +179,10 @@ namespace cpplox {
         CompileResult result;
         result.error = hadError;
         if (result.error == false) {
-            result.gcObjects = std::move(gcObjects);
             result.function = frame.function;
+            result.gcObjects = gcObjects;
+            // caller takes ownership of GC objects
+            gcObjects = nullptr;
         }
 
         return result;
@@ -193,18 +194,20 @@ namespace cpplox {
         parser = Parser{};
         frame = Frame{};
 
-        const std::size_t size = gcObjects.getCount();
-        for (std::size_t i = 0; i < size; ++i) {
-            gc::freeObject(gcObjects[i]);
+        while (gcObjects != nullptr) {
+            Object* next = gcObjects->nextObject;
+            gc::freeObject(gcObjects);
+            gcObjects = next;
         }
-        gcObjects.clear();
+        gcObjects = nullptr;
     }
 
     template <typename T, typename... Args>
     T* Compiler::makeObject(Args&&... args) {
         T* obj = gc::makeObject<T>(std::forward<Args>(args)...);
         if (obj != nullptr) {
-            gcObjects.insertBack(obj);
+            obj->nextObject = gcObjects;
+            gcObjects = obj;
         }
         else {
             compileError(parser.previous, "Out of memory");

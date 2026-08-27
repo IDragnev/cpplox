@@ -172,7 +172,7 @@ InterpretResult interpret(std::string_view source,
     if (compiled.error) {
         r.code = InterpretResultCode::COMPILE_ERROR;
     } else {
-        r = vm.interpret(compiled.function, std::move(compiled.gcObjects));
+        r = vm.interpret(compiled.function, compiled.gcObjects);
     }
 
     return r;

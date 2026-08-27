@@ -27,14 +27,15 @@ namespace cpplox {
     }
 
     VM::~VM() {
-        // ok for now, will be managed by the runtime GC
-        forEach(gcObjects, [](Object* o) {
-            gc::freeObject(o);
-        });
-        gcObjects.clear();
+        while (gcObjects != nullptr) {
+            Object* next = gcObjects->nextObject;
+            gc::freeObject(gcObjects);
+            gcObjects = next;
+        }
+        gcObjects = nullptr;
     }
 
-    InterpretResult VM::interpret(Function* func, Vector<Object*>&& objects) {
+    InterpretResult VM::interpret(Function* func, Object* objects) {
         InterpretResult result;
 
         if (func == nullptr) {
@@ -46,7 +47,7 @@ namespace cpplox {
             return result;
         }
 
-        addObjects(std::move(objects));
+        addObjects(objects);
         stack.reserve(2056);
         frames.reserve(512);
 
@@ -71,12 +72,21 @@ namespace cpplox {
         return result;
     }
 
-    void VM::addObjects(Vector<Object*>&& objects) {
-        forEach(objects, [this] (Object* o) {
-            gcObjects.insertBack(o);
-            bytesAllocated += objectSize(o);
-        });
-        objects.clear();
+    void VM::addObjects(Object* objects) {
+        if (objects == nullptr) {
+            return;
+        }
+
+        Object* last = objects;
+        Object* current = objects;
+        do {
+            last = current;
+            bytesAllocated += objectSize(current);
+            current = current->nextObject;
+        } while (current != nullptr);
+
+        last->nextObject = gcObjects;
+        gcObjects = objects;
     }
 
     void VM::defineNatives() {
@@ -799,7 +809,8 @@ namespace cpplox {
         T* obj = gc::makeObject<T>(std::forward<Args>(args)...);
         if (obj != nullptr) {
             bytesAllocated += sizeof(T);
-            gcObjects.insertBack(obj);
+            obj->nextObject = gcObjects;
+            gcObjects = obj;
         }
         else {
             runtimeError("Out of memory");
@@ -848,22 +859,29 @@ namespace cpplox {
 const auto before = bytesAllocated;
 #endif
 
-        // todo: optimize with intrusive linked list
-        forEach(gcObjects, [this](Object* &obj) {
-            if (obj != nullptr) {
-                if (obj->isReachable == false) {
-                    bytesAllocated -= objectSize(obj);
-                    gc::freeObject(obj);
-                    obj = nullptr;
+        Object* prev = nullptr;
+        Object* current = gcObjects;
+        while (current != nullptr) {
+            Object* next = current->nextObject;
+            
+            if (current->isReachable == false) {
+                bytesAllocated -= objectSize(current);
+                gc::freeObject(current);
+
+                if (prev == nullptr) {
+                    gcObjects = next;
                 }
                 else {
-                    obj->isReachable = false;
+                    prev->nextObject = next;
                 }
             }
-        });
-        removeIf(gcObjects, [] (const Object* obj) {
-            return obj == nullptr;
-        });
+            else {
+                current->isReachable = false;
+                prev = current;
+            }
+
+            current = next;
+        }
 
         const std::uint64_t HEAP_GROWTH_FACTOR = 2;
         nextGC = bytesAllocated * HEAP_GROWTH_FACTOR;

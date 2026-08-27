@@ -54,11 +54,11 @@ namespace cpplox {
         VM(const VM&) = delete;
         VM& operator=(const VM&) = delete;
 
-        InterpretResult interpret(Function* func, Vector<Object*>&& objects);
+        InterpretResult interpret(Function* func, Object* objects);
 
     private:
         InterpretResultCode run();
-        void addObjects(Vector<Object*>&& objects);
+        void addObjects(Object* objects);
         void defineNatives();
         template <typename T>
         bool defineNative();
@@ -90,7 +90,7 @@ namespace cpplox {
         ValueStack stack;
         ValueMap globals;
         Vector<CallFrame> frames;
-        Vector<Object*> gcObjects;
+        Object* gcObjects = nullptr;
         std::uint64_t bytesAllocated = 0;
         std::uint64_t nextGC = 1024 * 1024;
         Upvalue* openUpvalues = nullptr;
