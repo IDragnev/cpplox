@@ -2,7 +2,7 @@
 
 namespace cpplox {
     NativeFunction::NativeFunction(const String& name, Arity arity)
-        : Object(NativeFunction::TYPE)
+        : Object(NativeFunction::TYPE, sizeof(NativeFunction))
         , name(name)
         , arity(arity)
     {}

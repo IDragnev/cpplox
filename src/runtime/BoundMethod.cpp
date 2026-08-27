@@ -3,7 +3,7 @@
 
 namespace cpplox {
     BoundMethod::BoundMethod(Value r, Closure* m)
-        : Object(BoundMethod::TYPE)
+        : Object(BoundMethod::TYPE, sizeof(BoundMethod))
         , receiver(r)
         , method(m) {}
 

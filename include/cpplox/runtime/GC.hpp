@@ -29,4 +29,13 @@ namespace cpplox::gc {
 
     void traceRoot(Object* root);
     void freeObject(Object* obj);
+
+    using Deleter = void (*)(Object*);
+
+    struct SweepResult {
+        Object* head = nullptr;
+        std::size_t freedBytes = 0;
+    };
+
+    SweepResult sweep(Object* head, Deleter deleter);
 } // namespace cpplox::gc

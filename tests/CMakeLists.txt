@@ -49,9 +49,19 @@ target_compile_options(bytecode_test
  PRIVATE ${CPPLOX_TARGET_WARNING_FLAGS}
 )
 
+add_executable(runtime_test
+  runtime/main.cpp
+  runtime/GC.cpp
+)
+target_link_libraries(runtime_test runtime doctest)
+target_compile_options(runtime_test
+ PRIVATE ${CPPLOX_TARGET_WARNING_FLAGS}
+)
+
 add_test(NAME core_test COMMAND core_test)
 add_test(NAME compiler_test COMMAND compiler_test)
 add_test(NAME bytecode_test COMMAND bytecode_test)
+add_test(NAME runtime_test COMMAND runtime_test)
 add_test(NAME integration_test COMMAND integration_test)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)

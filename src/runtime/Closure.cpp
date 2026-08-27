@@ -4,7 +4,7 @@
 
 namespace cpplox {
     Closure::Closure(Function* fun)
-        : Object(TYPE)
+        : Object(TYPE, sizeof(Closure))
         , function(fun)
         , upvalues(fun->upvaluesCount)
     {}

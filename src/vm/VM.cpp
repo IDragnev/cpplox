@@ -81,7 +81,7 @@ namespace cpplox {
         Object* current = objects;
         do {
             last = current;
-            bytesAllocated += objectSize(current);
+            bytesAllocated += current->size();
             current = current->nextObject;
         } while (current != nullptr);
 
@@ -819,39 +819,6 @@ namespace cpplox {
         return obj;
     }
 
-    std::size_t VM::objectSize(Object* obj) {
-        if (obj == nullptr) {
-            return 0;
-        }
-
-        std::uint64_t objSize = 0;
-        switch (obj->type()) {
-            case ObjectType::FUNCTION: {
-                objSize = sizeof(Function);
-            } break;
-            case ObjectType::CLOSURE: {
-                objSize = sizeof(Closure);
-            } break;
-            case ObjectType::UPVALUE: {
-                objSize = sizeof(Upvalue);
-            } break;
-            case ObjectType::CLASS: {
-                objSize = sizeof(Class);
-            } break;
-            case ObjectType::INSTANCE: {
-                objSize = sizeof(Instance);
-            } break;
-            case ObjectType::BOUND_METHOD: {
-                objSize = sizeof(BoundMethod);
-            } break;
-            case ObjectType::NATIVE_FUNCTION: {
-                objSize = sizeof(NativeFunction);
-            } break;
-        }
-
-        return objSize;
-    }
-
     void VM::runGC() {
         traceGCRoots();
 
@@ -859,31 +826,11 @@ namespace cpplox {
 const auto before = bytesAllocated;
 #endif
 
-        Object* prev = nullptr;
-        Object* current = gcObjects;
-        while (current != nullptr) {
-            Object* next = current->nextObject;
-            
-            if (current->isReachable == false) {
-                bytesAllocated -= objectSize(current);
-                gc::freeObject(current);
+        auto result = gc::sweep(gcObjects, gc::freeObject);
+        gcObjects = result.head;
+        bytesAllocated -= result.freedBytes;
 
-                if (prev == nullptr) {
-                    gcObjects = next;
-                }
-                else {
-                    prev->nextObject = next;
-                }
-            }
-            else {
-                current->isReachable = false;
-                prev = current;
-            }
-
-            current = next;
-        }
-
-        const std::uint64_t HEAP_GROWTH_FACTOR = 2;
+        constexpr std::uint64_t HEAP_GROWTH_FACTOR = 2;
         nextGC = bytesAllocated * HEAP_GROWTH_FACTOR;
 
 #ifdef CPPLOX_DEBUG_LOG_GC

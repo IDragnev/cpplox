@@ -3,7 +3,7 @@
 
 namespace cpplox {
     Instance::Instance(Class* c)
-        : Object(Instance::TYPE)
+        : Object(Instance::TYPE, sizeof(Instance))
         , klass(c)
     {}
 

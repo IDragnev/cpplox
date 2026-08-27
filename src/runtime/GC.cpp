@@ -44,4 +44,34 @@ namespace cpplox::gc {
 #endif
         delete obj;
     }
+
+    SweepResult sweep(Object* head, Deleter deleter) {
+        Object* prev = nullptr;
+        Object* current = head;
+        std::size_t freedBytes = 0;
+
+        while (current != nullptr) {
+            Object* next = current->nextObject;
+
+            if (current->isReachable == false) {
+                freedBytes += current->size();
+                deleter(current);
+
+                if (prev == nullptr) {
+                    head = next;
+                }
+                else {
+                    prev->nextObject = next;
+                }
+            }
+            else {
+                current->isReachable = false;
+                prev = current;
+            }
+
+            current = next;
+        }
+
+        return SweepResult{.head = head, .freedBytes = freedBytes};
+    }
 } // namespace cpplox::gc

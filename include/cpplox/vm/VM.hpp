@@ -64,7 +64,6 @@ namespace cpplox {
         bool defineNative();
         template <typename T, typename... Args>
         T* makeObject(Args&&... args);
-        static std::size_t objectSize(Object* o);
         void runGC();
         void traceGCRoots();
 

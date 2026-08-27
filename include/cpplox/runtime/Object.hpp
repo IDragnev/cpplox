@@ -2,6 +2,8 @@
 
 #include "cpplox/runtime/GCVisitor.hpp"
 
+#include <cstddef>
+
 namespace cpplox {
     enum class ObjectType {
         FUNCTION,
@@ -18,13 +20,14 @@ namespace cpplox {
 
     class Object {
     public:
-        explicit Object(ObjectType t) : _type(t) {}
+        Object(ObjectType t, std::size_t size) : _type(t), _size(size) {}
         virtual ~Object() = default;
 
         virtual void trace(gc::Visitor& v) = 0;
 
         ObjectType type() const { return _type; }
         bool hasType(ObjectType t) const { return _type == t; }
+        std::size_t size() const { return _size; }
 
         template <HasTypeTag T>
         T* as() {
@@ -41,5 +44,6 @@ namespace cpplox {
 
     private:
         ObjectType _type;
+        std::size_t _size;
     };
 } // namespace cpplox

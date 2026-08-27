@@ -3,7 +3,7 @@
 
 namespace cpplox {
     Function::Function(const String& name)
-        : Object(Function::TYPE)
+        : Object(Function::TYPE, sizeof(Function))
         , name(name)
     {}
 

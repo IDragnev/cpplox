@@ -8,7 +8,7 @@ namespace cpplox {
     public:
         static const ObjectType TYPE = ObjectType::UPVALUE;
 
-        explicit Upvalue(Value* v) : Object(TYPE), location(v) {}
+        explicit Upvalue(Value* v) : Object(TYPE, sizeof(Upvalue)), location(v) {}
 
         void trace(gc::Visitor& v) override;
 

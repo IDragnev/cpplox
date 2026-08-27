@@ -2,7 +2,7 @@
 
 namespace cpplox {
     Class::Class(const String& name)
-        : Object(Class::TYPE)
+        : Object(Class::TYPE, sizeof(Class))
         , name(name)
     {}
 
