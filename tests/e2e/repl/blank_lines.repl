@@ -1,0 +1,8 @@
+// A blank line and a comment-only line hold no statements, so the REPL
+// accepts them and writes nothing, the same way an empty script runs.
+> 1 + 1
+2
+>
+> // just a comment
+> 2 + 2
+4

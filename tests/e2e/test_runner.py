@@ -28,7 +28,9 @@ running. They may appear anywhere in a file.
 Test REPL-specific behavior (expression auto-printing, state persistence, error
 recovery). The file format is line-based:
 
-    Lines starting with "> " are input fed to the REPL via stdin.
+    Lines starting with "> " are input fed to the REPL via stdin. A bare ">"
+    is a blank input line, which cannot be written as "> " because the
+    trailing space does not survive editors that trim it.
     All other non-comment lines are expected stdout output (in order).
     Comments (lines starting with "//") are ignored.
     Error expectations use the same syntax as .lox files, placed on input lines:
@@ -63,7 +65,7 @@ EXPECT_EMPTY_LINE = re.compile(r"// expect empty line")
 EXPECT_RUNTIME_ERR = re.compile(r"// expect runtime error: (.*)")
 EXPECT_COMPILE_ERR = re.compile(r"// expect compile error: (.*)")
 NONTEST = re.compile(r"// nontest")
-REPL_INPUT = re.compile(r"^> (.*)")
+REPL_INPUT = re.compile(r"^>(?: (.*))?$")
 COMMENT_LINE = re.compile(r"^\s*//")
 EXPECT_EMPTY_LINE_REPL = re.compile(r"^// expect empty line$")
 
@@ -142,7 +144,7 @@ def parse_repl_file(filepath: Path) -> ReplExpectations:
 
             m = REPL_INPUT.match(line)
             if m:
-                input_content = m.group(1)
+                input_content = m.group(1) or ""
 
                 err = EXPECT_RUNTIME_ERR.search(input_content)
                 if err:

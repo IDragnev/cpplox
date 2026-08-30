@@ -122,13 +122,13 @@ namespace cpplox {
         bool initOk = init(src, diag);
         if (initOk) {
             advance();
-            do {
+            while (peek(TokenType::EOF_TOKEN) == false) {
                 declaration();
 
                 if (parser.panicMode) {
                     synchronize();
                 }
-            } while (peek(TokenType::EOF_TOKEN) == false);
+            }
             emitReturn();
         }
 

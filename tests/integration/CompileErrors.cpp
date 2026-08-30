@@ -147,6 +147,14 @@ TEST_CASE("expected expression") {
     CHECK(diags[0].line == 1);
 }
 
+TEST_CASE("expected expression at end of input") {
+    const auto diags = compileAndCollect("var a =");
+
+    REQUIRE(diags.size() == 1);
+    CHECK(diags[0].msg == "Expected expression");
+    CHECK(diags[0].line == 1);
+}
+
 TEST_CASE("parameters limit") {
     std::string src = "fun f(";
     for (int i = 0; i < 256; ++i) {
