@@ -22,6 +22,10 @@
 #include <fmt/format.h>
 
 namespace cpplox {
+    static const std::size_t MAX_FRAMES = 1024;
+    static const std::size_t MAX_STACK_BYTES = 4 * 1024 * 1024;
+    static const std::size_t MAX_STACK_SLOTS = MAX_STACK_BYTES / sizeof(Value);
+
     VM::VM() {
         defineNatives();
     }
@@ -621,6 +625,12 @@ namespace cpplox {
             runtimeError("Invalid argument count. Expected {}, found {}.",
                          f->function->arity,
                          argc);
+            return false;
+        }
+
+        if (frames.getCount() == MAX_FRAMES || stack.size() >= MAX_STACK_SLOTS)
+        {
+            runtimeError("Stack overflow.");
             return false;
         }
 

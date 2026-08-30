@@ -34,15 +34,31 @@ private:
 };
 
 void printRuntimeError(const cpplox::RuntimeError& err, bool reportLines) {
-    cpplox::error("Runtime error: {}", err.msg);
-    for (std::size_t i = 0; i < err.frames.getCount(); ++i) {
-        const auto& frame = err.frames[i];
+    const std::size_t TRACE_HEAD_FRAMES = 10;
+
+    const auto printFrame = [reportLines](const cpplox::StackFrame& frame) {
         if (reportLines) {
             cpplox::error("\n[line {}] in {}", frame.line, frame.functionName);
         } else {
             cpplox::error("\nin {}", frame.functionName);
         }
+    };
+
+    cpplox::error("Runtime error: {}", err.msg);
+
+    const std::size_t count = err.frames.getCount();
+    const bool elide = count > TRACE_HEAD_FRAMES + 2;
+    const std::size_t shown = elide ? TRACE_HEAD_FRAMES : count;
+
+    for (std::size_t i = 0; i < shown; ++i) {
+        printFrame(err.frames[i]);
     }
+
+    if (elide) {
+        cpplox::error("\n... {} frames omitted", count - shown - 1);
+        printFrame(err.frames[count - 1]);
+    }
+
     cpplox::errorln("");
 }
 

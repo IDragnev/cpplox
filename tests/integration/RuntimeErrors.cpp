@@ -4,6 +4,8 @@
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 #include "cpplox/diagnostics/Diagnostic.hpp"
 
+#include <string>
+
 using cpplox::String;
 using cpplox::InterpretResultCode;
 
@@ -194,6 +196,27 @@ Foo(1);)");
     REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
     REQUIRE(r.error.frames.getCount() == 1);
     CHECK(r.error.msg == String("Expected 0 arguments but got 1."));
+}
+
+TEST_CASE("stack overflow: wide frames exhaust the slot budget first") {
+    std::string wideSrc = "fun f(n) {\n";
+    for (int i = 0; i < 300; ++i) {
+        wideSrc += "    var v" + std::to_string(i) + " = 0;\n";
+    }
+    wideSrc += "    return f(n + 1);\n}\nf(0);";
+
+    const auto deep = runAndCollect(R"(fun f(n) {
+    return f(n + 1);
+}
+f(0);)");
+    const auto wide = runAndCollect(wideSrc.c_str());
+
+    REQUIRE(deep.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(wide.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(deep.error.msg == String("Stack overflow."));
+    CHECK(wide.error.msg == String("Stack overflow."));
+
+    CHECK(wide.error.frames.getCount() < deep.error.frames.getCount());
 }
 
 TEST_CASE("nested call stack trace") {

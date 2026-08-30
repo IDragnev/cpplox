@@ -1,0 +1,10 @@
+// Recursion of ordinary depth is unaffected by the interpreter's stack limit.
+fun countDown(n) {
+    if (n == 0) {
+        return "done";
+    }
+
+    return countDown(n - 1);
+}
+
+assert(countDown(100) == "done");
