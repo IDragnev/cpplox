@@ -8,6 +8,7 @@
 #include "cpplox/core/Algorithm.hpp"
 
 #include <limits>
+#include <cstdlib>
 
 namespace cpplox {
     static const std::size_t MAX_LOCALS =
@@ -1007,7 +1008,28 @@ namespace cpplox {
     }
 
     void Compiler::number(bool) {
-        double v = std::strtod(parser.previous.lexeme.data(), nullptr);
+        const std::string_view lexeme = parser.previous.lexeme;
+
+        // A double round-trips in 17 significant digits, but Lox has no
+        // exponent syntax, so length also grows with magnitude: 1e-71 spells
+        // out to 73 characters. Magnitudes past about 1e126 need the heap.
+        constexpr std::size_t SMALL_LEXEME_SIZE = 128;
+        double v = 0.0;
+
+        // strtod reads until a character that cannot continue a number, which
+        // the lexeme's end is not, so it parses a NUL-terminated copy of the
+        // token rather than the view into the source.
+        if (lexeme.size() <= SMALL_LEXEME_SIZE) {
+            char buffer[SMALL_LEXEME_SIZE + 1]{};
+            for (std::size_t i = 0; i < lexeme.size(); ++i) {
+                buffer[i] = lexeme[i];
+            }
+            v = std::strtod(buffer, nullptr);
+        } else {
+            const String copy(lexeme);
+            v = std::strtod(copy.c_str(), nullptr);
+        }
+
         emitConstant(Value(v));
     }
 
