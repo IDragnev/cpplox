@@ -1030,6 +1030,14 @@ namespace cpplox {
             v = std::strtod(copy.c_str(), nullptr);
         }
 
+        // strtod saturates to an infinity when the literal names a magnitude
+        // too large to hold, and a literal carries no sign, so this is the one
+        // way an infinity could reach a program that cannot spell one.
+        if (v == std::numeric_limits<double>::infinity()) {
+            compileError(parser.previous, "Number is too large");
+            return;
+        }
+
         emitConstant(Value(v));
     }
 
