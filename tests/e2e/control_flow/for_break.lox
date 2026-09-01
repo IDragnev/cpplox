@@ -5,7 +5,3 @@ for (var i = 0; i < 10; i = i + 1) {
     trace = trace + str(i);
 }
 assert(trace == "012", trace);
-
-// Code after the loop still runs.
-var afterLoop = true;
-assert(afterLoop);

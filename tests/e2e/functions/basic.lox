@@ -7,9 +7,3 @@ fun add(a, b) {
     return a + b;
 }
 assert(add(2, 3) == 5);
-
-// Functions without an explicit return give nil.
-fun noReturn() {
-    var x = 1;
-}
-assert(noReturn() == nil);

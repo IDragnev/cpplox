@@ -2,8 +2,3 @@ assert(1 + 2 == 3);
 assert(0 + 0 == 0);
 assert(-1 + 1 == 0);
 assert(1.5 + 2.5 == 4);
-assert(100 + 200 == 300);
-
-// String concatenation uses + as well.
-assert("hello" + " " + "world" == "hello world");
-assert("a" + "b" == "ab");

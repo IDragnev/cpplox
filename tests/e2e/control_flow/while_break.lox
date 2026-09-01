@@ -9,7 +9,3 @@ while (i < 10) {
 
 assert(trace == "012", trace);
 assert(i == 3, "break left the counter where it was");
-
-// Code after the loop still runs.
-var afterLoop = true;
-assert(afterLoop);

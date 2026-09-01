@@ -18,7 +18,8 @@ assert(true, "never reported");
 var a = 2;
 assert(a * 3 == 6, "expected 6, got " + str(a * 3));
 
-fun isEven(n) {
+fun isFour(n) {
     return n == 4;
 }
-assert(isEven(4));
+assert(isFour(4));
+assert(isFour(5) == false);
