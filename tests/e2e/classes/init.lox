@@ -18,3 +18,17 @@ assert(r.area() == 21);
 var r2 = Rect(5, 2);
 assert(type(r2) == "instance");
 assert(r2.area() == 10);
+
+// A bare return leaves init early and still yields the instance.
+var trace = "";
+class Early {
+    init() {
+        trace = trace + "before,";
+        return;
+        trace = trace + "after,";
+    }
+}
+
+var early = Early();
+assert(trace == "before,", trace);
+assert(type(early) == "instance", "the bare return still gave back the instance");

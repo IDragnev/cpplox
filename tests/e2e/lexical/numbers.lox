@@ -1,0 +1,30 @@
+// A number is a run of digits with at most one interior dot.
+assert(type(1) == "number");
+assert(type(1.5) == "number");
+assert(1 == 1.0);
+assert(0 == 0.0);
+assert(3.5 == 7 / 2);
+
+// Redundant zeros do not change the value.
+assert(007 == 7);
+assert(1.500 == 1.5);
+assert(0.5 == 1 / 2);
+
+// Numbers are double-precision floating-point values, so they carry 15
+// significant digits comfortably and need 17 to be told apart from their
+// neighbours.
+assert(1.23456789012345 == 1.23456789012345);
+assert(9007199254740992 == 9007199254740993, "2^53 + 1 is not representable");
+assert(1.0000000000000001 == 1.0);
+assert(1.0000000000000002 != 1.0);
+
+// Digits past the 17th describe precision the type cannot hold, so this is the
+// same literal as 0.1.
+assert(0.1 == 0.1000000000000000055511151231257827);
+
+// There is no exponent notation, so magnitude is spelled out in full.
+assert(0.0000000000000000000000000000001 > 0);
+assert(10000000000000000000000000000000 > 0);
+
+// A literal may be far longer than that, however few of its digits matter.
+assert(0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001 == 1);

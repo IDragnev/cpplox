@@ -14,14 +14,22 @@ of the expectation formats below.
 
 The expectation comments are for the two things a script cannot assert about
 itself: what the interpreter writes to stdout, and the errors that stop it from
-running. They may appear anywhere in a file.
+running.
 
     // expect: <value>                    -- expected stdout line (in order)
     // expect empty line                  -- expected blank stdout line (in order)
     // expect runtime error: <message>    -- expected runtime-error substring on stderr
     // expect compile error: <message>    -- expected compile-error on stderr
-                                             (line number inferred from comment position)
     // nontest                            -- skip this file entirely
+
+Both error forms are written on the line the error is reported for, since that
+line is checked as well as the message. A script stops at its first runtime
+error, so a file declares at most one. Stdout and stderr are both accounted for
+in full: an undeclared line of output or an undeclared error fails the test.
+
+"// expect" is reserved. A comment that opens with it and then matches none of
+the forms above is a misspelled expectation rather than prose, and is reported
+instead of being quietly ignored.
 
 ## .repl tests
 
@@ -31,10 +39,14 @@ recovery). The file format is line-based:
     Lines starting with "> " are input fed to the REPL via stdin. A bare ">"
     is a blank input line, which cannot be written as "> " because the
     trailing space does not survive editors that trim it.
-    All other non-comment lines are expected stdout output (in order).
+    All other non-comment lines are expected stdout output (in order), so a
+    line of input that loses its prefix becomes output that never arrives.
     Comments (lines starting with "//") are ignored.
     Error expectations use the same syntax as .lox files, placed on input lines:
         > undefined_var // expect runtime error: Undefined variable 'undefined_var'.
+    A REPL keeps going after an error, so a file may declare several. There is
+    no "// expect:" form here: output is written bare, and a line is checked by
+    being there.
 
 The interpreter is launched with no file argument (REPL mode). stdin is piped,
 so the TTY-guarded prompt is suppressed and stdout contains only program output.
@@ -69,6 +81,25 @@ REPL_INPUT = re.compile(r"^>(?: (.*))?$")
 COMMENT_LINE = re.compile(r"^\s*//")
 EXPECT_EMPTY_LINE_REPL = re.compile(r"^// expect empty line$")
 
+# A comment that opens with the reserved word, whatever it goes on to say. The
+# word boundary is what keeps prose such as "// expected" out of it.
+SUSPECTED_EXPECT = re.compile(r"//\s*expect\b")
+LOX_EXPECT_FORMS = (
+    EXPECT_OUTPUT,
+    EXPECT_EMPTY_LINE,
+    EXPECT_RUNTIME_ERR,
+    EXPECT_COMPILE_ERR,
+)
+REPL_EXPECT_FORMS = (
+    EXPECT_EMPTY_LINE_REPL,
+    EXPECT_RUNTIME_ERR,
+    EXPECT_COMPILE_ERR,
+)
+
+# The first frame under a runtime error is where it happened.
+TRACE_FRAME = re.compile(r"^\[line (\d+)\]", re.M)
+REPORTED_ERROR = re.compile(r"^(Compile|Runtime) error")
+
 TIMEOUT_SECONDS = 5
 
 # Enough for a runtime error and the call stack under it. A deeper trace is
@@ -83,6 +114,7 @@ class Expectations:
     runtime_error: str | None = None
     runtime_error_line: int | None = None
     skip: bool = False
+    malformed: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -90,6 +122,22 @@ class TestResult:
     path: str
     passed: bool
     failures: list[str] = field(default_factory=list)
+
+
+def misspelled_expectation(line: str, lineno: int, forms: tuple) -> str | None:
+    """Report a comment that means to be an expectation but is not one.
+
+    A misspelled expectation matches nothing and is therefore checked against
+    nothing, leaving a test that quietly does less than it says.
+    """
+    if SUSPECTED_EXPECT.search(line) is None:
+        return None
+
+    for form in forms:
+        if form.search(line):
+            return None
+
+    return f"Line {lineno}: not an expectation form: {line.strip()}"
 
 
 def parse_expectations(filepath: Path) -> Expectations:
@@ -111,12 +159,22 @@ def parse_expectations(filepath: Path) -> Expectations:
 
             m = EXPECT_RUNTIME_ERR.search(line)
             if m:
+                if exp.runtime_error is not None:
+                    exp.malformed.append(
+                        f"Line {lineno}: a second runtime error is expected, but "
+                        f"the one on line {exp.runtime_error_line} already ends "
+                        f"the run"
+                    )
                 exp.runtime_error = m.group(1)
                 exp.runtime_error_line = lineno
 
             m = EXPECT_COMPILE_ERR.search(line)
             if m:
                 exp.compile_errors.append((lineno, m.group(1)))
+
+            bad = misspelled_expectation(line, lineno, LOX_EXPECT_FORMS)
+            if bad:
+                exp.malformed.append(bad)
 
     return exp
 
@@ -128,6 +186,7 @@ class ReplExpectations:
     runtime_errors: list[str] = field(default_factory=list)
     compile_errors: list[str] = field(default_factory=list)
     skip: bool = False
+    malformed: list[str] = field(default_factory=list)
 
 
 def parse_repl_file(filepath: Path) -> ReplExpectations:
@@ -135,14 +194,24 @@ def parse_repl_file(filepath: Path) -> ReplExpectations:
     exp = ReplExpectations()
 
     with open(filepath, "r", encoding="utf-8") as fh:
-        for line in fh:
+        for lineno, line in enumerate(fh, start=1):
             line = line.rstrip("\n")
 
             if NONTEST.search(line):
                 exp.skip = True
                 return exp
 
+            bad = misspelled_expectation(line, lineno, REPL_EXPECT_FORMS)
+            if bad:
+                exp.malformed.append(bad)
+
             m = REPL_INPUT.match(line)
+            if m is None and line.startswith(">"):
+                exp.malformed.append(
+                    f"Line {lineno}: an input line is '>' followed by a space, "
+                    f"or '>' alone when the input is blank: {line}"
+                )
+
             if m:
                 input_content = m.group(1) or ""
 
@@ -192,6 +261,34 @@ def describe_exit(expected: int, actual: int) -> str:
         return f"Expected {wanted}, but the script succeeded."
 
     return f"Expected {wanted} (exit {expected}), got exit {actual}:"
+
+
+def undeclared_errors(stderr: str, compile_count: int, runtime_count: int) -> list[str]:
+    """Report errors on stderr beyond the ones the file declared.
+
+    An error nobody asked for fails the test the same way an undeclared line of
+    stdout does, so that a file cannot check the first of its errors and let
+    the rest through.
+    """
+    reported = [line for line in stderr.splitlines() if REPORTED_ERROR.match(line)]
+    compile_reported = sum(1 for line in reported if line.startswith("Compile"))
+    runtime_reported = len(reported) - compile_reported
+
+    failures: list[str] = []
+    if compile_reported > compile_count:
+        failures.append(
+            f"Stderr has {compile_reported} compile errors, "
+            f"{compile_count} declared:"
+        )
+    if runtime_reported > runtime_count:
+        failures.append(
+            f"Stderr has {runtime_reported} runtime errors, "
+            f"{runtime_count} declared:"
+        )
+    if failures:
+        failures.extend(f"  {line}" for line in reported[:STDERR_EXCERPT_LINES])
+
+    return failures
 
 
 def run_test(interpreter: Path, filepath: Path, exp: Expectations) -> TestResult:
@@ -263,6 +360,24 @@ def run_test(interpreter: Path, filepath: Path, exp: Expectations) -> TestResult
             result.passed = False
             result.failures.append(f"Missing runtime error: '{needle}'")
 
+        frame = TRACE_FRAME.search(actual_stderr)
+        if frame is None:
+            result.passed = False
+            result.failures.append("Runtime error reported no source line")
+        elif int(frame.group(1)) != exp.runtime_error_line:
+            result.passed = False
+            result.failures.append(
+                f"Runtime error reported on line {frame.group(1)}, "
+                f"expected line {exp.runtime_error_line}"
+            )
+
+    undeclared = undeclared_errors(
+        actual_stderr, len(exp.compile_errors), 1 if exp.runtime_error else 0
+    )
+    if undeclared:
+        result.passed = False
+        result.failures.extend(undeclared)
+
     return result
 
 
@@ -330,6 +445,13 @@ def run_repl_test(interpreter: Path, filepath: Path, exp: ReplExpectations) -> T
             result.passed = False
             result.failures.append(f"Missing compile error: '{needle}'")
 
+    undeclared = undeclared_errors(
+        actual_stderr, len(exp.compile_errors), len(exp.runtime_errors)
+    )
+    if undeclared:
+        result.passed = False
+        result.failures.extend(undeclared)
+
     return result
 
 
@@ -390,7 +512,11 @@ def main() -> int:
                 print(f"  SKIP  {test_file}")
             continue
 
-        if test_file.suffix == ".repl":
+        if exp.malformed:
+            result = TestResult(
+                path=str(test_file), passed=False, failures=exp.malformed
+            )
+        elif test_file.suffix == ".repl":
             result = run_repl_test(interpreter, test_file, exp)
         else:
             result = run_test(interpreter, test_file, exp)

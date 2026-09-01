@@ -1,0 +1,10 @@
+// and binds tighter than or, so the and groups first.
+assert(true or false and false, "or would take the whole right side if it bound tighter");
+assert(false and false or true, "the and groups before the or");
+
+// Equality binds tighter than both, so a chain of comparisons joined by and or
+// or needs no parentheses.
+assert(1 == 1 and 2 == 2);
+assert(1 == 2 or 2 == 2);
+assert((1 == 2 and 2 == 2) == false);
+assert((1 == 1 and 2 == 3) == false);

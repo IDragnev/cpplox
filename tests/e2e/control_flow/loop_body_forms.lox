@@ -1,0 +1,22 @@
+// A loop body need not be a block. A single statement is a body of its own.
+var i = 0;
+while (i < 3) i = i + 1;
+assert(i == 3, "the while body ran without braces");
+
+var trace = "";
+for (var j = 0; j < 3; j = j + 1) trace = trace + str(j);
+assert(trace == "012", trace);
+
+// That single statement may itself be an if.
+trace = "";
+for (var p = 0; p < 4; p = p + 1) if (p == 2) trace = trace + "hit";
+assert(trace == "hit", trace);
+
+// A body with nothing in it still loops, so the increment keeps running.
+var m = 0;
+for (; m < 3; m = m + 1) {}
+assert(m == 3, "the empty body still ran the increment three times");
+
+var n = 0;
+while (n < 3) { n = n + 1; }
+assert(n == 3);

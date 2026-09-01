@@ -1,0 +1,41 @@
+// A function declared inside another one is a value like any other, and the
+// enclosing function can hand it back.
+fun makeAdder() {
+    fun addOne(a) {
+        return a + 1;
+    }
+    return addOne;
+}
+
+var addOne = makeAdder();
+assert(addOne(2) == 3);
+assert(makeAdder()(2) == 3, "a call applies to the result of a call");
+
+// It is an ordinary argument too.
+fun apply(fn, arg) {
+    return fn(arg);
+}
+
+assert(apply(addOne, 4) == 5);
+
+// A local function's own name is in scope inside its body, so it can recurse.
+fun outer() {
+    fun countDown(n) {
+        if (n == 0) return "done";
+        return countDown(n - 1);
+    }
+    return countDown(3);
+}
+
+assert(outer() == "done");
+
+// A function declared in a plain block belongs to that block.
+var reached = "";
+{
+    fun inBlock() {
+        return "block";
+    }
+    reached = inBlock();
+}
+
+assert(reached == "block");

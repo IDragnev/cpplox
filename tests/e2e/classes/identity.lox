@@ -1,0 +1,34 @@
+// Instances compare by identity, not by contents, so two instances with the
+// same fields are still different values.
+class Box {}
+
+var a = Box();
+var b = Box();
+a.item = "x";
+b.item = "x";
+
+assert(a == a);
+assert((a == b) == false, "same fields, different instances");
+assert(a != b);
+
+// A variable holds a reference to the instance rather than a copy of it, so
+// two names for one instance see each other's changes.
+var alias = a;
+assert(alias == a);
+alias.item = "changed";
+assert(a.item == "changed");
+
+// Which is why a function can change the instance it was handed, unlike a
+// number, which arrives as a copy.
+fun fill(box) {
+    box.item = "filled";
+}
+
+fill(a);
+assert(a.item == "filled");
+
+// An instance may hold itself.
+var self = Box();
+self.me = self;
+assert(self.me == self);
+assert(self.me.me.me == self);

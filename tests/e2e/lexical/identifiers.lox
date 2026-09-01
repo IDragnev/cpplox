@@ -1,0 +1,66 @@
+// A name starts with a letter or an underscore, then holds letters, digits and
+// underscores.
+var abc = 1;
+var _leading = 2;
+var with_underscores = 3;
+var digits123 = 4;
+var a1_B2 = 5;
+var _ = 6;
+var __ = 7;
+assert(abc + _leading + with_underscores + digits123 + a1_B2 == 15);
+assert(_ + __ == 13);
+
+// Names are case-sensitive, so these are three different variables.
+var name = "lower";
+var Name = "upper";
+var NAME = "shout";
+assert(name == "lower");
+assert(Name == "upper");
+assert(NAME == "shout");
+
+// A keyword is a keyword only when it stands alone. A name that merely begins
+// with one is an ordinary identifier.
+var android = "and";
+var breakfast = "break";
+var classy = "class";
+var continued = "continue";
+var elsewhere = "else";
+var falsework = "false";
+var forest = "for";
+var functional = "fun";
+var iffy = "if";
+var nilable = "nil";
+var orange = "or";
+var returns = "return";
+var superb = "super";
+var thistle = "this";
+var truest = "true";
+var variable = "var";
+var whilst = "while";
+assert(android == "and");
+assert(breakfast == "break");
+assert(classy == "class");
+assert(continued == "continue");
+assert(elsewhere == "else");
+assert(falsework == "false");
+assert(forest == "for");
+assert(functional == "fun");
+assert(iffy == "if");
+assert(nilable == "nil");
+assert(orange == "or");
+assert(returns == "return");
+assert(superb == "super");
+assert(thistle == "this");
+assert(truest == "true");
+assert(variable == "var");
+assert(whilst == "while");
+
+// A name shorter than the keyword it prefixes is still a name.
+var c = "c";
+var f = "f";
+var t = "t";
+var cl = "cl";
+var fu = "fu";
+var th = "th";
+assert(c + f + t == "cft");
+assert(cl + fu + th == "clfuth");

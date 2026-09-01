@@ -5,3 +5,10 @@ assert(false == 1 > 2);
 assert(false == 2 <= 1);
 assert(false == 1 >= 2);
 assert(true == 1 < 2);
+
+// Addition and subtraction bind tighter than comparison, so the arithmetic is
+// finished before anything is compared. The other grouping would compare a
+// number against a bool and fail at runtime.
+assert(1 + 1 < 3);
+assert(5 - 1 > 3);
+assert(1 + 1 == 2);

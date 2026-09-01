@@ -1,0 +1,33 @@
+// super.method without a call is a value: the superclass method, already bound
+// to the instance it was read from.
+class Base {
+    who() {
+        return "Base of " + this.name;
+    }
+}
+
+class Derived < Base {
+    init(name) {
+        this.name = name;
+    }
+
+    who() {
+        return "Derived of " + this.name;
+    }
+
+    superWho() {
+        return super.who;
+    }
+}
+
+var d = Derived("d");
+assert(d.who() == "Derived of d");
+
+var bound = d.superWho();
+assert(bound() == "Base of d", "the value kept both the superclass method and the receiver");
+
+// The instance it was bound to stays with it, whatever holds it afterwards.
+var other = Derived("other");
+other.taken = bound;
+assert(other.taken() == "Base of d");
+assert(other.who() == "Derived of other");

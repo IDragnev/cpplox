@@ -1,0 +1,48 @@
+// A method reaches the instance's other methods through this.
+class Counter {
+    init() {
+        this.n = 0;
+    }
+
+    bump() {
+        this.n = this.n + 1;
+        return this;
+    }
+
+    bumpTwice() {
+        this.bump();
+        this.bump();
+        return this.n;
+    }
+}
+
+var c = Counter();
+assert(c.bumpTwice() == 2);
+assert(c.n == 2);
+
+// bump hands back the instance, so calls chain.
+assert(c.bump().bump().n == 4);
+
+// A function declared inside a method captures this, so it still reaches the
+// instance after the method that made it has returned.
+class Holder {
+    init(v) {
+        this.v = v;
+    }
+
+    getter() {
+        fun read() {
+            return this.v;
+        }
+        return read;
+    }
+}
+
+var h = Holder("held");
+var read = h.getter();
+assert(read() == "held");
+
+// Each instance's captured this is its own.
+var other = Holder("other");
+assert(other.getter()() == "other");
+assert(read() == "held");

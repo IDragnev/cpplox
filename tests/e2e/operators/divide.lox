@@ -2,3 +2,7 @@ assert(10 / 2 == 5);
 assert(7 / 2 == 3.5);
 assert(9 / 4 == 2.25);
 assert(-6 / 3 == -2);
+
+// Zero divides like any other number, as long as it is the numerator.
+assert(0 / 5 == 0);
+assert(-0 / 5 == 0);

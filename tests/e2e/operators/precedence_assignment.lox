@@ -1,0 +1,18 @@
+// Assignment binds loosest, so the whole expression to the right of = is
+// evaluated before the variable is given its value.
+var a = 0;
+
+a = 1 + 2 * 3;
+assert(a == 7);
+
+a = 1 == 1;
+assert(a == true);
+
+a = false or true;
+assert(a == true);
+
+// Assignment is itself an expression, so it can appear where a value is
+// expected and still yield the value it assigned.
+var b = 0;
+assert((b = 5) == 5);
+assert(b == 5);

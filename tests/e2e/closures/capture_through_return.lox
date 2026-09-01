@@ -1,0 +1,21 @@
+// Each function here returns the next one, so by the time the innermost runs,
+// every scope it captured from has already exited. A capture taken from an
+// enclosing closure works the same as one taken from a live scope.
+fun a(x) {
+    fun b(y) {
+        fun c(z) {
+            return x + y + z;
+        }
+        return c;
+    }
+    return b;
+}
+
+assert(a("1")("2")("3") == "123");
+
+// The intermediate functions are values, so the chain can be taken apart and
+// each piece reused.
+var first = a("1");
+var second = first("2");
+assert(second("3") == "123");
+assert(first("9")("8") == "198", "the first capture is still intact");

@@ -1,0 +1,45 @@
+// Any number of branches can be chained with else if. Only the first branch
+// whose condition holds runs.
+var trace = "";
+var a = 2;
+
+if (a == 1) {
+    trace = trace + "one";
+} else if (a == 2) {
+    trace = trace + "two";
+} else if (a == 3) {
+    trace = trace + "three";
+} else {
+    trace = trace + "many";
+}
+assert(trace == "two", trace);
+
+// The final else catches whatever the chain missed.
+trace = "";
+a = 9;
+if (a == 1) {
+    trace = trace + "one";
+} else if (a == 2) {
+    trace = trace + "two";
+} else {
+    trace = trace + "many";
+}
+assert(trace == "many", trace);
+
+// A chain without a final else may match nothing at all.
+trace = "";
+if (a == 1) {
+    trace = trace + "one";
+} else if (a == 2) {
+    trace = trace + "two";
+}
+assert(trace == "", trace);
+
+// A later branch does not run even when its condition also holds.
+trace = "";
+if (true) {
+    trace = trace + "first";
+} else if (true) {
+    trace = trace + "second";
+}
+assert(trace == "first", trace);

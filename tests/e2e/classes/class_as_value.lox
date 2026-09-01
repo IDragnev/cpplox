@@ -1,0 +1,45 @@
+// A class is a value: it can be held in a variable and called through it.
+class Person {
+    init(name) {
+        this.name = name;
+    }
+}
+
+var maker = Person;
+assert(type(maker) == "class");
+assert(maker("Jane").name == "Jane");
+
+// It can be passed to a function like anything else.
+fun build(cls, arg) {
+    return cls(arg);
+}
+
+assert(build(Person, "Bill").name == "Bill");
+
+// A class declared inside a block belongs to that block.
+var made = "";
+{
+    class Local {
+        speak() {
+            return "local";
+        }
+    }
+    made = Local().speak();
+}
+
+assert(made == "local");
+
+// A class declared inside a function is made anew on every call.
+fun makeClass() {
+    class Made {
+        speak() {
+            return "made";
+        }
+    }
+    return Made;
+}
+
+var first = makeClass();
+var second = makeClass();
+assert(first().speak() == "made");
+assert(second().speak() == "made");

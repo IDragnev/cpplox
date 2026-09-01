@@ -1,23 +1,10 @@
-class Nested {
+class Thing {
     method() {
         return this;
     }
 }
 
 // this is the instance the method was called on, not a copy of it.
-var nested = Nested();
-assert(nested.method() == nested);
-assert(str(nested.method()) == "<Nested instance>");
-
-class Cake {
-    init(flavor) {
-        this.flavor = flavor;
-    }
-
-    taste() {
-        return "The " + this.flavor + " cake";
-    }
-}
-
-var cake = Cake("German chocolate");
-assert(cake.taste() == "The German chocolate cake");
+var thing = Thing();
+assert(thing.method() == thing);
+assert(str(thing.method()) == "<Thing instance>");

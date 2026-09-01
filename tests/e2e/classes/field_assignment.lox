@@ -1,0 +1,30 @@
+// Assigning to a field is an expression that yields the value assigned.
+class Box {}
+
+var b = Box();
+assert((b.item = "hat") == "hat");
+assert(b.item == "hat");
+
+// So field assignments chain the way variable assignments do.
+var c = Box();
+b.item = c.item = "shared";
+assert(b.item == "shared");
+assert(c.item == "shared");
+
+// The instance being assigned to may come from any expression.
+fun make() {
+    return Box();
+}
+
+var d = make();
+d.item = "made";
+assert(d.item == "made");
+
+// A field may hold an instance, so paths nest to any depth.
+var outer = Box();
+outer.inner = Box();
+outer.inner.value = 7;
+assert(outer.inner.value == 7);
+
+outer.inner.value = outer.inner.value + 1;
+assert(outer.inner.value == 8, "the field was read and written in one statement");

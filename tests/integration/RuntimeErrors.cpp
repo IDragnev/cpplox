@@ -58,6 +58,56 @@ TEST_CASE("binary operand type error - subtract") {
     CHECK(r.error.msg == String("Operands must be numbers."));
 }
 
+TEST_CASE("binary operand type error - multiply") {
+    const auto r = runAndCollect("var a = \"a\" * 2;");
+
+    REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(r.error.frames.getCount() == 1);
+    CHECK(r.error.msg == String("Operands must be numbers."));
+}
+
+TEST_CASE("binary operand type error - compare") {
+    const auto less = runAndCollect("var a = 1 < \"b\";");
+    const auto greaterEqual = runAndCollect("var a = nil >= 1;");
+
+    REQUIRE(less.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(greaterEqual.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(less.error.msg == String("Operands must be numbers."));
+    CHECK(greaterEqual.error.msg == String("Operands must be numbers."));
+}
+
+// Divide checks its operand types before it checks the divisor, so a
+// non-number divisor reports the type rather than the zero.
+TEST_CASE("binary operand type error - divide") {
+    const auto right = runAndCollect("var a = \"a\" / 2;");
+    const auto left = runAndCollect("var a = 2 / \"a\";");
+    const auto both = runAndCollect("var a = \"a\" / 0;");
+
+    REQUIRE(right.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(left.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(both.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(right.error.msg == String("Operands must be numbers."));
+    CHECK(left.error.msg == String("Operands must be numbers."));
+    CHECK(both.error.msg == String("Operands must be numbers."));
+}
+
+TEST_CASE("division by zero") {
+    const auto literal = runAndCollect("var a = 1 / 0;");
+    const auto computed = runAndCollect("var b = 5 - 5;\nvar a = 1 / b;");
+    const auto negativeZero = runAndCollect("var a = 1 / -0;");
+    const auto zeroOverZero = runAndCollect("var a = 0 / 0;");
+
+    REQUIRE(literal.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(computed.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(negativeZero.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(zeroOverZero.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(literal.error.frames.getCount() == 1);
+    CHECK(literal.error.msg == String("Division by zero."));
+    CHECK(computed.error.msg == String("Division by zero."));
+    CHECK(negativeZero.error.msg == String("Division by zero."));
+    CHECK(zeroOverZero.error.msg == String("Division by zero."));
+}
+
 TEST_CASE("call nil") {
     const auto r = runAndCollect("nil();");
 

@@ -1,0 +1,12 @@
+// ! and unary - bind tighter than any binary operator, so they take only the
+// operand beside them.
+assert(-2 + 3 == 1, "the minus applies to 2, not to 2 + 3");
+assert(-2 - 3 == -5, "grouping the other way would give 1");
+assert(-1 * -1 == 1);
+
+assert((!1 == 2) == false, "the ! applies to 1, not to 1 == 2");
+assert((!false and false) == false, "the ! applies to false, not to the and");
+
+// Parentheses are the way to get the other grouping.
+assert(-(2 + 3) == -5);
+assert(!(1 == 2) == true);

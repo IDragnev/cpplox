@@ -1,0 +1,56 @@
+// super is fixed to the superclass of the class the method was written in, not
+// to the superclass of the instance's class. A subclass that inherits a method
+// containing super therefore runs the same two methods its parent would.
+var trace = "";
+
+class A {
+    f() {
+        trace = trace + "A";
+    }
+}
+
+class B < A {
+    f() {
+        trace = trace + "B";
+        super.f();
+    }
+}
+
+class C < B {}
+
+C().f();
+assert(trace == "BA", trace);
+
+// Resolving super from the instance's class instead would send B's super call
+// back into B, so reaching A at all is the point of this test.
+trace = "";
+B().f();
+assert(trace == "BA", trace);
+
+// Every level may add its own super call.
+trace = "";
+
+class D < B {
+    f() {
+        trace = trace + "D";
+        super.f();
+    }
+}
+
+D().f();
+assert(trace == "DBA", trace);
+
+// super starts its search at the superclass and keeps walking up, so it finds
+// a method the immediate superclass never declared.
+class Gap < A {}
+
+class Below < Gap {
+    f() {
+        trace = trace + "Below";
+        super.f();
+    }
+}
+
+trace = "";
+Below().f();
+assert(trace == "BelowA", trace);

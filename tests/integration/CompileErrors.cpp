@@ -155,6 +155,46 @@ TEST_CASE("expected expression at end of input") {
     CHECK(diags[0].line == 1);
 }
 
+// A literal needs a digit on both sides of its dot. Neither form is a lexical
+// error though: the scanner ends the number at the dot, so a trailing one is
+// parsed as the start of a property access and a leading one as no expression
+// at all.
+TEST_CASE("number literal with a dot on one side only") {
+    const auto trailing = compileAndCollect("var a = 1.;");
+    const auto trailingFraction = compileAndCollect("var a = 1.5.;");
+    const auto leading = compileAndCollect("var a = .5;");
+
+    REQUIRE(trailing.size() == 1);
+    CHECK(trailing[0].msg == "Expected property name after '.'");
+    CHECK(trailing[0].line == 1);
+
+    REQUIRE(trailingFraction.size() == 1);
+    CHECK(trailingFraction[0].msg == "Expected property name after '.'");
+
+    REQUIRE(leading.size() == 1);
+    CHECK(leading[0].msg == "Expected expression");
+
+    CHECK(compileAndCollect("var a = 1.0;").empty());
+}
+
+// The largest double is just under 1.8e308, and a literal is spelled out in
+// full, so the magnitude is rejected rather than folded into an infinity.
+TEST_CASE("number literal too large") {
+    const std::string overflowing = "var a = 1" + std::string(400, '0') + ";";
+    const std::string largest = "var a = 1" + std::string(307, '0') + ";";
+
+    const auto diags = compileAndCollect(overflowing);
+
+    REQUIRE(diags.size() == 1);
+    CHECK(diags[0].msg == "Number is too large");
+    CHECK(diags[0].line == 1);
+
+    // A magnitude that does fit is still accepted, however long it is, and so
+    // is one that merely loses precision on the way down to zero.
+    CHECK(compileAndCollect(largest).empty());
+    CHECK(compileAndCollect("var a = 0." + std::string(400, '0') + "1;").empty());
+}
+
 TEST_CASE("parameters limit") {
     std::string src = "fun f(";
     for (int i = 0; i < 256; ++i) {

@@ -1,0 +1,42 @@
+// Arguments are evaluated left to right, and all of them before the call runs.
+var trace = "";
+fun mark(s) {
+    trace = trace + s;
+    return s;
+}
+
+fun join(a, b, c) {
+    return a + b + c;
+}
+
+assert(join(mark("1"), mark("2"), mark("3")) == "123");
+assert(trace == "123", trace);
+
+// A parameter is a local of the call, so assigning to it leaves the caller's
+// variable alone.
+fun bump(n) {
+    n = n + 1;
+    return n;
+}
+
+var v = 1;
+assert(bump(v) == 2);
+assert(v == 1, "the argument was copied into the parameter");
+
+// A parameter shadows a global of the same name for the length of the call.
+var name = "global";
+fun echo(name) {
+    return name;
+}
+
+assert(echo("parameter") == "parameter");
+assert(name == "global");
+
+// Every call gets its own parameters, so a recursive call does not disturb the
+// frames waiting underneath it.
+fun countUp(n) {
+    if (n == 3) return str(n);
+    return str(n) + countUp(n + 1);
+}
+
+assert(countUp(0) == "0123");

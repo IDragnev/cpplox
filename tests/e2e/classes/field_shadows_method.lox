@@ -1,0 +1,41 @@
+// A field and a method may share a name. Fields are looked up first, so a
+// field hides the method it shares a name with.
+class Greeter {
+    greet() {
+        return "method";
+    }
+}
+
+var g = Greeter();
+assert(g.greet() == "method");
+
+fun replacement() {
+    return "field";
+}
+
+g.greet = replacement;
+assert(g.greet() == "field", "the field hid the method");
+
+// Only that instance is affected, since the class still holds the method.
+var untouched = Greeter();
+assert(untouched.greet() == "method");
+
+// A method read off an instance stays bound to it, even when stored in a field
+// of a different instance.
+class Person {
+    init(name) {
+        this.name = name;
+    }
+
+    who() {
+        return this.name;
+    }
+}
+
+var jane = Person("Jane");
+var bill = Person("Bill");
+assert(bill.who() == "Bill");
+
+bill.who = jane.who;
+assert(bill.who() == "Jane", "the bound method kept Jane as its receiver");
+assert(jane.who() == "Jane");

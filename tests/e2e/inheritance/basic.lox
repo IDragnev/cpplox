@@ -16,3 +16,27 @@ class Cat < Animal {}
 assert(Dog().speak() == "Woof!");
 assert(Cat().speak() == "...");
 assert(Animal().speak() == "...");
+
+// A method calls through this against the instance's own class, so a method
+// declared on the superclass reaches the subclass override.
+class Announcer {
+    announce() {
+        return "says " + this.speak();
+    }
+
+    speak() {
+        return "...";
+    }
+}
+
+class Cow < Announcer {
+    speak() {
+        return "Moo!";
+    }
+}
+
+class Quiet < Cow {}
+
+assert(Announcer().announce() == "says ...");
+assert(Cow().announce() == "says Moo!", "the inherited method called the override");
+assert(Quiet().announce() == "says Moo!");

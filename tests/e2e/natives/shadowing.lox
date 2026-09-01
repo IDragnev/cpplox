@@ -1,0 +1,22 @@
+// A native lives in an ordinary global, so declaring a global of the same name
+// shadows it for the rest of the run. Anything that took a copy first keeps the
+// native itself.
+var savedStr = str;
+var savedType = type;
+
+var clock = 10;
+assert(clock == 10);
+assert(savedType(clock) == "number");
+
+// A function declaration shadows a native the same way a variable does.
+fun type(v) {
+    return "shadowed";
+}
+
+assert(type(1) == "shadowed");
+assert(savedType(1) == "number", "the copy taken earlier is unaffected");
+
+// The global is only a variable, so the native can be put back.
+type = savedType;
+assert(type(1) == "number");
+assert(savedStr(true) == "true");

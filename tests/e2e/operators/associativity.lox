@@ -1,0 +1,13 @@
+// Operators of equal precedence group to the left, so each one takes the
+// result of everything left of it as its first operand.
+assert(8 - 3 - 2 == 3, "grouping to the right would give 7");
+assert(1 - 2 + 3 == 2, "grouping to the right would give -4");
+
+assert(8 / 4 / 2 == 1, "grouping to the right would give 4");
+assert(8 / 4 * 2 == 4, "grouping to the right would give 1");
+
+// Equality groups left in the same way, so the second operator compares
+// against the bool the first one produced.
+assert((1 == 1 == true) == true);
+assert((true == 1 == 1) == false, "true == 1 is false, and false is not 1");
+assert((1 == 2 == false) == true, "1 == 2 is false, and false is false");

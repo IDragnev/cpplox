@@ -1,0 +1,17 @@
+// A string literal holds every character between the quotes, newlines
+// included, so a literal may span lines.
+var spanning = "first
+second";
+
+// There are no escape sequences, so a backslash is an ordinary character. This
+// literal is one character longer than the one above rather than equal to it.
+var backslash = "first\nsecond";
+assert(spanning != backslash, "a backslash does not escape anything");
+
+// Whitespace inside a literal is kept exactly as written.
+assert("  padded  " != "padded");
+assert(" " != "");
+
+// A literal with nothing between the quotes is a string all the same.
+assert("" == "");
+assert(type("") == "string");

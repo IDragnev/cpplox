@@ -1,0 +1,55 @@
+// break leaves the loop from inside nested blocks, discarding the locals those
+// blocks declared.
+var trace = "";
+while (true) {
+    var outer = "a";
+    {
+        var inner = "b";
+        {
+            trace = trace + outer + inner;
+            break;
+        }
+    }
+}
+assert(trace == "ab", trace);
+
+// Whatever break discarded, it left the surrounding code able to run.
+var after = 1 + 1;
+assert(after == 2);
+
+// return unwinds the same nesting, all the way out of the function.
+fun deep() {
+    while (true) {
+        var outer = 1;
+        {
+            var inner = 2;
+            {
+                return outer + inner;
+            }
+        }
+    }
+}
+assert(deep() == 3);
+
+// continue does the same and starts the next iteration.
+trace = "";
+for (var i = 0; i < 4; i = i + 1) {
+    var kept = str(i);
+    {
+        var skipped = "x";
+        if (i == 1 or i == 2) continue;
+        trace = trace + kept + skipped;
+    }
+}
+assert(trace == "0x3x", trace);
+
+// continue affects only the innermost loop, the same way break does.
+trace = "";
+for (var i = 0; i < 3; i = i + 1) {
+    for (var j = 0; j < 3; j = j + 1) {
+        if (j == 1) continue;
+        trace = trace + str(i) + str(j);
+    }
+    trace = trace + ";";
+}
+assert(trace == "0002;1012;2022;", trace);

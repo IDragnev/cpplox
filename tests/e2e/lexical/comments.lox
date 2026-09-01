@@ -1,0 +1,22 @@
+// A comment runs from // to the end of the line and produces no tokens, so a
+// file can open with one.
+var a = 1; // A trailing comment does not disturb the statement it follows.
+assert(a == 1);
+
+// A comment may hold anything, including var a = 99; an unbalanced quote (")
+// slashes // and keywords such as class, return and while.
+assert(a == 1, "the text of a comment never runs");
+
+// Two slashes inside a string literal are ordinary characters.
+assert("http://example.com" == "http://example.com");
+
+var url = "// not a comment";
+assert(url == "// not a comment");
+
+var mixed = "before // after";
+assert(mixed == "before // after");
+
+// A comment needs no code before it, and none after it either: the file below
+// ends inside a comment with no trailing newline.
+assert(true);
+// The last line of the file.
