@@ -175,7 +175,9 @@ namespace cpplox {
                     BINARY_OP(-);
                 } break;
                 case OpCode::DIVIDE: {
-                    BINARY_OP(/);
+                    if (divide() == false) {
+                        return InterpretResultCode::RUNTIME_ERROR;
+                    }
                 } break;
                 case OpCode::MULTIPLY: {
                     BINARY_OP(*);
@@ -772,6 +774,25 @@ namespace cpplox {
 
         runtimeError("Operands must be numbers.");
         return false;
+    }
+
+    bool VM::divide() {
+        if (stack.peek().isNumber() == false ||
+            stack.peekN(1).isNumber() == false)
+        {
+            runtimeError("Operands must be numbers.");
+            return false;
+        }
+        if (stack.peek().asNumber() == 0.0) {
+            runtimeError("Division by zero.");
+            return false;
+        }
+
+        const double b = stack.pop().asNumber();
+        const double a = stack.pop().asNumber();
+        stack.push(Value(a / b));
+
+        return true;
     }
 
     template <typename... Args>

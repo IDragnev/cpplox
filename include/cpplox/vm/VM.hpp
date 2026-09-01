@@ -69,6 +69,7 @@ namespace cpplox {
 
         template <NumberBinaryOp Op>
         bool numBinaryOp(const Op& op);
+        bool divide();
 
         bool invoke(const String& name, std::uint8_t argc);
         bool invokeFromClass(Class* klass, const String& method, std::uint8_t argc);
