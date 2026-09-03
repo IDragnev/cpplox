@@ -49,8 +49,8 @@ cpplox [path-to-script-file]
 ## The language
 ### Types
 - **bool** - values can be *true* and *false*
-- **number** - all numbers are represented as double-precision floating-point numbers. They must not have a trailing dot (*1.* is not allowed as a literal, while *1.0* and *1* are ok).
-- **string** - string literals are sequences of characters enclosed in double quotes, such as *"hello"*.
+- **number** - all numbers are represented as double-precision floating-point numbers. A literal needs a digit on either side of its dot, so *1.* and *.5* are both errors while *1.0*, *0.5* and *1* are ok. A magnitude may be spelled out in full or written with an exponent, as in *1e5*, *2.5E-3* or *1e+16*, and a literal too large to represent is a compile error rather than an infinity.
+- **string** - string literals are sequences of characters enclosed in double quotes, such as *"hello"*. There are no escape sequences, so a backslash is an ordinary character and a literal ends at the next quote. A literal may run over several lines, and the newlines it spans are part of it.
 - **functions** - Lox has [first-class functions](https://en.wikipedia.org/wiki/First-class_function). It supports passing functions as arguments to other functions, returning them as the values from other functions, and assigning them to variables.
 - **nil** - the **nil** type has a single value - *nil*. It represents the [null value](https://en.wikipedia.org/wiki/Nullable_type). It is the value of any uninitialized variable and the default return value of functions.
 - **classes** - user defined types with methods and dynamic fields. Inheritance is also supported.
@@ -136,6 +136,11 @@ print("got " + str(3)); // got 3
 The other three operators only ever accept numbers:
 ```
 print("a" * 2); // runtime error
+```
+Dividing by zero is a runtime error rather than an infinity:
+```
+print(1 / 0); // runtime error
+print(0 / 5); // 0, since only the divisor is rejected
 ```
 
 #### Comparison
@@ -407,6 +412,12 @@ print(1, true, nil);
 // true
 // nil
 print();        // an empty line
+```
+A number is written with as many digits as it takes to read back as the same value, and switches to exponent notation for very large and very small ones. Both forms are literals, so output can be pasted back into a program:
+```
+print(1 / 3);              // 0.3333333333333333
+print(10000000000000000);  // 1e+16
+print(0.00001);            // 1e-05
 ```
 `clock` is meant for measuring how long a piece of code takes, by subtracting two readings, the way the example at the top of this file does.
 
