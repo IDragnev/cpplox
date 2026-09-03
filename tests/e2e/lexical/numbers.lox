@@ -22,9 +22,30 @@ assert(1.0000000000000002 != 1.0);
 // same literal as 0.1.
 assert(0.1 == 0.1000000000000000055511151231257827);
 
-// There is no exponent notation, so magnitude is spelled out in full.
+// A magnitude may be spelled out in full or written with an exponent, which is
+// e or E, an optional sign, and at least one digit.
 assert(0.0000000000000000000000000000001 > 0);
 assert(10000000000000000000000000000000 > 0);
+assert(1e5 == 100000);
+assert(1E5 == 100000);
+assert(1e+5 == 100000);
+assert(1e-5 == 0.00001);
+assert(1.5e3 == 1500);
+assert(2.5E-3 == 0.0025);
+assert(1e0 == 1);
+assert(1e16 == 10000000000000000);
+assert(type(1e5) == "number");
+
+// The exponent carries its own redundant zeros, which is the form printing a
+// number produces, so output reads back as the value it came from.
+assert(1e-05 == 1e-5);
+assert(1e+16 == 1e16);
+
+// An e without digits after it is not an exponent, so it stays a name.
+var e = 3;
+var e5 = 7;
+assert(1 + e == 4);
+assert(1 + e5 == 8);
 
 // A literal may be far longer than that, however few of its digits matter.
 assert(0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001 == 1);

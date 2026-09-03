@@ -36,7 +36,7 @@ assert(str(0.00001) == "1e-05");
 // There is no way to write an infinity, and a literal too large to hold is
 // rejected rather than rounded up to one, but arithmetic can still overflow
 // into one. It renders by name.
-var big = 100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000;
+var big = 1e200;
 assert(str(big * big) == "inf");
 assert(str(-(big * big)) == "-inf");
 

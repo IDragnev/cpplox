@@ -1010,9 +1010,9 @@ namespace cpplox {
     void Compiler::number(bool) {
         const std::string_view lexeme = parser.previous.lexeme;
 
-        // A double round-trips in 17 significant digits, but Lox has no
-        // exponent syntax, so length also grows with magnitude: 1e-71 spells
-        // out to 73 characters. Magnitudes past about 1e126 need the heap.
+        // A double round-trips in 17 significant digits, and an exponent adds
+        // a handful more, but a magnitude may also be spelled out in full, in
+        // which case 1e-71 takes 73 characters and 1e126 exhausts the buffer.
         constexpr std::size_t SMALL_LEXEME_SIZE = 128;
         double v = 0.0;
 

@@ -24,6 +24,7 @@ namespace cpplox {
 
         char peek() const;
         char peekNext() const;
+        char peekAt(unsigned offset) const;
         char advance();
         bool match(char c);
         void skipWhitespace();

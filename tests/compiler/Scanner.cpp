@@ -3,6 +3,7 @@
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 
 #include <vector>
+#include <ostream>
 
 class DiagnosticsIgnore : public cpplox::DiagnosticConsumer {
 public:
@@ -47,7 +48,7 @@ TEST_CASE("Scanning simple tokens") {
 }
 
 TEST_CASE("Scanning complex tokens") {
-    std::string source = "\"str\" 123 123.456 123.";
+    std::string source = "\"str\" 123 123.456 1e5 1.5e-3 1E+16 123.";
     cpplox::Scanner scanner(source, &diag);
 
     cpplox::ScanResult r = scanner.scanToken();
@@ -65,10 +66,63 @@ TEST_CASE("Scanning complex tokens") {
     r = scanner.scanToken();
     CHECK_FALSE(r.error);
     CHECK(r.token.type == cpplox::TokenType::NUMBER);
+    CHECK(r.token.lexeme == "1e5");
+
+    r = scanner.scanToken();
+    CHECK_FALSE(r.error);
+    CHECK(r.token.type == cpplox::TokenType::NUMBER);
+    CHECK(r.token.lexeme == "1.5e-3");
+
+    r = scanner.scanToken();
+    CHECK_FALSE(r.error);
+    CHECK(r.token.type == cpplox::TokenType::NUMBER);
+    CHECK(r.token.lexeme == "1E+16");
+
+    r = scanner.scanToken();
+    CHECK_FALSE(r.error);
+    CHECK(r.token.type == cpplox::TokenType::NUMBER);
 
     r = scanner.scanToken();
     CHECK_FALSE(r.error);
     CHECK(r.token.type == cpplox::TokenType::DOT);
+}
+
+TEST_CASE("Scanning an e that is not an exponent") {
+    std::string source = "1e 3ex 2e+";
+    cpplox::Scanner scanner(source, &diag);
+
+    auto tokens = scanAll(scanner);
+
+    REQUIRE(tokens.size() == 7);
+    CHECK(tokens[0].type == cpplox::TokenType::NUMBER);
+    CHECK(tokens[0].lexeme == "1");
+    CHECK(tokens[1].type == cpplox::TokenType::IDENTIFIER);
+    CHECK(tokens[1].lexeme == "e");
+
+    CHECK(tokens[2].type == cpplox::TokenType::NUMBER);
+    CHECK(tokens[2].lexeme == "3");
+    CHECK(tokens[3].type == cpplox::TokenType::IDENTIFIER);
+    CHECK(tokens[3].lexeme == "ex");
+
+    CHECK(tokens[4].type == cpplox::TokenType::NUMBER);
+    CHECK(tokens[4].lexeme == "2");
+    CHECK(tokens[5].type == cpplox::TokenType::IDENTIFIER);
+    CHECK(tokens[5].lexeme == "e");
+    CHECK(tokens[6].type == cpplox::TokenType::PLUS);
+}
+
+TEST_CASE("Scanning a fractional exponent ends the number at the dot") {
+    std::string source = "2.5e2.5";
+    cpplox::Scanner scanner(source, &diag);
+
+    auto tokens = scanAll(scanner);
+
+    REQUIRE(tokens.size() == 3);
+    CHECK(tokens[0].type == cpplox::TokenType::NUMBER);
+    CHECK(tokens[0].lexeme == "2.5e2");
+    CHECK(tokens[1].type == cpplox::TokenType::DOT);
+    CHECK(tokens[2].type == cpplox::TokenType::NUMBER);
+    CHECK(tokens[2].lexeme == "5");
 }
 
 TEST_CASE("Scanner handles invalid token") {

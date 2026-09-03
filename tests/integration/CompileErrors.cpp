@@ -174,25 +174,26 @@ TEST_CASE("number literal with a dot on one side only") {
     REQUIRE(leading.size() == 1);
     CHECK(leading[0].msg == "Expected expression");
 
+    const auto afterExponent = compileAndCollect("var a = 2.5e2.5;");
+    REQUIRE(afterExponent.size() == 1);
+    CHECK(afterExponent[0].msg == "Expected property name after '.'");
+
     CHECK(compileAndCollect("var a = 1.0;").empty());
+    CHECK(compileAndCollect("var a = 2.5e2;").empty());
 }
 
-// The largest double is just under 1.8e308, and a literal is spelled out in
-// full, so the magnitude is rejected rather than folded into an infinity.
 TEST_CASE("number literal too large") {
-    const std::string overflowing = "var a = 1" + std::string(400, '0') + ";";
-    const std::string largest = "var a = 1" + std::string(307, '0') + ";";
-
-    const auto diags = compileAndCollect(overflowing);
+    const auto diags = compileAndCollect("var a = 1e400;");
 
     REQUIRE(diags.size() == 1);
     CHECK(diags[0].msg == "Number is too large");
     CHECK(diags[0].line == 1);
 
-    // A magnitude that does fit is still accepted, however long it is, and so
-    // is one that merely loses precision on the way down to zero.
-    CHECK(compileAndCollect(largest).empty());
-    CHECK(compileAndCollect("var a = 0." + std::string(400, '0') + "1;").empty());
+    // The largest double is just under 1.8e308, so this one still fits.
+    CHECK(compileAndCollect("var a = 1e308;").empty());
+
+    // Underflow leaves zero rather than an infinity, so it is accepted.
+    CHECK(compileAndCollect("var a = 1e-400;").empty());
 }
 
 TEST_CASE("parameters limit") {

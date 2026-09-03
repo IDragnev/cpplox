@@ -152,6 +152,23 @@ namespace cpplox {
             }
         }
 
+        if (peek() == 'e' || peek() == 'E') {
+            const bool hasSign = peekNext() == '+' || peekNext() == '-';
+            const char firstDigit = hasSign ? peekAt(2) : peekNext();
+
+            if (isDigit(firstDigit)) {
+                // consume e and the sign it may carry
+                advance();
+                if (hasSign) {
+                    advance();
+                }
+
+                while (isDigit(peek())) {
+                    advance();
+                }
+            }
+        }
+
         result.token = makeToken(TokenType::NUMBER);
     }
 
@@ -164,10 +181,16 @@ namespace cpplox {
     }
 
     char Scanner::peekNext() const {
-        if (isDone()) {
-            return '\0';
+        return peekAt(1);
+    }
+
+    char Scanner::peekAt(unsigned offset) const {
+        const char* c = current;
+        for (unsigned i = 0; i < offset && *c != '\0'; ++i) {
+            ++c;
         }
-        return *(current + 1);
+
+        return *c;
     }
 
     char Scanner::advance() {
