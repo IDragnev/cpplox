@@ -1,0 +1,39 @@
+cpplox
+======
+
+Prebuilt cpplox @PROJECT_VERSION@ interpreter. No installer is required - put
+the binary anywhere on your PATH, or run it from this folder.
+
+Quick start
+-----------
+  Windows:      cpplox.exe
+  Linux/macOS:  ./cpplox
+
+  cpplox myscript.lox    run a script
+  cpplox                 start the REPL (type :q to exit)
+  cpplox --version       print the version
+  cpplox --help          print usage
+
+Documentation
+-------------
+Language reference and examples for this version:
+  https://github.com/IDragnev/cpplox/blob/v@PROJECT_VERSION@/README.md
+
+Platform notes
+--------------
+  Windows x64: may require the Microsoft Visual C++ Redistributable
+    https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+    SmartScreen may warn on first run: More info -> Run anyway.
+
+  Linux x64: needs a glibc and a libstdc++ at least as new as the ones it
+    was built against; the release notes state which. Too old a system
+    refuses to start it with a loader error naming the missing version,
+    and building from source is the way round it.
+
+  macOS arm64: requires macOS 11 (Big Sur) or newer, on Apple Silicon.
+    The binary is unsigned, so the first launch needs Right-click -> Open,
+    or clear the quarantine flag with: xattr -cr cpplox
+
+License
+-------
+MIT - see LICENSE in this folder.

@@ -1,5 +1,6 @@
 # cpplox
-[![CI](https://github.com/IDragnev/cpplox/actions/workflows/ci.yml/badge.svg)](https://github.com/IDragnev/cpplox/actions)  
+[![CI](https://github.com/IDragnev/cpplox/actions/workflows/ci.yml/badge.svg)](https://github.com/IDragnev/cpplox/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/IDragnev/cpplox)](https://github.com/IDragnev/cpplox/releases/latest)  
 
 An interpreter for the Lox programming language - a dynamically typed language with C-like syntax, from Robert Nystrom's [Crafting Interpreters](https://craftinginterpreters.com/). **cpplox** implements the book's bytecode interpreter and extends the language it defines, so the sections below describe **cpplox**'s version of Lox rather than the book's.
 
@@ -28,16 +29,7 @@ print(clock() - start); // the milliseconds the greetings took
 Comments start with `//` and run to the end of the line; there is no block comment form. Variable declarations, `return`, `break`, `continue` and expression statements end with a semicolon, while blocks, `if`, loops and function and class declarations do not. In the examples below, a trailing comment usually shows what the line prints.
 
 ## Getting started
-There is no released binary, so the interpreter has to be built first. One command configures it, builds it and runs the tests:
-```
-cmake --workflow --preset windows-msvc-debug
-```
-Presets are named after the host and compiler, so this is the one to use on Windows with MSVC. `cmake --list-presets all` shows the ones available on your machine, and [Build](#build) explains the rest of them.
-
-The executable is written to the build tree of the preset that produced it:
-```
-build/windows-msvc/app/Debug/cpplox.exe
-```
+Prebuilt binaries for Windows, Linux and macOS are on the [releases page](https://github.com/IDragnev/cpplox/releases/latest). Each archive unpacks into a folder holding the interpreter and a short `INSTALL.txt` covering that platform's requirements; there is nothing to install. To build it from source instead, see [Build](#build).
 
 Run it with the path to a script, or with no argument at all:
 ```
@@ -463,7 +455,11 @@ print(1); // runtime error
 cpplox is a bytecode interpreter rather than a tree-walking one. A single-pass compiler emits bytecode straight from the token stream, with no AST in between, and a stack-based VM executes it. Runtime objects are freed by a mark-and-sweep collector. The `-diag` presets in [Build](#build) expose all three, turning on an instruction-by-instruction trace, a GC log, and a collection on every allocation.
 
 ## Build
-The supported toolchains are described in `CMakePresets.json`, which requires **CMake 3.25** or newer. [Getting started](#getting-started) has the single command that configures, builds and tests in one go; the same thing one step at a time is:
+The supported toolchains are described in `CMakePresets.json`, which requires **CMake 3.25** or newer. One command configures, builds and runs the tests:
+```
+cmake --workflow --preset windows-msvc-debug
+```
+The same thing one step at a time is:
 ```
 cmake --preset windows-msvc
 cmake --build --preset windows-msvc-release
@@ -480,7 +476,7 @@ Presets are named `<os>-<compiler>-<config>`:
 | `linux-clang` | Clang | `linux-clang-<config>` |
 | `macos-appleclang` | Apple Clang | `macos-appleclang-<config>` |
 
-`<config>` is `debug`, `release` or `relwithdebinfo` when building, and `debug` or `release` when testing. All of them are multi-configuration builds, so a configure preset only has to be run once and the configuration is chosen when building. Each preset gets its own build tree under `build/`. The Linux and macOS presets use the *Ninja Multi-Config* generator and need `ninja` on the `PATH`.
+`<config>` is `debug`, `release` or `relwithdebinfo` when building, and `debug` or `release` when testing. All of them are multi-configuration builds, so a configure preset only has to be run once and the configuration is chosen when building. Each preset gets its own build tree under `build/`, so the executable lands somewhere like `build/windows-msvc/app/Debug/cpplox.exe`. The Linux and macOS presets use the *Ninja Multi-Config* generator and need `ninja` on the `PATH`.
 
 Only the presets matching the host operating system are usable; `cmake --list-presets all` shows them.
 

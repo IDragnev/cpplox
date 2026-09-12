@@ -1,0 +1,186 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ matrix.asset }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            configure-preset: windows-msvc
+            build-preset: windows-msvc-release
+            test-preset: windows-msvc-release
+            asset: windows-x64
+            archive-ext: zip
+            binary: cpplox.exe
+
+          - os: ubuntu-latest
+            configure-preset: linux-gcc
+            build-preset: linux-gcc-release
+            test-preset: linux-gcc-release
+            asset: linux-x64
+            archive-ext: tar.gz
+            binary: cpplox
+
+          - os: macos-latest
+            configure-preset: macos-appleclang
+            build-preset: macos-appleclang-release
+            test-preset: macos-appleclang-release
+            asset: macos-arm64
+            archive-ext: tar.gz
+            binary: cpplox
+
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install Ninja
+        if: runner.os != 'Windows'
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo apt-get update && sudo apt-get install -y ninja-build
+          else
+            brew install ninja
+          fi
+
+      # A prerelease tag such as v0.1.0-rc1 releases the same 0.1.0 binaries,
+      # so only the part before the hyphen has to match.
+      - name: Check the tag against the declared version
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          tag_version="${tag_version%%-*}"
+          declared=$(grep -m1 -oE 'VERSION[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+' \
+            CMakeLists.txt | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+          if [ "$tag_version" != "$declared" ]; then
+            echo "Tag $GITHUB_REF_NAME wants $tag_version but CMakeLists.txt" \
+                 "declares $declared. Bump the version, then retag." >&2
+            exit 1
+          fi
+          echo "TAG_VERSION=$tag_version" >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: cmake --preset ${{ matrix.configure-preset }}
+
+      - name: Build
+        run: cmake --build --preset ${{ matrix.build-preset }}
+
+      - name: Test
+        run: ctest --preset ${{ matrix.test-preset }}
+
+      - name: Package
+        run: |
+          cpack --config build/${{ matrix.configure-preset }}/CPackConfig.cmake \
+            -C Release
+          archive="build/${{ matrix.configure-preset }}"
+          archive="$archive/cpplox-$TAG_VERSION-${{ matrix.asset }}"
+          archive="$archive.${{ matrix.archive-ext }}"
+          if [ ! -f "$archive" ]; then
+            echo "cpack produced no $archive. It made:" >&2
+            ls "build/${{ matrix.configure-preset }}" >&2
+            exit 1
+          fi
+          echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
+
+      - name: Smoke-test the archive
+        run: |
+          mkdir smoke && cd smoke
+          cmake -E tar xf "../$ARCHIVE"
+          cd "cpplox-$TAG_VERSION-${{ matrix.asset }}"
+          test -f LICENSE
+          test -f INSTALL.txt
+          reported=$(./${{ matrix.binary }} --version)
+          if [ "$reported" != "cpplox $TAG_VERSION" ]; then
+            echo "Packaged binary reports '$reported'," \
+                 "expected 'cpplox $TAG_VERSION'." >&2
+            exit 1
+          fi
+          printf 'assert(1 + 1 == 2);\n' > smoke.lox
+          ./${{ matrix.binary }} smoke.lox
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cpplox-${{ matrix.asset }}
+          path: ${{ env.ARCHIVE }}
+          if-no-files-found: error
+
+  release:
+    name: Draft release
+    needs: build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      # The floor is a property of the binary, not of the runner, so it is
+      # measured rather than declared. objdump -p lists the symbol versions
+      # the loader will demand. The floor rises when GitHub moves
+      # ubuntu-latest; the draft notes are where that becomes visible.
+      - name: Derive the Linux requirements
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          version="${version%%-*}"
+          root="cpplox-$version-linux-x64"
+          mkdir linux
+          tar -C linux -xf "dist/$root.tar.gz"
+          needed=$(objdump -p "linux/$root/cpplox")
+          glibc=$(echo "$needed" | grep -oE 'GLIBC_[0-9.]+' | sort -uV | tail -1)
+          glibcxx=$(echo "$needed" | grep -oE 'GLIBCXX_[0-9.]+' \
+            | sort -uV | tail -1)
+          if [ -z "$glibc" ] || [ -z "$glibcxx" ]; then
+            echo "Found no version requirements in $root/cpplox." >&2
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "LINUX_REQS=glibc ${glibc#GLIBC_} or newer, and a libstdc++" \
+               "providing $glibcxx" >> "$GITHUB_ENV"
+
+      - name: Assemble the release notes
+        run: |
+          awk -v heading="## [$VERSION]" '
+            index($0, heading) == 1 { inside = 1; next }
+            inside && /^## / { exit }
+            inside && /^\[[^]]*\]:/ { exit }
+            inside { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "CHANGELOG.md has no entry for $VERSION." >&2
+            exit 1
+          fi
+          sed "s|@LINUX_REQS@|$LINUX_REQS|" packaging/release-notes-footer.md \
+            >> notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          body_path: notes.md
+          files: dist/*
+          fail_on_unmatched_files: true

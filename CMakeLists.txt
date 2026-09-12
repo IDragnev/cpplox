@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 
+# Has to precede project(): the compiler check bakes the target into the
+# toolchain and later changes are ignored.
+if(APPLE AND NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
+endif()
+
 project(cpplox
   VERSION 0.1.0
   LANGUAGES CXX
@@ -52,6 +58,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/fmtlib/fmt.git
     GIT_TAG 11.1.4
 )
+set(FMT_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(fmt)
 set_target_properties(fmt PROPERTIES
     INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:fmt,INTERFACE_INCLUDE_DIRECTORIES>"
@@ -71,3 +78,5 @@ if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+include(packaging/Packaging.cmake)

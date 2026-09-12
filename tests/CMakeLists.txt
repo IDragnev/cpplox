@@ -2,6 +2,7 @@ FetchContent_Declare(doctest
   GIT_REPOSITORY https://github.com/onqtam/doctest.git
   GIT_TAG        v2.4.12
 )
+set(DOCTEST_NO_INSTALL ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(doctest)
 set_target_properties(doctest PROPERTIES
     INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:doctest,INTERFACE_INCLUDE_DIRECTORIES>"
