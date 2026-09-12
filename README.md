@@ -42,9 +42,13 @@ build/windows-msvc/app/Debug/cpplox.exe
 Run it with the path to a script, or with no argument at all:
 ```
 cpplox [path-to-script-file]
+cpplox --version
+cpplox --help
 ```
 - With a path, the script is loaded and executed.
 - With no argument the interpreter starts in [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) mode. To exit type *:q*. A bare expression is echoed, so `1 + 1` prints `2`; adding a semicolon makes it an ordinary statement, which prints nothing. End a line with `\` to continue input on the next line.
+
+A successful run exits with 0. Anything else follows the [sysexits](https://man.freebsd.org/cgi/man.cgi?query=sysexits) conventions: *64* for a usage error, *65* for a compile error, *70* for a runtime error, and *74* for a script file that cannot be read.
 
 ## The language
 ### Types

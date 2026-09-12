@@ -10,3 +10,9 @@ target_link_libraries(cpplox_exe
 target_compile_options(cpplox_exe
   PRIVATE ${CPPLOX_TARGET_WARNING_FLAGS}
 )
+
+target_compile_definitions(cpplox_exe
+  PRIVATE CPPLOX_VERSION="${PROJECT_VERSION}"
+)
+
+install(TARGETS cpplox_exe RUNTIME DESTINATION .)

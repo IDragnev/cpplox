@@ -6,6 +6,7 @@
 
 #include <cstdlib>
 #include <string>
+#include <string_view>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -16,6 +17,14 @@ using cpplox::InterpretResult;
 using cpplox::InterpretResultCode;
 using cpplox::DiagnosticConsumer;
 using cpplox::DiagnosticEngine;
+
+constexpr std::string_view USAGE =
+    "Usage: cpplox [script]\n"
+    "       cpplox --version\n"
+    "       cpplox --help\n"
+    "\n"
+    "Runs the given Lox script, or starts the REPL when given none.\n"
+    "Type :q to leave the REPL.\n";
 
 class DiagnosticLogger : public DiagnosticConsumer {
 public:
@@ -84,7 +93,30 @@ void repl(DiagnosticEngine& e, VM& vm, Compiler& c);
 bool readFile(const char* filename, std::string& result);
 
 int main(int argc, const char* argv[]) {
-    const bool replMode = (argc == 1);
+    if (argc > 2) {
+        cpplox::errorln("Expected at most one argument.");
+        cpplox::error("{}", USAGE);
+        return 64;
+    }
+
+    if (argc == 2) {
+        const std::string_view arg = argv[1];
+        if (arg == "--version") {
+            cpplox::println("cpplox {}", CPPLOX_VERSION);
+            return 0;
+        }
+        if (arg == "--help" || arg == "-h") {
+            cpplox::print("{}", USAGE);
+            return 0;
+        }
+        if (arg.starts_with('-')) {
+            cpplox::errorln("Unknown option '{}'.", arg);
+            cpplox::error("{}", USAGE);
+            return 64;
+        }
+    }
+
+    const bool replMode = (argc < 2);
     DiagnosticLogger logger(replMode == false);
     DiagnosticEngine diagnostics(&logger);
     Compiler compiler;
@@ -93,9 +125,9 @@ int main(int argc, const char* argv[]) {
     });
     VM vm;
 
-    if (argc == 1) {
+    if (replMode) {
         repl(diagnostics, vm, compiler);
-    } else if (argc == 2) {
+    } else {
         std::string source = "";
         bool bFileOk = readFile(argv[1], source);
         if (bFileOk == false) {
@@ -115,8 +147,6 @@ int main(int argc, const char* argv[]) {
             printRuntimeError(r.error, true);
             return 70;
         }
-    } else {
-        return 64;
     }
 
     return 0;

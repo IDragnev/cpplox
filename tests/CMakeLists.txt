@@ -64,6 +64,22 @@ add_test(NAME bytecode_test COMMAND bytecode_test)
 add_test(NAME runtime_test COMMAND runtime_test)
 add_test(NAME integration_test COMMAND integration_test)
 
+add_test(NAME cli_version_test COMMAND cpplox_exe --version)
+set_tests_properties(cli_version_test PROPERTIES
+  PASS_REGULAR_EXPRESSION "^cpplox ${PROJECT_VERSION}[\r\n]"
+)
+
+add_test(NAME cli_help_test COMMAND cpplox_exe --help)
+set_tests_properties(cli_help_test PROPERTIES
+  PASS_REGULAR_EXPRESSION "Usage: cpplox"
+)
+
+add_test(NAME cli_too_many_arguments_test COMMAND cpplox_exe one two)
+set_tests_properties(cli_too_many_arguments_test PROPERTIES WILL_FAIL TRUE)
+
+add_test(NAME cli_unknown_option_test COMMAND cpplox_exe --nope)
+set_tests_properties(cli_unknown_option_test PROPERTIES WILL_FAIL TRUE)
+
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(
     NAME e2e_tests
