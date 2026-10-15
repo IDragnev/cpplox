@@ -37,4 +37,39 @@ namespace cpplox {
 
         bool call(std::span<Value> args, Value& result) override;
     };
+
+    class Push : public NativeFunction {
+    public:
+        Push() : NativeFunction("push", Arity::exactly(2)) {}
+
+        bool call(std::span<Value> args, Value& result) override;
+    };
+
+    class Pop : public NativeFunction {
+    public:
+        Pop() : NativeFunction("pop", Arity::exactly(1)) {}
+
+        bool call(std::span<Value> args, Value& result) override;
+    };
+
+    class Len : public NativeFunction {
+    public:
+        Len() : NativeFunction("len", Arity::exactly(1)) {}
+
+        bool call(std::span<Value> args, Value& result) override;
+    };
+
+    class ListEquals : public NativeFunction {
+    public:
+        ListEquals() : NativeFunction("listEquals", Arity::exactly(2)) {}
+
+        bool call(std::span<Value> args, Value& result) override;
+    };
+
+    class Floor : public NativeFunction {
+    public:
+        Floor() : NativeFunction("floor", Arity::exactly(1)) {}
+
+        bool call(std::span<Value> args, Value& result) override;
+    };
 }

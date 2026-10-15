@@ -204,6 +204,15 @@ namespace cpplox {
             case OpCode::SUPER_INVOKE_16: {
                 return invoke16Instruction("SUPER_INVOKE_16", chunk, offset);
             } break;
+            case OpCode::MAKE_LIST: {
+                return integerInstruction("MAKE_LIST", chunk, offset);
+            } break;
+            case OpCode::SUBSCRIPT_GET: {
+                return simpleInstruction("SUBSCRIPT_GET", offset);
+            } break;
+            case OpCode::SUBSCRIPT_SET: {
+                return simpleInstruction("SUBSCRIPT_SET", offset);
+            } break;
             default: {
                 println("Unknown opcode '{}'",
                         static_cast<std::uint8_t>(opCode));

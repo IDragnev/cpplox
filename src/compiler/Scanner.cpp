@@ -55,6 +55,12 @@ namespace cpplox {
             case '}': {
                 result.token = makeToken(TokenType::RIGHT_BRACE);
             } break;
+            case '[': {
+                result.token = makeToken(TokenType::LEFT_BRACKET);
+            } break;
+            case ']': {
+                result.token = makeToken(TokenType::RIGHT_BRACKET);
+            } break;
             case ';': {
                 result.token = makeToken(TokenType::SEMICOLON);
             } break;

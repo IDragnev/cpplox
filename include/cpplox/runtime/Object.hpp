@@ -13,6 +13,7 @@ namespace cpplox {
         INSTANCE,
         BOUND_METHOD,
         NATIVE_FUNCTION,
+        LIST,
     };
 
     template <typename T>

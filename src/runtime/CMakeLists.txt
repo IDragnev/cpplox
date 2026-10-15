@@ -11,8 +11,10 @@ set(CPPLOX_RUNTIME_SOURCE
   ${RUNTIME_HEADERS_DIR}/Instance.hpp
   ${RUNTIME_HEADERS_DIR}/BoundMethod.hpp
   ${RUNTIME_HEADERS_DIR}/NativeFunction.hpp
+  ${RUNTIME_HEADERS_DIR}/List.hpp
   ${RUNTIME_HEADERS_DIR}/Natives.hpp
   ${RUNTIME_HEADERS_DIR}/ObjectFormatter.hpp
+  ${RUNTIME_HEADERS_DIR}/Reflect.hpp
 
   Function.cpp
   Closure.cpp
@@ -21,7 +23,10 @@ set(CPPLOX_RUNTIME_SOURCE
   Instance.cpp
   BoundMethod.cpp
   NativeFunction.cpp
+  List.cpp
   Natives.cpp
+  ObjectFormatter.cpp
+  Reflect.cpp
   GC.cpp
 )
 

@@ -15,6 +15,7 @@ namespace cpplox {
         std::numeric_limits<std::uint16_t>::max() + 1;
     static const std::size_t MAX_UPVALUES = 255;
     static const std::size_t MAX_FUN_PARAMS = 255;
+    static const std::size_t MAX_LIST_LITERAL_SIZE = 255;
 
     enum class Compiler::OpPrecedence {
         NONE,
@@ -26,7 +27,7 @@ namespace cpplox {
         TERM,       // + -
         FACTOR,     // * /
         UNARY,      // ! -
-        CALL,       // . ()
+        CALL,       // . () []
         PRIMARY
     };
 
@@ -48,6 +49,7 @@ namespace cpplox {
             Vector<ParseRule> rules(size);
             // clang-format off
             rules[as_index(TokenType::LEFT_PAREN)]    = ParseRule{ .prefix = &Compiler::grouping,.infix = &Compiler::call,   .infixPrec = OpPrecedence::CALL, };
+            rules[as_index(TokenType::LEFT_BRACKET)]  = ParseRule{ .prefix = &Compiler::list,    .infix = &Compiler::subscr, .infixPrec = OpPrecedence::CALL, };
             rules[as_index(TokenType::MINUS)]         = ParseRule{ .prefix = &Compiler::unary,   .infix = &Compiler::binary, .infixPrec = OpPrecedence::TERM, };
             rules[as_index(TokenType::PLUS)]          = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::TERM, };
             rules[as_index(TokenType::SLASH)]         = ParseRule{                               .infix = &Compiler::binary, .infixPrec = OpPrecedence::FACTOR, };
@@ -1048,6 +1050,35 @@ namespace cpplox {
         v.remove_suffix(1);
 
         emitConstant(Value(v));
+    }
+
+    void Compiler::list(bool) {
+        std::size_t count = 0;
+        if (peek(TokenType::RIGHT_BRACKET) == false) {
+            do {
+                expression();
+                ++count;
+            } while (match(TokenType::COMMA));
+        }
+        if (count > MAX_LIST_LITERAL_SIZE) {
+            compileError(parser.previous, "Can't have more than {} elements in a list literal", MAX_LIST_LITERAL_SIZE);
+            return;
+        }
+        consumeTokenErr(TokenType::RIGHT_BRACKET, "Expected ']' after list elements");
+
+        emitOpCode(OpCode::MAKE_LIST);
+        emitByte(static_cast<std::uint8_t>(count));
+    }
+
+    void Compiler::subscr(bool canAssign) {
+        expression();
+        consumeTokenErr(TokenType::RIGHT_BRACKET, "Expected ']' after list index");
+        if (canAssign && match(TokenType::EQUAL)) {
+            expression();
+            emitOpCode(OpCode::SUBSCRIPT_SET);
+        } else {
+            emitOpCode(OpCode::SUBSCRIPT_GET);
+        }
     }
 
     void Compiler::and_(bool) {

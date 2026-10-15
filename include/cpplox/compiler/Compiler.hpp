@@ -153,7 +153,9 @@ namespace cpplox {
         void dot(bool canAssign);
         void _this(bool canAssign);
         void super(bool canAssign);
-
+        void list(bool canAssign);
+        void subscr(bool canAssign);
+        
     private:
         Scanner scanner;
         struct Parser {

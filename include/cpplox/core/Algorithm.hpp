@@ -25,6 +25,19 @@ namespace cpplox {
         }
     }
 
+    template <typename T, typename F>
+    requires std::predicate<F, const T&>
+    bool contains(const Vector<T>& v, const F& pred) {
+        const auto size = v.getCount();
+        for (std::size_t i = 0; i < size; ++i) {
+            if (pred(v[i])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     template <typename T, typename Pred>
         requires std::predicate<Pred, const T&>
     void removeIf(Vector<T>& vec, Pred pred) {

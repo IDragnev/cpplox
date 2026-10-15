@@ -57,5 +57,8 @@ namespace cpplox {
         GET_SUPER_16,
         SUPER_INVOKE,
         SUPER_INVOKE_16,
+        MAKE_LIST,
+        SUBSCRIPT_GET,
+        SUBSCRIPT_SET,
     };
 }

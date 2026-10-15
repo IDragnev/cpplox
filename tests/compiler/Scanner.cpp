@@ -38,12 +38,42 @@ TEST_CASE("Scanning empty source") {
 }
 
 TEST_CASE("Scanning simple tokens") {
-    std::string source = ". ; < - + x ( ) { } >= <= ==";
+    using cpplox::TokenType;
+
+    std::string source = "( ) { } [ ] , . - + ; / * ! != = == > >= < <= x";
     cpplox::Scanner scanner(source, &diag);
 
-    auto tokens = scanAll(scanner);
+    const TokenType expected[] = {
+        TokenType::LEFT_PAREN,
+        TokenType::RIGHT_PAREN,
+        TokenType::LEFT_BRACE,
+        TokenType::RIGHT_BRACE,
+        TokenType::LEFT_BRACKET,
+        TokenType::RIGHT_BRACKET,
+        TokenType::COMMA,
+        TokenType::DOT,
+        TokenType::MINUS,
+        TokenType::PLUS,
+        TokenType::SEMICOLON,
+        TokenType::SLASH,
+        TokenType::STAR,
+        TokenType::BANG,
+        TokenType::BANG_EQUAL,
+        TokenType::EQUAL,
+        TokenType::EQUAL_EQUAL,
+        TokenType::GREATER,
+        TokenType::GREATER_EQUAL,
+        TokenType::LESS,
+        TokenType::LESS_EQUAL,
+        TokenType::IDENTIFIER,
+    };
 
-    CHECK(tokens.size() == 13);
+    for (TokenType type : expected) {
+        cpplox::ScanResult r = scanner.scanToken();
+        CHECK_FALSE(r.error);
+        CHECK(r.token.type == type);
+    }
+
     CHECK(scanner.isDone());
 }
 

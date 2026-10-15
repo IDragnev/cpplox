@@ -44,6 +44,56 @@ TEST_SUITE("forEach") {
     }
 }
 
+TEST_SUITE("contains") {
+    TEST_CASE("finds an element matching the predicate") {
+        const auto v = makeVec({1, 2, 3});
+
+        CHECK(contains(v, [](int x) { return x == 2; }));
+    }
+
+    TEST_CASE("finds the first and the last element") {
+        const auto v = makeVec({1, 2, 3});
+
+        CHECK(contains(v, [](int x) { return x == 1; }));
+        CHECK(contains(v, [](int x) { return x == 3; }));
+    }
+
+    TEST_CASE("no element matches") {
+        const auto v = makeVec({1, 2, 3});
+
+        CHECK_FALSE(contains(v, [](int x) { return x > 3; }));
+    }
+
+    TEST_CASE("empty vector never calls the predicate") {
+        const Vector<int> v;
+        int calls = 0;
+
+        CHECK_FALSE(contains(v, [&calls](int) { ++calls; return true; }));
+        CHECK(calls == 0);
+    }
+
+    TEST_CASE("stops at the first match") {
+        const auto v = makeVec({1, 2, 3, 4});
+        int calls = 0;
+
+        CHECK(contains(v, [&calls](int x) { ++calls; return x == 2; }));
+        CHECK(calls == 2);
+    }
+
+    TEST_CASE("predicate can match on a member") {
+        struct Pair {
+            int l = 0;
+            int r = 0;
+        };
+        Vector<Pair> v;
+        v.insertBack(Pair{1, 2});
+        v.insertBack(Pair{3, 4});
+
+        CHECK(contains(v, [](const Pair& p) { return p.l == 3 && p.r == 4; }));
+        CHECK_FALSE(contains(v, [](const Pair& p) { return p.l == 1 && p.r == 4; }));
+    }
+}
+
 TEST_SUITE("removeIf") {
     TEST_CASE("removes elements for which predicate is true") {
         auto v = makeVec({1, 2, 3, 4, 5, 6});

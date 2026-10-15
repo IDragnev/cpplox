@@ -3,6 +3,8 @@
 #include "cpplox/runtime/ObjectFormatter.hpp"
 #include "cpplox/log/Log.hpp"
 #include "cpplox/core/Format.hpp"
+#include "cpplox/runtime/List.hpp"
+#include "cpplox/runtime/Reflect.hpp"
 
 #include <chrono>
 #include <string_view>
@@ -18,29 +20,6 @@ namespace cpplox {
             }
 
             return String(fmt::format("{}", v));
-        }
-
-        std::string_view typeName(const Value& v) {
-            switch (v.internalType()) {
-                case ValueType::NIL: return "nil";
-                case ValueType::BOOL: return "bool";
-                case ValueType::NUMBER: return "number";
-                case ValueType::STRING: return "string";
-                case ValueType::OBJECT: break;
-            }
-
-            switch (v.asObject()->type()) {
-                case ObjectType::FUNCTION:
-                case ObjectType::CLOSURE:
-                case ObjectType::BOUND_METHOD: return "function";
-                case ObjectType::NATIVE_FUNCTION: return "native function";
-                case ObjectType::CLASS: return "class";
-                case ObjectType::INSTANCE: return "instance";
-                case ObjectType::UPVALUE: break;
-            }
-
-            // Upvalues are internal and never reachable from a script.
-            return "unknown";
         }
     } // namespace
 
@@ -92,5 +71,83 @@ namespace cpplox {
         }
 
         return false;
+    }
+
+    bool Push::call(std::span<Value> args, Value& result) {
+        const Value& list = args[0];
+        if (isList(list) == false) {
+            result = Value(String(fmt::format("push() expects a list, got {}.",
+                                              typeName(list))));
+            return false;
+        }
+
+        List* listObj = args[0].asObject()->as<List>();
+        listObj->values.insertBack((args[1]));
+        
+        //grow gc bytes and size if needed
+
+        return true;
+    }
+
+    bool Pop::call(std::span<Value> args, Value& result) {
+        Value& list = args[0];
+        if (isList(list) == false) {
+            result = Value(String(fmt::format("pop() expects a list, got {}.",
+                                              typeName(list))));
+            return false;
+        }
+
+        List* listObj = list.asObject()->as<List>();
+        if (listObj->values.isEmpty()) {
+            result = Value(String("Cannot pop from an empty list."));
+            return false;
+        }
+        
+        result = listObj->values.back();
+        listObj->values.removeBack();
+
+        //shrink gc bytes and size if needed
+
+        return true;
+    }
+
+    bool Len::call(std::span<Value> args, Value& result) {
+        Value& list = args[0];
+        if (isList(list) == false) {
+            result = Value(String(fmt::format("len() expects a list, got {}.",
+                                              typeName(list))));
+            return false;
+        }
+
+        List* listObj = list.asObject()->as<List>();
+        result = Value(static_cast<double>(listObj->values.getCount()));
+
+        return true;
+    }
+
+    bool ListEquals::call(std::span<Value> args, Value& result) {
+        if (isList(args[0]) == false || isList(args[1]) == false) {
+            result = Value(String("listEquals() expects two lists."));
+            return false;
+        }
+
+        const List* list1 = args[0].asObject()->as<List>();
+        const List* list2 = args[1].asObject()->as<List>();
+
+        result = Value(structurallyEqual(list1, list2));
+        
+        return true;
+    }
+
+    bool Floor::call(std::span<Value> args, Value& result) {
+        if (args[0].isNumber() == false) {
+            result = Value(String(fmt::format("floor() expects a number, got {}.",
+                                              typeName(args[0]))));
+            return false;
+        }
+
+        result = Value(std::floor(args[0].asNumber()));
+
+        return true;
     }
 } // namespace cpplox

@@ -12,6 +12,8 @@
 #include "cpplox/runtime/NativeFunction.hpp"
 #include "cpplox/runtime/Natives.hpp"
 #include "cpplox/runtime/GC.hpp"
+#include "cpplox/runtime/List.hpp"
+#include "cpplox/runtime/Reflect.hpp"
 #include "cpplox/log/Log.hpp"
 #include "cpplox/core/Algorithm.hpp"
 #include "cpplox/core/Format.hpp"
@@ -20,6 +22,7 @@
 #include <span>
 #include <type_traits>
 #include <fmt/format.h>
+#include <cmath>
 
 namespace cpplox {
     static const std::size_t MAX_FRAMES = 1024;
@@ -99,6 +102,11 @@ namespace cpplox {
         defineNative<Str>();
         defineNative<Type>();
         defineNative<Assert>();
+        defineNative<Push>();
+        defineNative<Pop>();
+        defineNative<Len>();
+        defineNative<ListEquals>();
+        defineNative<Floor>();
     }
 
     template <typename T>
@@ -157,7 +165,29 @@ namespace cpplox {
             const auto opCode = static_cast<OpCode>(readByte());
             switch (opCode) {
                 case OpCode::ADD: {
-                    if (stack.peek().isString() && stack.peekN(1).isString()) {
+                    if (isList(stack.peek()) && isList(stack.peekN(1))) {
+                        List* b = stack.peek().asObject()->as<List>();
+                        List* a = stack.peekN(1).asObject()->as<List>();
+
+                        const std::size_t aCount = a->values.getCount();
+                        const std::size_t bCount = b->values.getCount();
+                        List* result = makeObject<List>(aCount + bCount);
+                        if (result == nullptr) {
+                            return InterpretResultCode::RUNTIME_ERROR;
+                        }
+
+                        for (std::size_t i = 0; i < aCount; ++i) {
+                            result->values[i] = a->values[i];
+                        }
+                        for (std::size_t i = 0; i < bCount; ++i) {
+                            result->values[aCount + i] = b->values[i];
+                        }
+
+                        stack.pop();
+                        stack.pop();
+                        stack.push(Value(result));
+                    }
+                    else if (stack.peek().isString() && stack.peekN(1).isString()) {
                         Value b = stack.pop();
                         Value& a = stack.peek();
                         a.asString() += b.asString();
@@ -167,7 +197,7 @@ namespace cpplox {
                         double a = stack.pop().asNumber();
                         stack.push(Value(a + b));
                     } else {
-                        runtimeError("Operands must be two numbers or two strings.");
+                        runtimeError("Operands must be two numbers, two strings or two lists.");
                         return InterpretResultCode::RUNTIME_ERROR;
                     }
                 } break;
@@ -528,6 +558,46 @@ namespace cpplox {
                         }
                     }
                 } break;
+                case OpCode::MAKE_LIST: {
+                    const std::uint8_t count = readByte();
+                    List* list = makeObject<List>(count);
+                    if (list != nullptr) {
+                        for (std::size_t i = count; i > 0; --i) {
+                            list->values[i - 1] = stack.pop();
+                        }
+                        stack.push(Value(list));
+                    }
+                    else {
+                        return InterpretResultCode::RUNTIME_ERROR;
+                    }
+                } break;
+                case OpCode::SUBSCRIPT_GET: {
+                    const Value& target = stack.peekN(1);
+                    const Value& index = stack.peek();
+                    if (validateSubscript(target, index) == false) {
+                        return InterpretResultCode::RUNTIME_ERROR;
+                    }
+
+                    const List* list = target.asObject()->as<List>();
+                    const auto idx = static_cast<std::size_t>(index.asNumber());
+                    Value element = list->values[idx];
+                    stack.pop();
+                    stack.peek() = std::move(element);
+                } break;
+                case OpCode::SUBSCRIPT_SET: {
+                    Value& target = stack.peekN(2);
+                    const Value& index = stack.peekN(1);
+                    if (validateSubscript(target, index) == false) {
+                        return InterpretResultCode::RUNTIME_ERROR;
+                    }
+
+                    List* list = target.asObject()->as<List>();
+                    const auto idx = static_cast<std::size_t>(index.asNumber());
+                    Value v = stack.pop();
+                    list->values[idx] = v;
+                    stack.pop();
+                    stack.peek() = std::move(v);
+                } break;
                 default: {
                     runtimeError("Unknown opcode");
                     return InterpretResultCode::RUNTIME_ERROR;
@@ -795,6 +865,33 @@ namespace cpplox {
         return true;
     }
 
+    bool VM::validateSubscript(const Value& target, const Value& index) {
+        if (isList(target) == false) {
+            runtimeError("Only lists can be indexed, got {}.", typeName(target));
+            return false;
+        }
+        if (index.isNumber() == false) {
+            runtimeError("List index must be a number, got {}.", typeName(index));
+            return false;
+        }
+
+        const double idx = index.asNumber();
+        if (std::trunc(idx) != idx) {
+            runtimeError("List index must be a whole number, got {}.", idx);
+            return false;
+        }
+
+        const std::size_t count = target.asObject()->as<List>()->values.getCount();
+        if (idx < 0 || idx >= static_cast<double>(count)) {
+            runtimeError("List index {} is out of range for a list of length {}.",
+                         idx,
+                         count);
+            return false;
+        }
+
+        return true;
+    }
+
     template <typename... Args>
     void VM::runtimeError(std::string_view fmtStr, Args&&... args) {
         fmt::memory_buffer buf;
@@ -839,7 +936,7 @@ namespace cpplox {
 
         T* obj = gc::makeObject<T>(std::forward<Args>(args)...);
         if (obj != nullptr) {
-            bytesAllocated += sizeof(T);
+            bytesAllocated += obj->size();
             obj->nextObject = gcObjects;
             gcObjects = obj;
         }
