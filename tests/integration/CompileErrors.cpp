@@ -226,6 +226,30 @@ TEST_CASE("arguments limit") {
     CHECK(diags[0].line == 1);
 }
 
+TEST_CASE("list literal limit") {
+    std::string src = "[";
+    for (int i = 0; i < 256; ++i) {
+        if (i > 0) src += ", ";
+        src += std::to_string(i);
+    }
+    src += "];";
+
+    const auto diags = compileAndCollect(src);
+
+    REQUIRE(diags.size() == 1);
+    CHECK(diags[0].msg == "Can't have more than 255 elements in a list literal");
+    CHECK(diags[0].line == 1);
+
+    std::string ok = "[";
+    for (int i = 0; i < 255; ++i) {
+        if (i > 0) ok += ", ";
+        ok += std::to_string(i);
+    }
+    ok += "];";
+
+    CHECK(compileAndCollect(ok).empty());
+}
+
 TEST_CASE("constants limit") {
     std::string src;
     for (int i = 0; i <= 65536; ++i) {
@@ -293,4 +317,41 @@ TEST_CASE("null source") {
 
     CHECK(result.error == true);
     CHECK(result.function == nullptr);
+}
+
+TEST_CASE("trailing comma in list") {
+    const auto diags = compileAndCollect("[1, 2, 3,]");
+
+    REQUIRE(diags.size() == 1);
+    CHECK(diags[0].msg == "Expected expression");
+    CHECK(diags[0].line == 1);
+}
+
+TEST_CASE("unterminated list") {
+    const auto diags = compileAndCollect("[1, 2, 3");
+
+    REQUIRE(diags.size() == 1);
+    CHECK(diags[0].msg == "Expected ']' after list elements");
+    CHECK(diags[0].line == 1);
+}
+
+TEST_CASE("invalid assignment target - subscript") {
+    const auto binary = compileAndCollect("1 + xs[0] = 5;");
+    const auto unary = compileAndCollect("-xs[0] = 5;");
+
+    REQUIRE(binary.size() == 1);
+    CHECK(binary[0].msg == "Invalid assignment target");
+    CHECK(binary[0].line == 1);
+    REQUIRE(unary.size() == 1);
+    CHECK(unary[0].msg == "Invalid assignment target");
+    CHECK(unary[0].line == 1);
+}
+
+TEST_CASE("valid subscript assignment targets") {
+    CHECK(compileAndCollect("xs[0] = 1;").empty());
+    CHECK(compileAndCollect("grid[0][1] = 1;").empty());
+    CHECK(compileAndCollect("obj.items[0] = 1;").empty());
+    CHECK(compileAndCollect("f()[0] = 1;").empty());
+    CHECK(compileAndCollect("a[0] = b[1] = 5;").empty());
+    CHECK(compileAndCollect("xs[i = 1] = 2;").empty());
 }

@@ -47,7 +47,7 @@ TEST_CASE("binary operand type error - add") {
 
     REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
     REQUIRE(r.error.frames.getCount() == 1);
-    CHECK(r.error.msg == String("Operands must be two numbers or two strings."));
+    CHECK(r.error.msg == String("Operands must be two numbers, two strings or two lists."));
 }
 
 TEST_CASE("binary operand type error - subtract") {
@@ -320,4 +320,224 @@ Foo().bar();)");
     CHECK(r.error.frames[0].line == 3);
     CHECK(r.error.frames[1].functionName == String("script"));
     CHECK(r.error.frames[1].line == 6);
+}
+
+TEST_CASE("subscript on a non-list") {
+    const auto str = runAndCollect("\"abc\"[0];");
+    const auto nil = runAndCollect("nil[0];");
+    const auto number = runAndCollect("var x = 1;\nx[0] = 2;");
+    const auto instance = runAndCollect("class Foo {}\nFoo()[0];");
+
+    REQUIRE(str.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(nil.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(number.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(instance.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(str.error.frames.getCount() == 1);
+    CHECK(str.error.msg == String("Only lists can be indexed, got string."));
+    CHECK(nil.error.msg == String("Only lists can be indexed, got nil."));
+    CHECK(number.error.msg == String("Only lists can be indexed, got number."));
+    CHECK(instance.error.msg == String("Only lists can be indexed, got instance."));
+}
+
+TEST_CASE("list index is not a number") {
+    const auto str = runAndCollect("[1][\"0\"];");
+    const auto boolean = runAndCollect("[1][true];");
+    const auto nil = runAndCollect("[1][nil] = 2;");
+    const auto list = runAndCollect("[1][[0]];");
+
+    REQUIRE(str.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(boolean.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(nil.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(list.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(str.error.frames.getCount() == 1);
+    CHECK(str.error.msg == String("List index must be a number, got string."));
+    CHECK(boolean.error.msg == String("List index must be a number, got bool."));
+    CHECK(nil.error.msg == String("List index must be a number, got nil."));
+    CHECK(list.error.msg == String("List index must be a number, got list."));
+}
+
+TEST_CASE("list index is not a whole number") {
+    const auto get = runAndCollect("[1, 2][1.5];");
+    const auto set = runAndCollect("var xs = [1, 2];\nxs[0.5] = 3;");
+    const auto computed = runAndCollect("var xs = [1, 2, 3];\nxs[3 / 2];");
+
+    REQUIRE(get.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(set.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(computed.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(get.error.frames.getCount() == 1);
+    CHECK(get.error.msg == String("List index must be a whole number, got 1.5."));
+    CHECK(set.error.msg == String("List index must be a whole number, got 0.5."));
+    CHECK(computed.error.msg == String("List index must be a whole number, got 1.5."));
+}
+
+TEST_CASE("list index out of range") {
+    const auto pastEnd = runAndCollect("[1, 2, 3][5];");
+    const auto atEnd = runAndCollect("[1, 2, 3][3];");
+    const auto negative = runAndCollect("[1, 2, 3][-1];");
+    const auto empty = runAndCollect("[][0];");
+
+    REQUIRE(pastEnd.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(atEnd.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(negative.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(empty.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(pastEnd.error.frames.getCount() == 1);
+    CHECK(pastEnd.error.msg == String("List index 5 is out of range for a list of length 3."));
+    CHECK(atEnd.error.msg == String("List index 3 is out of range for a list of length 3."));
+    CHECK(negative.error.msg == String("List index -1 is out of range for a list of length 3."));
+    CHECK(empty.error.msg == String("List index 0 is out of range for a list of length 0."));
+}
+
+TEST_CASE("assigning past the end does not grow a list") {
+    const auto r = runAndCollect("var xs = [1];\nxs[1] = 2;");
+
+    REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(r.error.frames.getCount() == 1);
+    CHECK(r.error.frames[0].line == 2);
+    CHECK(r.error.msg == String("List index 1 is out of range for a list of length 1."));
+}
+
+TEST_CASE("list errors are checked in order: target, type, whole, range") {
+    const auto targetFirst = runAndCollect("nil[1.5];");
+    const auto typeBeforeRange = runAndCollect("[][\"x\"];");
+    const auto wholeBeforeRange = runAndCollect("[][-0.5];");
+
+    REQUIRE(targetFirst.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(typeBeforeRange.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(wholeBeforeRange.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(targetFirst.error.msg == String("Only lists can be indexed, got nil."));
+    CHECK(typeBeforeRange.error.msg == String("List index must be a number, got string."));
+    CHECK(wholeBeforeRange.error.msg == String("List index must be a whole number, got -0.5."));
+}
+
+TEST_CASE("add a list and a non-list") {
+    const auto listFirst = runAndCollect("[1] + 1;");
+    const auto listSecond = runAndCollect("\"a\" + [1];");
+    const auto nil = runAndCollect("[] + nil;");
+
+    REQUIRE(listFirst.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(listSecond.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(nil.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(listFirst.error.frames.getCount() == 1);
+    CHECK(listFirst.error.msg == String("Operands must be two numbers, two strings or two lists."));
+    CHECK(listSecond.error.msg == String("Operands must be two numbers, two strings or two lists."));
+    CHECK(nil.error.msg == String("Operands must be two numbers, two strings or two lists."));
+}
+
+TEST_CASE("lists in arithmetic and comparison") {
+    const auto negate = runAndCollect("-[1];");
+    const auto multiply = runAndCollect("[0] * 3;");
+    const auto subtract = runAndCollect("[1] - [1];");
+    const auto divide = runAndCollect("[2] / 2;");
+    const auto less = runAndCollect("[1] < [2];");
+
+    REQUIRE(negate.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(multiply.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(subtract.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(divide.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(less.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(negate.error.msg == String("Operand must be a number."));
+    CHECK(multiply.error.msg == String("Operands must be numbers."));
+    CHECK(subtract.error.msg == String("Operands must be numbers."));
+    CHECK(divide.error.msg == String("Operands must be numbers."));
+    CHECK(less.error.msg == String("Operands must be numbers."));
+}
+
+TEST_CASE("lists have no methods or fields") {
+    const auto method = runAndCollect("var xs = [];\nxs.push(1);");
+    const auto get = runAndCollect("[].length;");
+    const auto set = runAndCollect("var xs = [];\nxs.length = 1;");
+
+    REQUIRE(method.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(get.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(set.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(method.error.msg == String("Only instances have properties."));
+    CHECK(get.error.msg == String("Only instances have properties."));
+    CHECK(set.error.msg == String("Only instances have fields."));
+}
+
+TEST_CASE("len of a non-list") {
+    const auto str = runAndCollect("len(\"abc\");");
+    const auto nil = runAndCollect("len(nil);");
+
+    REQUIRE(str.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(nil.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(str.error.frames.getCount() == 1);
+    CHECK(str.error.msg == String("len() expects a list, got string."));
+    CHECK(nil.error.msg == String("len() expects a list, got nil."));
+}
+
+TEST_CASE("push to a non-list") {
+    const auto r = runAndCollect("push(\"abc\", 1);");
+
+    REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(r.error.frames.getCount() == 1);
+    CHECK(r.error.msg == String("push() expects a list, got string."));
+}
+
+TEST_CASE("pop from a non-list") {
+    const auto r = runAndCollect("pop(1);");
+
+    REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(r.error.frames.getCount() == 1);
+    CHECK(r.error.msg == String("pop() expects a list, got number."));
+}
+
+TEST_CASE("pop from an empty list") {
+    const auto literal = runAndCollect("pop([]);");
+    const auto emptied = runAndCollect("var xs = [1];\npop(xs);\npop(xs);");
+
+    REQUIRE(literal.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(emptied.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(emptied.error.frames.getCount() == 1);
+    CHECK(emptied.error.frames[0].line == 3);
+    CHECK(literal.error.msg == String("Cannot pop from an empty list."));
+    CHECK(emptied.error.msg == String("Cannot pop from an empty list."));
+}
+
+TEST_CASE("listEquals with a non-list") {
+    const auto first = runAndCollect("listEquals(1, []);");
+    const auto second = runAndCollect("listEquals([], nil);");
+    const auto strings = runAndCollect("listEquals(\"a\", \"a\");");
+
+    REQUIRE(first.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(second.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(strings.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(first.error.frames.getCount() == 1);
+    CHECK(first.error.msg == String("listEquals() expects two lists."));
+    CHECK(second.error.msg == String("listEquals() expects two lists."));
+    CHECK(strings.error.msg == String("listEquals() expects two lists."));
+}
+
+TEST_CASE("floor of a non-number") {
+    const auto str = runAndCollect("floor(\"1.5\");");
+    const auto list = runAndCollect("floor([1.5]);");
+
+    REQUIRE(str.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(list.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(str.error.frames.getCount() == 1);
+    CHECK(str.error.msg == String("floor() expects a number, got string."));
+    CHECK(list.error.msg == String("floor() expects a number, got list."));
+}
+
+TEST_CASE("sort comparator returns a non-bool") {
+    const auto r = runAndCollect(R"(fun before(a, b) { return a - b; }
+sort([2, 1], before);)");
+
+    REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(r.error.msg == String("sort() comparator must return true or false."));
+}
+
+TEST_CASE("list error inside a function reports the call stack") {
+    const auto r = runAndCollect(R"(fun second(xs) {
+    return xs[1];
+}
+second([1]);)");
+
+    REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(r.error.msg == String("List index 1 is out of range for a list of length 1."));
+    REQUIRE(r.error.frames.getCount() == 2);
+    CHECK(r.error.frames[0].functionName == String("second"));
+    CHECK(r.error.frames[0].line == 2);
+    CHECK(r.error.frames[1].functionName == String("script"));
+    CHECK(r.error.frames[1].line == 4);
 }
