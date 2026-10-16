@@ -1,0 +1,72 @@
+// A literal's contents can only be observed through len and subscripts, so
+// those are what this file checks with.
+
+var empty = [];
+assert(len(empty) == 0);
+
+// Elements keep the order they were written in.
+var xs = [10, 20, 30];
+assert(len(xs) == 3);
+assert(xs[0] == 10);
+assert(xs[1] == 20);
+assert(xs[2] == 30);
+
+// A list holds values of any type side by side.
+fun f() {
+    return "called";
+}
+class Box {}
+var box = Box();
+
+var mixed = [1, "two", nil, true, f, Box, box];
+assert(len(mixed) == 7);
+assert(mixed[0] == 1);
+assert(mixed[1] == "two");
+assert(mixed[2] == nil);
+assert(mixed[3] == true);
+assert(mixed[4] == f);
+assert(mixed[5] == Box);
+assert(mixed[6] == box);
+
+// Elements are arbitrary expressions, evaluated when the literal is.
+var x = 4;
+var computed = [x + 1, f(), xs[2], -x, x == 4];
+assert(computed[0] == 5);
+assert(computed[1] == "called");
+assert(computed[2] == 30);
+assert(computed[3] == -4);
+assert(computed[4] == true);
+
+// Lists nest, including empty ones.
+var nested = [[1, 2], [], [[3]]];
+assert(len(nested) == 3);
+assert(len(nested[0]) == 2);
+assert(len(nested[1]) == 0);
+assert(len(nested[2]) == 1);
+assert(nested[2][0][0] == 3);
+
+// The language is not newline-sensitive, so a literal may span lines.
+var spread = [
+    1,
+    2
+];
+assert(len(spread) == 2);
+assert(spread[1] == 2);
+
+// A literal is an expression, so it can be used without a name.
+assert(len([1, 2, 3]) == 3);
+assert([7, 8][1] == 8);
+
+// Every evaluation creates a new list, so a literal in a function body or a
+// loop produces a fresh one each time.
+fun make() {
+    return [];
+}
+assert(make() != make());
+
+var previous = nil;
+for (var i = 0; i < 3; i = i + 1) {
+    var fresh = [i];
+    assert(fresh != previous);
+    previous = fresh;
+}

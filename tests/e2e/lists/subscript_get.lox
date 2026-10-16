@@ -1,0 +1,48 @@
+var xs = ["a", "b", "c"];
+
+// There is a single number type, so a whole number written with a fraction is
+// the same index, and negative zero is zero.
+assert(xs[1.0] == "b");
+assert(xs[-0] == "a");
+
+// The index is any expression that evaluates to a whole number.
+var i = 1;
+assert(xs[i + 1] == "c");
+assert(xs[floor(5 / 2)] == "c");
+
+// Subscripts chain with each other, with calls and with property access, in
+// any order.
+var grid = [[1, 2], [3, 4]];
+assert(grid[0][1] == 2);
+assert(grid[1][0] == 3);
+
+fun makeList() {
+    return [5, 6];
+}
+assert(makeList()[1] == 6);
+
+fun double(n) {
+    return n * 2;
+}
+var fns = [double, makeList];
+assert(fns[0](21) == 42);
+assert(fns[1]()[0] == 5);
+
+class Holder {
+    init() {
+        this.items = [double, makeList];
+    }
+}
+var holder = Holder();
+assert(holder.items[0](2) == 4);
+assert(holder.items[1]()[1] == 6);
+
+class Point {
+    init(x) {
+        this.x = x;
+    }
+}
+var points = [Point(1)];
+assert(points[0].x == 1);
+points[0].x = 5;
+assert(points[0].x == 5);

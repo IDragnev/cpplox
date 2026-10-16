@@ -1,0 +1,65 @@
+// A list is held by reference, like an instance: assigning it shares the list.
+var a = [1, 2];
+var b = a;
+push(b, 3);
+assert(len(a) == 3);
+assert(a[2] == 3);
+b[0] = "changed";
+assert(a[0] == "changed");
+
+// Passing a list to a function shares it too, so the function can change the
+// caller's list...
+fun fill(xs) {
+    xs[0] = "filled";
+    push(xs, "more");
+}
+var c = [nil];
+fill(c);
+assert(c[0] == "filled");
+assert(len(c) == 2);
+
+// ...but reassigning the parameter leaves the caller's variable alone.
+fun replace(xs) {
+    xs = [99];
+    return xs;
+}
+var d = [1];
+var replaced = replace(d);
+assert(d[0] == 1);
+assert(replaced[0] == 99);
+
+// The sharing is of the list, not of its slots. Reading an element copies its
+// value out, so changing what was read does not touch the list.
+var l = [1, 2];
+var x = l[0];
+x = 10;
+assert(l[0] == 1);
+
+var s = ["text"];
+var t = s[0];
+t = t + " more";
+assert(s[0] == "text");
+
+// Storing a new value in a slot does not change a value read from it before.
+var before = l[1];
+l[1] = 20;
+assert(before == 2);
+
+// An element that is a list reads out as a reference to that list, so changes
+// through it are visible, while reassigning it is not.
+var inner = [1];
+var outer = [inner];
+outer[0][0] = 99;
+assert(inner[0] == 99);
+
+var alias = outer[0];
+push(alias, 2);
+assert(len(inner) == 2);
+alias = [];
+assert(outer[0] == inner);
+
+// The same list can sit in several slots at once.
+var shared = [0];
+var pair = [shared, shared];
+pair[0][0] = 5;
+assert(pair[1][0] == 5);

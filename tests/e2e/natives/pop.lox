@@ -1,0 +1,20 @@
+// pop removes and returns the last element.
+var xs = [1, 2, 3];
+assert(pop(xs) == 3);
+assert(len(xs) == 2);
+assert(pop(xs) == 2);
+assert(pop(xs) == 1);
+assert(len(xs) == 0);
+
+// The popped value no longer belongs to the list, so reusing the freed slot
+// leaves it alone.
+var zs = ["x"];
+var v = pop(zs);
+push(zs, "y");
+assert(v == "x");
+assert(zs[0] == "y");
+
+// An emptied list can be filled again.
+push(xs, 1);
+assert(len(xs) == 1);
+assert(xs[0] == 1);

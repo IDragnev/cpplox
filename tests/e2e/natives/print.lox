@@ -23,6 +23,12 @@ print("text"); // expect: text
 print(str("text")); // expect: text
 print(""); // expect empty line
 
+// Strings inside a list are quoted. A string literal cannot hold a quote, so
+// this is the one place their exact form can be checked.
+print([1, "1"]); // expect: [1, "1"]
+print(["a", "", "b c"]); // expect: ["a", "", "b c"]
+print([["nested"]]); // expect: [["nested"]]
+
 class Foo {}
 print(Foo()); // expect: <Foo instance>
 

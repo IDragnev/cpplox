@@ -60,3 +60,45 @@ assert(str(clock) == "<native fun clock:0>");
 assert(str(str) == "<native fun str:1>");
 assert(str(assert) == "<native fun assert:1-2>");
 assert(str(print) == "<native fun print:*>");
+assert(str(len) == "<native fun len:1>");
+assert(str(push) == "<native fun push:2>");
+assert(str(pop) == "<native fun pop:1>");
+assert(str(floor) == "<native fun floor:1>");
+assert(str(listEquals) == "<native fun listEquals:2>");
+
+// A list renders as the display form of each element, comma separated, in
+// brackets. Numbers and objects render inside a list as they do on their own.
+assert(str([]) == "[]");
+assert(str([1, 2, 3]) == "[1, 2, 3]");
+assert(str([nil, true, false]) == "[nil, true, false]");
+assert(str([1.5, -0, 1 / 3]) == "[1.5, -0, 0.3333333333333333]");
+assert(str([[1, [2]], []]) == "[[1, [2]], []]");
+assert(str([f, Foo, foo, foo.bar]) == "[<fun f:0>, <class Foo>, <Foo instance>, <fun bar:0>]");
+assert(str([clock, len]) == "[<native fun clock:0>, <native fun len:1>]");
+assert("xs = " + str([1, 2]) == "xs = [1, 2]");
+
+// Strings inside a list are quoted, so a number and its rendering can be told
+// apart. A string literal cannot hold a quote, so print.lox checks the exact
+// form.
+assert(str([1]) != str(["1"]));
+
+// A list that contains itself still renders in finite time. Where the
+// rendering re-enters a list it is already inside, it writes [...].
+var xs = [1];
+push(xs, xs);
+assert(str(xs) == "[1, [...]]");
+
+var a = [];
+var b = [a];
+push(a, b);
+assert(str(a) == "[[[...]]]");
+
+// The same list twice side by side is not a cycle.
+var inner = [1];
+assert(str([inner, inner]) == "[[1], [1]]");
+
+// An instance does not show its fields, so a cycle through one never recurses.
+var box = Foo();
+var holder = [box];
+box.list = holder;
+assert(str(holder) == "[<Foo instance>]");

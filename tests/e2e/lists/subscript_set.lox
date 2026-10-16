@@ -1,0 +1,54 @@
+var xs = [1, 2, 3];
+
+// Assigning replaces the element; it does not insert one.
+xs[0] = 10;
+assert(listEquals(xs, [10, 2, 3]));
+
+// An element can be replaced with a value of a different type.
+xs[1] = "two";
+assert(xs[1] == "two");
+
+// The last index can be assigned.
+xs[len(xs) - 1] = "last";
+assert(xs[2] == "last");
+
+// An element assignment is an expression whose value is the assigned value.
+assert((xs[0] = 5) == 5);
+assert(xs[0] == 5);
+
+// It is right-associative, so a chain stores the same value everywhere.
+var a = [0];
+var b = [0, 0];
+var result = a[0] = b[1] = 7;
+assert(a[0] == 7);
+assert(b[1] == 7);
+assert(b[0] == 0);
+assert(result == 7);
+
+// Assignment binds loosest, so the whole right-hand side is evaluated first.
+xs[0] = 1 + 2 * 3;
+assert(xs[0] == 7);
+xs[0] = 1 == 1;
+assert(xs[0] == true);
+
+// Nested elements are assigned through the chain of subscripts.
+var grid = [[0, 0], [0, 0]];
+grid[1][0] = 5;
+assert(grid[1][0] == 5);
+assert(grid[0][0] == 0);
+
+// The list being assigned into can come from a call or a field.
+fun getGrid() {
+    return grid;
+}
+getGrid()[0][1] = 9;
+assert(grid[0][1] == 9);
+
+class Holder {
+    init() {
+        this.items = [0];
+    }
+}
+var holder = Holder();
+holder.items[0] = 4;
+assert(holder.items[0] == 4);

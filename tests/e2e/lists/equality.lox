@@ -1,0 +1,15 @@
+// == on lists is identity: two lists are equal only if they are the same list.
+var a = [1, 2];
+assert(a == a);
+assert((a == [1, 2]) == false, "same contents, different lists");
+assert(a != [1, 2]);
+assert([] != []);
+
+var b = a;
+assert(a == b);
+assert((a != b) == false);
+
+// Identity does not depend on the contents, so mutating a list cannot change
+// what it compares equal to.
+push(a, 3);
+assert(a == b);

@@ -1,0 +1,31 @@
+// floor answers the largest whole number not greater than its argument.
+assert(floor(1) == 1);
+assert(floor(1.5) == 1);
+assert(floor(1.999) == 1);
+assert(floor(0) == 0);
+assert(floor(0.5) == 0);
+assert(type(floor(1.5)) == "number");
+
+// Negative numbers round down, away from zero.
+assert(floor(-1) == -1);
+assert(floor(-1.5) == -2);
+assert(floor(-0.5) == -1);
+
+// Negative zero keeps its sign.
+assert(str(floor(-0)) == "-0");
+
+// Infinities are already whole.
+var big = 1e200;
+assert(floor(big * big) == big * big);
+assert(str(floor(-(big * big))) == "-inf");
+
+// Division can produce a fraction, so integer division goes through floor.
+assert(floor(7 / 2) == 3);
+
+// It also tells whole numbers apart.
+fun isWhole(n) {
+    return floor(n) == n;
+}
+assert(isWhole(3));
+assert(isWhole(-2));
+assert(isWhole(3.5) == false);

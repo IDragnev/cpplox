@@ -28,6 +28,9 @@ assert(type(foo) == "instance");
 // A method reference is a function, matching how it renders.
 assert(type(foo.bar) == "function");
 
+assert(type([]) == "list");
+assert(type([1, "two", [3]]) == "list");
+
 assert(type(clock) == "native function");
 assert(type(print) == "native function");
 

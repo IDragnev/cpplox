@@ -15,12 +15,13 @@ if (false) {
 
 assert(trace == "yes,block true,else branch,", trace);
 
-// Truthiness: only nil and false are falsey, so a zero and an empty string
-// both take the branch.
+// Truthiness: only nil and false are falsey, so a zero, an empty string and an
+// empty list all take the branch.
 trace = "";
 if (0) trace = trace + "zero,";
 if ("") trace = trace + "empty string,";
+if ([]) trace = trace + "empty list,";
 if (nil) trace = trace + "bad,";
 if (false) trace = trace + "bad,";
 
-assert(trace == "zero,empty string,", trace);
+assert(trace == "zero,empty string,empty list,", trace);

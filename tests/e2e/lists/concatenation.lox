@@ -1,0 +1,37 @@
+// + on two lists makes a new list with the elements of the first followed by
+// those of the second.
+var a = [1, 2];
+var b = [3];
+var c = a + b;
+assert(listEquals(c, [1, 2, 3]));
+
+// Neither operand changes.
+assert(listEquals(a, [1, 2]));
+assert(listEquals(b, [3]));
+
+// The result is independent of both operands.
+assert(c != a);
+assert(c != b);
+push(c, 4);
+c[0] = "x";
+assert(listEquals(a, [1, 2]));
+
+// Joining with an empty list still makes a new list.
+assert(len([] + []) == 0);
+var same = a + [];
+assert(listEquals(same, a));
+assert(same != a);
+assert(listEquals([] + a, a));
+
+// A list can be joined with itself.
+assert(listEquals(a + a, [1, 2, 1, 2]));
+
+// + is left-associative.
+assert(listEquals([1] + [2] + [3], [1, 2, 3]));
+
+// The new list is shallow: elements that are lists are shared, not copied.
+var inner = [0];
+var joined = [inner] + [inner];
+joined[0][0] = 7;
+assert(inner[0] == 7);
+assert(joined[1] == inner);

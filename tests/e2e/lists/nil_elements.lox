@@ -1,0 +1,20 @@
+// nil is an ordinary element: storing it neither shortens a list nor leaves a
+// hole in it.
+assert(len([nil]) == 1);
+assert(len([nil, nil]) == 2);
+assert(len([1, nil, 3]) == 3);
+
+var xs = [1, 2, 3];
+xs[2] = nil;
+assert(len(xs) == 3);
+xs[0] = nil;
+assert(len(xs) == 3);
+assert(xs[1] == 2);
+
+push(xs, nil);
+assert(len(xs) == 4);
+assert(xs[3] == nil);
+
+// Popping a nil element still removes it.
+assert(pop(xs) == nil);
+assert(len(xs) == 3);

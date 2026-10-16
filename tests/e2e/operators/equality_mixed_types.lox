@@ -26,3 +26,13 @@ assert((nil == 0) == false);
 assert(nil != 0);
 assert((nil == "") == false);
 assert(nil != "");
+
+// A list never equals a value of another type, even one it holds.
+assert(([nil] == nil) == false);
+assert([nil] != nil);
+assert(([false] == false) == false);
+assert([false] != false);
+assert(([0] == 0) == false);
+assert([0] != 0);
+assert(([""] == "") == false);
+assert([""] != "");

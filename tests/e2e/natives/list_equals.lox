@@ -1,0 +1,76 @@
+// listEquals compares contents: the same length and pairwise equal elements.
+assert(listEquals([], []));
+assert(listEquals([1, 2], [1, 2]));
+assert(listEquals([1, 2], [1, 2, 3]) == false);
+assert(listEquals([1, 2, 3], [1, 2]) == false);
+assert(listEquals([1, 2], [2, 1]) == false, "order matters");
+assert(type(listEquals([], [])) == "bool");
+
+// A list equals itself.
+var a = [1, "x"];
+assert(listEquals(a, a));
+
+// Elements that are not both lists compare with ==, so strings and numbers
+// compare by value...
+assert(listEquals(["a", "b"], ["a", "b"]));
+assert(listEquals([nil, true, false], [nil, true, false]));
+assert(listEquals([0], [-0]));
+assert(listEquals([1], ["1"]) == false);
+assert(listEquals([nil], [false]) == false);
+
+// ...and instances and functions by identity.
+class Box {}
+var box = Box();
+assert(listEquals([box], [box]));
+assert(listEquals([Box()], [Box()]) == false, "two different instances");
+fun f() {}
+assert(listEquals([f, clock], [f, clock]));
+
+// Elements that are both lists are compared recursively.
+assert(listEquals([1, [2, "x"]], [1, [2, "x"]]));
+assert(listEquals([[[]]], [[[]]]));
+assert(listEquals([[1]], [[2]]) == false);
+assert(listEquals([[1]], [1]) == false);
+assert(listEquals([1], [[1]]) == false);
+
+// Cycles terminate: a pair of lists already being compared further up counts
+// as equal.
+var c1 = [1];
+push(c1, c1);
+var c2 = [1];
+push(c2, c2);
+assert(listEquals(c1, c2));
+assert(listEquals(c1, c1));
+
+// Counting a revisited pair as equal does not hide a difference elsewhere.
+var d1 = [];
+push(d1, d1);
+push(d1, 1);
+var d2 = [];
+push(d2, d2);
+push(d2, 2);
+assert(listEquals(d1, d2) == false);
+
+// A cycle through another list.
+var m1 = [];
+var m2 = [m1];
+push(m1, m2);
+var n1 = [];
+var n2 = [n1];
+push(n1, n2);
+assert(listEquals(m1, n1));
+
+// Lists built differently but unfolding into the same infinite nesting are
+// equal.
+var p = [1];
+push(p, p);
+var q = [1];
+var qInner = [1];
+push(qInner, q);
+push(q, qInner);
+assert(listEquals(p, q));
+
+// A cycle is not equal to a finite list of the same shape.
+var lone = [];
+push(lone, lone);
+assert(listEquals(lone, [[]]) == false);

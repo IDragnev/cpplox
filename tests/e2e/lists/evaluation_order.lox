@@ -1,0 +1,39 @@
+// Everything involved in a list operation is evaluated strictly left to right.
+var log = [];
+
+fun note(v) {
+    push(log, v);
+    return v;
+}
+
+// The elements of a literal.
+var xs = [note("a"), note("b"), note("c")];
+assert(listEquals(log, ["a", "b", "c"]));
+
+var target = [10, 20];
+
+fun theList() {
+    push(log, "list");
+    return target;
+}
+
+fun index() {
+    push(log, "index");
+    return 1;
+}
+
+fun value() {
+    push(log, "value");
+    return 30;
+}
+
+// In a read, the list comes before the index.
+log = [];
+assert(theList()[index()] == 20);
+assert(listEquals(log, ["list", "index"]));
+
+// In an assignment, the list, then the index, then the value.
+log = [];
+theList()[index()] = value();
+assert(listEquals(log, ["list", "index", "value"]));
+assert(target[1] == 30);

@@ -1,0 +1,24 @@
+var xs = [];
+assert(push(xs, 1) == nil, "push returns nil");
+assert(len(xs) == 1);
+assert(xs[0] == 1);
+
+// Values are appended at the end, in order.
+push(xs, 2);
+push(xs, 3);
+assert(listEquals(xs, [1, 2, 3]));
+
+// A list can be pushed onto itself.
+var self = [];
+push(self, self);
+assert(len(self) == 1);
+assert(self[0] == self);
+
+// A list grows as far as it is pushed.
+var big = [];
+for (var i = 0; i < 1000; i = i + 1) {
+    push(big, i);
+}
+assert(len(big) == 1000);
+assert(big[0] == 0);
+assert(big[999] == 999);

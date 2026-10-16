@@ -1,0 +1,8 @@
+assert(len([]) == 0);
+assert(len([1]) == 1);
+assert(len([1, 2, 3]) == 3);
+assert(type(len([])) == "number");
+
+// Only the top-level elements count.
+assert(len([[1, 2, 3]]) == 1);
+assert(len([[], []]) == 2);
