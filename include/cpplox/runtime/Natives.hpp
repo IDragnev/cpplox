@@ -52,6 +52,13 @@ namespace cpplox {
         bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
     };
 
+    class MakeList : public NativeFunction {
+    public:
+        MakeList() : NativeFunction("makeList", Arity::exactly(2)) {}
+
+        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+    };
+
     class Len : public NativeFunction {
     public:
         Len() : NativeFunction("len", Arity::exactly(1)) {}

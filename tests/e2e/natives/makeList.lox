@@ -1,0 +1,36 @@
+// makeList(count, value) answers a new list of count elements, all value.
+var xs = makeList(3, 0);
+assert(listEquals(xs, [0, 0, 0]));
+
+var empty = makeList(0, 1);
+assert(len(empty) == 0);
+
+var nils = makeList(2, nil);
+assert(listEquals(nils, [nil, nil]));
+
+// A whole number written with a fraction is still a valid count.
+assert(len(makeList(2.0, true)) == 2);
+
+// The point of it: every slot can be assigned without pushing first.
+var squares = makeList(5, nil);
+for (var i = 0; i < 5; i = i + 1) {
+    squares[i] = i * i;
+}
+assert(listEquals(squares, [0, 1, 4, 9, 16]));
+
+// It is not limited to the 255 elements a list literal can hold.
+var big = makeList(1000, 7);
+assert(len(big) == 1000);
+assert(big[0] == 7);
+assert(big[999] == 7);
+
+// Each call answers a distinct list.
+var a = makeList(1, 0);
+var b = makeList(1, 0);
+assert(a != b);
+
+// The value is evaluated once, so an object fills every slot by reference.
+var rows = makeList(2, []);
+push(rows[0], 1);
+assert(rows[0] == rows[1]);
+assert(len(rows[1]) == 1);

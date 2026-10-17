@@ -6,8 +6,12 @@
 #include "cpplox/core/Format.hpp"
 #include "cpplox/runtime/List.hpp"
 #include "cpplox/runtime/Reflect.hpp"
+#include "cpplox/core/Algorithm.hpp"
 
 #include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <limits>
 #include <string_view>
 
 namespace cpplox {
@@ -106,6 +110,47 @@ namespace cpplox {
         result = listObj->values.back();
         listObj->values.removeBack();
         ctx.resized(listObj);
+
+        return true;
+    }
+
+    bool MakeList::call(NativeContext& ctx, std::span<Value> args, Value& result) {
+        // Objects are capped at PTRDIFF_MAX bytes, so no allocation can hold
+        // more values. Rejecting larger counts also keeps the cast defined.
+        constexpr std::size_t MAX_ALLOCATABLE_COUNT =
+            static_cast<std::size_t>(std::numeric_limits<std::ptrdiff_t>::max())
+            / sizeof(Value);
+
+        if (args[0].isNumber() == false) {
+            result = Value(String(fmt::format(
+                "makeList() count must be a number, got {}.", typeName(args[0]))));
+            return false;
+        }
+
+        const double count = args[0].asNumber();
+        if (std::trunc(count) != count) {
+            result = Value(String(fmt::format(
+                "makeList() count must be a whole number, got {}.", count)));
+            return false;
+        }
+        if (count < 0) {
+            result = Value(String(fmt::format(
+                "makeList() count must not be negative, got {}.", count)));
+            return false;
+        }
+        if (count > static_cast<double>(MAX_ALLOCATABLE_COUNT)) {
+            result = Value(String("Out of memory."));
+            return false;
+        }
+
+        List* listObj = ctx.newList(static_cast<std::size_t>(count));
+        if (listObj == nullptr) {
+            result = Value(String("Out of memory."));
+            return false;
+        }
+
+        forEach(listObj->values, [&args](Value& v) { v = args[1]; });
+        result = Value(listObj);
 
         return true;
     }

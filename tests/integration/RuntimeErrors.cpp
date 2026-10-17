@@ -508,6 +508,34 @@ TEST_CASE("listEquals with a non-list") {
     CHECK(strings.error.msg == String("listEquals() expects two lists."));
 }
 
+TEST_CASE("makeList with an invalid count") {
+    const auto str = runAndCollect("makeList(\"3\", 0);");
+    const auto fraction = runAndCollect("makeList(1.5, 0);");
+    const auto negative = runAndCollect("makeList(-1, 0);");
+
+    REQUIRE(str.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(fraction.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(negative.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(str.error.frames.getCount() == 1);
+    CHECK(str.error.msg == String("makeList() count must be a number, got string."));
+    CHECK(fraction.error.msg ==
+          String("makeList() count must be a whole number, got 1.5."));
+    CHECK(negative.error.msg ==
+          String("makeList() count must not be negative, got -1."));
+}
+
+TEST_CASE("makeList larger than memory") {
+    const auto unallocatable = runAndCollect("var xs = [];\nmakeList(1e15, 0);");
+    const auto unaddressable = runAndCollect("makeList(1e300, 0);");
+
+    REQUIRE(unallocatable.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(unaddressable.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(unallocatable.error.frames.getCount() == 1);
+    CHECK(unallocatable.error.frames[0].line == 2);
+    CHECK(unallocatable.error.msg == String("Out of memory."));
+    CHECK(unaddressable.error.msg == String("Out of memory."));
+}
+
 TEST_CASE("floor of a non-number") {
     const auto str = runAndCollect("floor(\"1.5\");");
     const auto list = runAndCollect("floor([1.5]);");

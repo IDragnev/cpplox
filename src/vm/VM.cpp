@@ -19,6 +19,7 @@
 #include "cpplox/core/Format.hpp"
 
 #include <iterator>
+#include <new>
 #include <span>
 #include <type_traits>
 #include <fmt/format.h>
@@ -61,7 +62,13 @@ namespace cpplox {
             stack.push(Value(closure));
             call(closure, 0);
 
-            result.code = run();
+            try {
+                result.code = run();
+            }
+            catch (const std::bad_alloc&) {
+                runtimeError("Out of memory.");
+                result.code = InterpretResultCode::RUNTIME_ERROR;
+            }
         }
         else {
             result.code = InterpretResultCode::RUNTIME_ERROR;
@@ -83,6 +90,7 @@ namespace cpplox {
         defineNative<Assert>();
         defineNative<Push>();
         defineNative<Pop>();
+        defineNative<MakeList>();
         defineNative<Len>();
         defineNative<ListEquals>();
         defineNative<Floor>();
@@ -919,7 +927,7 @@ namespace cpplox {
 
         T* obj = heap.make<T>(std::forward<Args>(args)...);
         if (obj == nullptr) {
-            runtimeError("Out of memory");
+            runtimeError("Out of memory.");
         }
 
         return obj;
