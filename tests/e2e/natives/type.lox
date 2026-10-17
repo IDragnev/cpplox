@@ -9,8 +9,7 @@ assert(type(-1.5) == "number");
 assert(type("") == "string");
 assert(type("text") == "string");
 
-// A number and its rendering are different types, which is the distinction
-// print cannot show now that strings are unquoted.
+// A number and its rendering are different types.
 assert(type(1) == "number");
 assert(type("1") == "string");
 assert(type(str(1)) == "string");

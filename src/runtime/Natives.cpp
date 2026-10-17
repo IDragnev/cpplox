@@ -1,7 +1,7 @@
 #include "cpplox/runtime/Natives.hpp"
 #include "cpplox/runtime/NativeContext.hpp"
 #include "cpplox/runtime/Object.hpp"
-#include "cpplox/runtime/ObjectFormatter.hpp"
+#include "cpplox/runtime/Display.hpp"
 #include "cpplox/log/Log.hpp"
 #include "cpplox/core/Format.hpp"
 #include "cpplox/runtime/List.hpp"
@@ -18,14 +18,6 @@ namespace cpplox {
     namespace {
         using Clk = std::chrono::steady_clock;
         const Clk::time_point programStart = Clk::now();
-
-        String renderValue(const Value& v) {
-            if (v.isObject()) {
-                return String(fmt::format("{}", *v.asObject()));
-            }
-
-            return String(fmt::format("{}", v));
-        }
     } // namespace
 
     bool Clock::call(NativeContext&, std::span<Value>, Value& result) {
@@ -45,14 +37,14 @@ namespace cpplox {
         }
 
         for (const Value& v : args) {
-            println("{}", renderValue(v));
+            println("{}", display(v));
         }
 
         return true;
     }
 
     bool Str::call(NativeContext&, std::span<Value> args, Value& result) {
-        result = Value(renderValue(args[0]));
+        result = Value(str(args[0]));
 
         return true;
     }
@@ -69,8 +61,7 @@ namespace cpplox {
         }
 
         if (args.size() == 2) {
-            result = args[1].isString() ? args[1]
-                                        : Value(renderValue(args[1]));
+            result = Value(str(args[1]));
         } else {
             result = Value(String("Assertion failed."));
         }

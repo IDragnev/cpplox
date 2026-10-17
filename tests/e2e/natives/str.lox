@@ -1,6 +1,8 @@
 // str renders a value the way print writes it, and returns a string.
 assert(type(str(1)) == "string");
 
+// The one exception: a string is returned as it is, without the quotes print
+// adds, so str can be used to build messages.
 assert(str("hi") == "hi");
 assert(str("") == "");
 assert("got " + str("hi") == "got hi");

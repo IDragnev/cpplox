@@ -9,17 +9,10 @@
 #include "cpplox/runtime/NativeFunction.hpp"
 #include "cpplox/runtime/List.hpp"
 #include "cpplox/core/StringFormatter.hpp"
-#include "cpplox/core/Vector.hpp"
 
 #include <fmt/format.h>
 #include <string>
 #include <string_view>
-
-namespace cpplox::detail {
-    void formatList(std::string& out,
-                    const List& list,
-                    Vector<const List*>& active);
-} // namespace cpplox::detail
 
 template <>
 struct fmt::formatter<cpplox::Object> : fmt::formatter<std::string_view> {
@@ -72,8 +65,8 @@ struct fmt::formatter<cpplox::Object> : fmt::formatter<std::string_view> {
                 text = "<upvalue>";
             } break;
             case cpplox::ObjectType::LIST: {
-                cpplox::Vector<const cpplox::List*> active;
-                cpplox::detail::formatList(text, *obj.as<cpplox::List>(), active);
+                const auto* list = obj.as<cpplox::List>();
+                text = fmt::format("<list {}>", list->values.getCount());
             } break;
         }
 

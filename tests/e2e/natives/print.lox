@@ -17,14 +17,15 @@ print(print(1));
 // expect: 1
 // expect: nil
 
-// Values are written the way str renders them, which means strings arrive
-// without quotes.
-print("text"); // expect: text
-print(str("text")); // expect: text
-print(""); // expect empty line
+// Values are written the way str renders them, except that a string is
+// quoted, so a number and a string that look alike stay distinguishable.
+print("text"); // expect: "text"
+print(""); // expect: ""
+print("1"); // expect: "1"
+print(str(1)); // expect: "1"
 
-// Strings inside a list are quoted. A string literal cannot hold a quote, so
-// this is the one place their exact form can be checked.
+// Strings inside a list are quoted the same way. A string literal cannot hold a
+// quote, so this is the one place their exact form can be checked.
 print([1, "1"]); // expect: [1, "1"]
 print(["a", "", "b c"]); // expect: ["a", "", "b c"]
 print([["nested"]]); // expect: [["nested"]]
@@ -37,5 +38,5 @@ fun apply(fn, arg) {
     return fn(arg);
 }
 print(apply(print, "hello"));
-// expect: hello
+// expect: "hello"
 // expect: nil

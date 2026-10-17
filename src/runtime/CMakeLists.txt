@@ -16,6 +16,7 @@ set(CPPLOX_RUNTIME_SOURCE
   ${RUNTIME_HEADERS_DIR}/List.hpp
   ${RUNTIME_HEADERS_DIR}/Natives.hpp
   ${RUNTIME_HEADERS_DIR}/ObjectFormatter.hpp
+  ${RUNTIME_HEADERS_DIR}/Display.hpp
   ${RUNTIME_HEADERS_DIR}/Reflect.hpp
 
   Function.cpp
@@ -28,7 +29,7 @@ set(CPPLOX_RUNTIME_SOURCE
   NativeContext.cpp
   List.cpp
   Natives.cpp
-  ObjectFormatter.cpp
+  Display.cpp
   Reflect.cpp
   Memory.cpp
   Heap.cpp
