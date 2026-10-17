@@ -6,11 +6,13 @@ set(CPPLOX_RUNTIME_SOURCE
   ${RUNTIME_HEADERS_DIR}/Closure.hpp
   ${RUNTIME_HEADERS_DIR}/Upvalue.hpp
   ${RUNTIME_HEADERS_DIR}/GCVisitor.hpp
-  ${RUNTIME_HEADERS_DIR}/GC.hpp
+  ${RUNTIME_HEADERS_DIR}/Memory.hpp
+  ${RUNTIME_HEADERS_DIR}/Heap.hpp
   ${RUNTIME_HEADERS_DIR}/Class.hpp
   ${RUNTIME_HEADERS_DIR}/Instance.hpp
   ${RUNTIME_HEADERS_DIR}/BoundMethod.hpp
   ${RUNTIME_HEADERS_DIR}/NativeFunction.hpp
+  ${RUNTIME_HEADERS_DIR}/NativeContext.hpp
   ${RUNTIME_HEADERS_DIR}/List.hpp
   ${RUNTIME_HEADERS_DIR}/Natives.hpp
   ${RUNTIME_HEADERS_DIR}/ObjectFormatter.hpp
@@ -23,11 +25,13 @@ set(CPPLOX_RUNTIME_SOURCE
   Instance.cpp
   BoundMethod.cpp
   NativeFunction.cpp
+  NativeContext.cpp
   List.cpp
   Natives.cpp
   ObjectFormatter.cpp
   Reflect.cpp
-  GC.cpp
+  Memory.cpp
+  Heap.cpp
 )
 
 add_library(

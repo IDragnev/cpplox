@@ -16,5 +16,8 @@ namespace cpplox {
 
         Class* const klass = nullptr;
         ValueMap fields;
+
+    protected:
+        std::size_t computeAllocSize() const override;
     };
 }

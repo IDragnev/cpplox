@@ -8,12 +8,15 @@ namespace cpplox {
     public:
         static const ObjectType TYPE = ObjectType::UPVALUE;
 
-        explicit Upvalue(Value* v) : Object(TYPE, sizeof(Upvalue)), location(v) {}
+        explicit Upvalue(Value* v) : Object(TYPE), location(v) {}
 
         void trace(gc::Visitor& v) override;
 
         Value closed;
         Value* location = nullptr;
         Upvalue* next = nullptr;
+
+    protected:
+        std::size_t computeAllocSize() const override { return sizeof(Upvalue); }
     };
 } // namespace cpplox

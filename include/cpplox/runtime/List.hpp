@@ -15,6 +15,9 @@ namespace cpplox {
         void trace(gc::Visitor& v) override;
 
         Vector<Value> values;
+
+    protected:
+        std::size_t computeAllocSize() const override;
     };
 
     bool structurallyEqual(const List* l, const List* r);

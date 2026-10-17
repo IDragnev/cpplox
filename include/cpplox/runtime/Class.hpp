@@ -15,5 +15,8 @@ namespace cpplox {
 
         const String name;
         ValueMap methods;
+
+    protected:
+        std::size_t computeAllocSize() const override;
     };
 }

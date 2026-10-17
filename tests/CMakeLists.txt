@@ -52,7 +52,7 @@ target_compile_options(bytecode_test
 
 add_executable(runtime_test
   runtime/main.cpp
-  runtime/GC.cpp
+  runtime/Heap.cpp
 )
 target_link_libraries(runtime_test runtime doctest)
 target_compile_options(runtime_test

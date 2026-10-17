@@ -3,7 +3,7 @@
 
 namespace cpplox {
     Function::Function(const String& name)
-        : Object(Function::TYPE, sizeof(Function))
+        : Object(Function::TYPE)
         , name(name)
     {}
 
@@ -13,5 +13,12 @@ namespace cpplox {
                 v.visit(val.asObject());
             }
         });
+    }
+
+    std::size_t Function::computeAllocSize() const {
+        return sizeof(Function)
+             + chunk.code.getAllocSize()
+             + chunk.lines.getAllocSize()
+             + chunk.constants.getAllocSize();
     }
 } // namespace cpplox

@@ -16,5 +16,8 @@ namespace cpplox {
 
         Function* const function = nullptr;
         Vector<Upvalue*> upvalues;
+
+    protected:
+        std::size_t computeAllocSize() const override;
     };
 }

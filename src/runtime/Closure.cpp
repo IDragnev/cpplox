@@ -4,7 +4,7 @@
 
 namespace cpplox {
     Closure::Closure(Function* fun)
-        : Object(TYPE, sizeof(Closure)  + fun->upvaluesCount * sizeof(Upvalue*))
+        : Object(TYPE)
         , function(fun)
         , upvalues(fun->upvaluesCount)
     {}
@@ -15,5 +15,9 @@ namespace cpplox {
         forEach(upvalues, [&v](Upvalue* upv) {
             v.visit(upv);
         });
+    }
+
+    std::size_t Closure::computeAllocSize() const {
+        return sizeof(Closure) + upvalues.getAllocSize();
     }
 } // namespace cpplox

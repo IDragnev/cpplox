@@ -3,7 +3,7 @@
 
 namespace cpplox {
     BoundMethod::BoundMethod(Value r, Closure* m)
-        : Object(BoundMethod::TYPE, sizeof(BoundMethod))
+        : Object(BoundMethod::TYPE)
         , receiver(r)
         , method(m) {}
 
@@ -13,5 +13,9 @@ namespace cpplox {
         if (receiver.isObject()) {
             v.visit(receiver.asObject());
         }
+    }
+
+    std::size_t BoundMethod::computeAllocSize() const {
+        return sizeof(BoundMethod);
     }
 } // namespace cpplox

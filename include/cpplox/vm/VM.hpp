@@ -4,6 +4,7 @@
 #include "cpplox/core/ValueMap.hpp"
 #include "cpplox/core/Vector.hpp"
 #include "cpplox/core/String.hpp"
+#include "cpplox/runtime/Heap.hpp"
 
 #include <cstdint>
 
@@ -58,7 +59,6 @@ namespace cpplox {
 
     private:
         InterpretResultCode run();
-        void addObjects(Object* objects);
         void defineNatives();
         template <typename T>
         bool defineNative();
@@ -88,12 +88,11 @@ namespace cpplox {
         void collectStackFrames();
 
     private:
+        // Declared first so it outlives every member referencing its objects.
+        Heap heap;
         ValueStack stack;
         ValueMap globals;
         Vector<CallFrame> frames;
-        Object* gcObjects = nullptr;
-        std::uint64_t bytesAllocated = 0;
-        std::uint64_t nextGC = 1024 * 1024;
         Upvalue* openUpvalues = nullptr;
         RuntimeError error;
         String classInitKey = "init";

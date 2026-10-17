@@ -2,7 +2,7 @@
 
 namespace cpplox {
     Class::Class(const String& name)
-        : Object(Class::TYPE, sizeof(Class))
+        : Object(Class::TYPE)
         , name(name)
     {}
 
@@ -12,5 +12,9 @@ namespace cpplox {
                 v.visit(val.asObject());
             }
         });
+    }
+
+    std::size_t Class::computeAllocSize() const {
+        return sizeof(Class) + methods.getAllocSize();
     }
 }

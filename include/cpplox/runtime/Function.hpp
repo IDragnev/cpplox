@@ -17,5 +17,8 @@ namespace cpplox {
         unsigned arity = 0;
         unsigned upvaluesCount = 0;
         Chunk chunk;
+
+    protected:
+        std::size_t computeAllocSize() const override;
     };
 }

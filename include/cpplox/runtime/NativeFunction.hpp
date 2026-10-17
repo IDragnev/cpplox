@@ -7,6 +7,8 @@
 #include <span>
 
 namespace cpplox {
+    class NativeContext;
+
     class Arity {
     public:
         static Arity exactly(unsigned count) { return Arity(count, count, false); }
@@ -47,9 +49,14 @@ namespace cpplox {
 
         // Returns false on failure. A failing native may leave a string in
         // result, which the VM reports as the runtime error message.
-        virtual bool call(std::span<Value> args, Value& result) = 0;
+        virtual bool call(NativeContext& ctx,
+                          std::span<Value> args,
+                          Value& result) = 0;
 
         const String name;
         const Arity arity;
+
+    protected:
+        std::size_t computeAllocSize() const override;
     };
 }

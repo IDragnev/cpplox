@@ -8,7 +8,7 @@
 #include <new>
 #include <utility>
 
-namespace cpplox::gc {
+namespace cpplox::memory {
     template <typename T, typename... Args>
     inline T* makeObject(Args&&... args) {
         T* obj = new (std::nothrow) T(std::forward<Args>(args)...);
@@ -27,15 +27,5 @@ namespace cpplox::gc {
         return obj;
     }
 
-    void traceRoot(Object* root);
     void freeObject(Object* obj);
-
-    using Deleter = void (*)(Object*);
-
-    struct SweepResult {
-        Object* head = nullptr;
-        std::size_t freedBytes = 0;
-    };
-
-    SweepResult sweep(Object* head, Deleter deleter);
-} // namespace cpplox::gc
+} // namespace cpplox::memory

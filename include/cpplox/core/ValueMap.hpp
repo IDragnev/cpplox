@@ -27,6 +27,8 @@ namespace cpplox {
 
         bool isEmpty() const;
         void clear();
+        
+        std::size_t getAllocSize() const { return table.getAllocSize(); }
 
         void swap(ValueMap& other);
 

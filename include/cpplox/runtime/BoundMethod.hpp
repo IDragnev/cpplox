@@ -16,5 +16,8 @@ namespace cpplox {
 
         Value receiver;
         Closure* const method = nullptr;
+
+    protected:
+        std::size_t computeAllocSize() const override;
     };
 }

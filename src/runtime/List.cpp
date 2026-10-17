@@ -47,7 +47,7 @@ namespace cpplox {
     List::List() : List(0) {}
 
     List::List(std::size_t size)
-        : Object(List::TYPE, sizeof(List) + size * sizeof(Value))
+        : Object(List::TYPE)
         , values(size)
     {}
 
@@ -57,6 +57,10 @@ namespace cpplox {
                 v.visit(val.asObject());
             }
         }); 
+    }
+
+    std::size_t List::computeAllocSize() const {
+        return sizeof(List) + values.getAllocSize();
     }
 
     bool structurallyEqual(const List* l, const List* r) {

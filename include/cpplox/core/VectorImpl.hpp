@@ -225,6 +225,11 @@ namespace cpplox {
     }
 
     template <typename T>
+    inline std::size_t Vector<T>::getAllocSize() const noexcept {
+        return size * sizeof(T);
+    }
+
+    template <typename T>
     bool operator==(const Vector<T>& lhs, const Vector<T>& rhs) {
         if (lhs.getCount() != rhs.getCount()) {
             return false;

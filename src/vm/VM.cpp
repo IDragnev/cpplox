@@ -10,8 +10,8 @@
 #include "cpplox/runtime/Instance.hpp"
 #include "cpplox/runtime/BoundMethod.hpp"
 #include "cpplox/runtime/NativeFunction.hpp"
+#include "cpplox/runtime/NativeContext.hpp"
 #include "cpplox/runtime/Natives.hpp"
-#include "cpplox/runtime/GC.hpp"
 #include "cpplox/runtime/List.hpp"
 #include "cpplox/runtime/Reflect.hpp"
 #include "cpplox/log/Log.hpp"
@@ -25,22 +25,18 @@
 #include <cmath>
 
 namespace cpplox {
-    static const std::size_t MAX_FRAMES = 1024;
-    static const std::size_t MAX_STACK_BYTES = 4 * 1024 * 1024;
-    static const std::size_t MAX_STACK_SLOTS = MAX_STACK_BYTES / sizeof(Value);
+    namespace {
+        const std::size_t MAX_FRAMES = 1024;
+        const std::size_t MAX_STACK_BYTES = 4 * 1024 * 1024;
+        const std::size_t MAX_STACK_SLOTS = MAX_STACK_BYTES / sizeof(Value);
+        const std::uint64_t FIRST_GC_AT_BYTES = 1024 * 1024;
+    } // namespace
 
-    VM::VM() {
+    VM::VM() : heap(FIRST_GC_AT_BYTES) {
         defineNatives();
     }
 
-    VM::~VM() {
-        while (gcObjects != nullptr) {
-            Object* next = gcObjects->nextObject;
-            gc::freeObject(gcObjects);
-            gcObjects = next;
-        }
-        gcObjects = nullptr;
-    }
+    VM::~VM() = default;
 
     InterpretResult VM::interpret(Function* func, Object* objects) {
         InterpretResult result;
@@ -54,7 +50,7 @@ namespace cpplox {
             return result;
         }
 
-        addObjects(objects);
+        heap.adopt(objects);
         stack.reserve(2056);
         frames.reserve(512);
 
@@ -77,23 +73,6 @@ namespace cpplox {
         stack.clear();
 
         return result;
-    }
-
-    void VM::addObjects(Object* objects) {
-        if (objects == nullptr) {
-            return;
-        }
-
-        Object* last = objects;
-        Object* current = objects;
-        do {
-            last = current;
-            bytesAllocated += current->size();
-            current = current->nextObject;
-        } while (current != nullptr);
-
-        last->nextObject = gcObjects;
-        gcObjects = objects;
     }
 
     void VM::defineNatives() {
@@ -491,6 +470,7 @@ namespace cpplox {
                         Instance* inst = instance.asObject()->as<Instance>();
                         if (inst != nullptr) {
                             inst->fields.insert(name.asString(), stack.peek());
+                            heap.resized(inst);
                             Value val = stack.pop();
                             stack.pop();
                             stack.push(val);
@@ -524,6 +504,7 @@ namespace cpplox {
                     Class* subclassObj = subclass.asObject()->as<Class>();
                     Class* superclassObj = superclass.asObject()->as<Class>();
                     subclassObj->methods = superclassObj->methods;
+                    heap.resized(subclassObj);
 
                     stack.pop(); // subclass
                 } break;
@@ -739,7 +720,8 @@ namespace cpplox {
 
         Value result;
         const std::span<Value> args(stack.data() + (stack.size() - argc), argc);
-        if (f->call(args, result) == false) {
+        NativeContext ctx(heap);
+        if (f->call(ctx, args, result) == false) {
             if (result.isString()) {
                 runtimeError("{}", result.asString());
             } else {
@@ -807,6 +789,7 @@ namespace cpplox {
             Class* c = classObj.asObject()->as<Class>();
             if (c != nullptr) {
                 c->methods.insert(name, method);
+                heap.resized(c);
             }
         }
 
@@ -930,17 +913,12 @@ namespace cpplox {
         runGC();
 #endif
 
-        if (bytesAllocated > nextGC) {
+        if (heap.needsCollection()) {
             runGC();
         }
 
-        T* obj = gc::makeObject<T>(std::forward<Args>(args)...);
-        if (obj != nullptr) {
-            bytesAllocated += obj->size();
-            obj->nextObject = gcObjects;
-            gcObjects = obj;
-        }
-        else {
+        T* obj = heap.make<T>(std::forward<Args>(args)...);
+        if (obj == nullptr) {
             runtimeError("Out of memory");
         }
 
@@ -949,24 +927,7 @@ namespace cpplox {
 
     void VM::runGC() {
         traceGCRoots();
-
-#ifdef CPPLOX_DEBUG_LOG_GC
-const auto before = bytesAllocated;
-#endif
-
-        auto result = gc::sweep(gcObjects, gc::freeObject);
-        gcObjects = result.head;
-        bytesAllocated -= result.freedBytes;
-
-        constexpr std::uint64_t HEAP_GROWTH_FACTOR = 2;
-        nextGC = bytesAllocated * HEAP_GROWTH_FACTOR;
-
-#ifdef CPPLOX_DEBUG_LOG_GC
-        println("GC Collected {} bytes from the total {}. Next run at {}.",
-                before - bytesAllocated,
-                before,
-                nextGC);
-#endif
+        heap.sweep();
     }
 
     void VM::traceGCRoots() {
@@ -974,24 +935,24 @@ const auto before = bytesAllocated;
         for (std::size_t i = 0; i < stackSize; ++i) {
             Value& v = stack.at(i);
             if (v.isObject()) {
-                gc::traceRoot(v.asObject());
+                heap.traceRoot(v.asObject());
             }
         }
 
-        globals.forEachValue([](Value& v) {
+        globals.forEachValue([this](Value& v) {
             if (v.isObject()) {
-                gc::traceRoot(v.asObject());
+                heap.traceRoot(v.asObject());
             }
         });
 
-        forEach(frames, [](CallFrame& f) { 
-            gc::traceRoot(f.closure);
+        forEach(frames, [this](CallFrame& f) { 
+            heap.traceRoot(f.closure);
         });
 
         for (Upvalue* upvalue = openUpvalues; upvalue != nullptr;
              upvalue = upvalue->next)
         {
-            gc::traceRoot(upvalue);
+            heap.traceRoot(upvalue);
         }
     }
 }

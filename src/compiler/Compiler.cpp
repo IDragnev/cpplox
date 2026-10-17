@@ -3,7 +3,7 @@
 #include "cpplox/bytecode/Bytecode.hpp"
 #include "cpplox/bytecode/Chunk.hpp"
 #include "cpplox/runtime/Function.hpp"
-#include "cpplox/runtime/GC.hpp"
+#include "cpplox/runtime/Memory.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 #include "cpplox/core/Algorithm.hpp"
 
@@ -199,7 +199,7 @@ namespace cpplox {
 
         while (gcObjects != nullptr) {
             Object* next = gcObjects->nextObject;
-            gc::freeObject(gcObjects);
+            memory::freeObject(gcObjects);
             gcObjects = next;
         }
         gcObjects = nullptr;
@@ -207,7 +207,7 @@ namespace cpplox {
 
     template <typename T, typename... Args>
     T* Compiler::makeObject(Args&&... args) {
-        T* obj = gc::makeObject<T>(std::forward<Args>(args)...);
+        T* obj = memory::makeObject<T>(std::forward<Args>(args)...);
         if (obj != nullptr) {
             obj->nextObject = gcObjects;
             gcObjects = obj;

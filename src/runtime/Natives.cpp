@@ -1,4 +1,5 @@
 #include "cpplox/runtime/Natives.hpp"
+#include "cpplox/runtime/NativeContext.hpp"
 #include "cpplox/runtime/Object.hpp"
 #include "cpplox/runtime/ObjectFormatter.hpp"
 #include "cpplox/log/Log.hpp"
@@ -23,7 +24,7 @@ namespace cpplox {
         }
     } // namespace
 
-    bool Clock::call(std::span<Value>, Value& result) {
+    bool Clock::call(NativeContext&, std::span<Value>, Value& result) {
         const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
             Clk::now() - programStart);
         // Whole milliseconds, widened to a double only because that is the
@@ -33,7 +34,7 @@ namespace cpplox {
         return true;
     }
 
-    bool Print::call(std::span<Value> args, Value&) {
+    bool Print::call(NativeContext&, std::span<Value> args, Value&) {
         if (args.empty()) {
             println("");
             return true;
@@ -46,19 +47,19 @@ namespace cpplox {
         return true;
     }
 
-    bool Str::call(std::span<Value> args, Value& result) {
+    bool Str::call(NativeContext&, std::span<Value> args, Value& result) {
         result = Value(renderValue(args[0]));
 
         return true;
     }
 
-    bool Type::call(std::span<Value> args, Value& result) {
+    bool Type::call(NativeContext&, std::span<Value> args, Value& result) {
         result = Value(typeName(args[0]));
 
         return true;
     }
 
-    bool Assert::call(std::span<Value> args, Value& result) {
+    bool Assert::call(NativeContext&, std::span<Value> args, Value& result) {
         if (args[0].isFalsey() == false) {
             return true;
         }
@@ -73,7 +74,7 @@ namespace cpplox {
         return false;
     }
 
-    bool Push::call(std::span<Value> args, Value& result) {
+    bool Push::call(NativeContext& ctx, std::span<Value> args, Value& result) {
         const Value& list = args[0];
         if (isList(list) == false) {
             result = Value(String(fmt::format("push() expects a list, got {}.",
@@ -83,13 +84,12 @@ namespace cpplox {
 
         List* listObj = args[0].asObject()->as<List>();
         listObj->values.insertBack((args[1]));
-        
-        //grow gc bytes and size if needed
+        ctx.resized(listObj);
 
         return true;
     }
 
-    bool Pop::call(std::span<Value> args, Value& result) {
+    bool Pop::call(NativeContext& ctx, std::span<Value> args, Value& result) {
         Value& list = args[0];
         if (isList(list) == false) {
             result = Value(String(fmt::format("pop() expects a list, got {}.",
@@ -105,13 +105,12 @@ namespace cpplox {
         
         result = listObj->values.back();
         listObj->values.removeBack();
-
-        //shrink gc bytes and size if needed
+        ctx.resized(listObj);
 
         return true;
     }
 
-    bool Len::call(std::span<Value> args, Value& result) {
+    bool Len::call(NativeContext&, std::span<Value> args, Value& result) {
         Value& list = args[0];
         if (isList(list) == false) {
             result = Value(String(fmt::format("len() expects a list, got {}.",
@@ -125,7 +124,7 @@ namespace cpplox {
         return true;
     }
 
-    bool ListEquals::call(std::span<Value> args, Value& result) {
+    bool ListEquals::call(NativeContext&, std::span<Value> args, Value& result) {
         if (isList(args[0]) == false || isList(args[1]) == false) {
             result = Value(String("listEquals() expects two lists."));
             return false;
@@ -139,7 +138,7 @@ namespace cpplox {
         return true;
     }
 
-    bool Floor::call(std::span<Value> args, Value& result) {
+    bool Floor::call(NativeContext&, std::span<Value> args, Value& result) {
         if (args[0].isNumber() == false) {
             result = Value(String(fmt::format("floor() expects a number, got {}.",
                                               typeName(args[0]))));

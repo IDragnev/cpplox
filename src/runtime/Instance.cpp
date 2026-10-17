@@ -3,7 +3,7 @@
 
 namespace cpplox {
     Instance::Instance(Class* c)
-        : Object(Instance::TYPE, sizeof(Instance))
+        : Object(Instance::TYPE)
         , klass(c)
     {}
 
@@ -15,5 +15,9 @@ namespace cpplox {
                 v.visit(val.asObject());
             }
         });
+    }
+
+    std::size_t Instance::computeAllocSize() const {
+        return sizeof(Instance) + fields.getAllocSize();
     }
 } // namespace cpplox

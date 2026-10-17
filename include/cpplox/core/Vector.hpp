@@ -45,6 +45,7 @@ namespace cpplox {
 
         std::size_t getSize() const noexcept;
         std::size_t getCount() const noexcept;
+        std::size_t getAllocSize() const noexcept;
 
     private:
         void growIfFull();
