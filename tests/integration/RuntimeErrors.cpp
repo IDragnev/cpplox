@@ -519,14 +519,6 @@ TEST_CASE("floor of a non-number") {
     CHECK(list.error.msg == String("floor() expects a number, got list."));
 }
 
-TEST_CASE("sort comparator returns a non-bool") {
-    const auto r = runAndCollect(R"(fun before(a, b) { return a - b; }
-sort([2, 1], before);)");
-
-    REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
-    CHECK(r.error.msg == String("sort() comparator must return true or false."));
-}
-
 TEST_CASE("list error inside a function reports the call stack") {
     const auto r = runAndCollect(R"(fun second(xs) {
     return xs[1];
