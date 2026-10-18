@@ -155,6 +155,17 @@ TEST_CASE("expected expression at end of input") {
     CHECK(diags[0].line == 1);
 }
 
+TEST_CASE("prefix operator at end of input") {
+    for (const char* src : {"(", "-", "!", "[", "f(", "if ("}) {
+        CAPTURE(src);
+        const auto diags = compileAndCollect(src);
+
+        REQUIRE(diags.size() >= 1);
+        CHECK(diags[0].msg == "Expected expression");
+        CHECK(diags[0].line == 1);
+    }
+}
+
 // A literal needs a digit on both sides of its dot. Neither form is a lexical
 // error though: the scanner ends the number at the dot, so a trailing one is
 // parsed as the start of a property access and a leading one as no expression

@@ -372,6 +372,7 @@ namespace cpplox {
 
     void Compiler::advance() {
         if (parser.current.type == TokenType::EOF_TOKEN) {
+            parser.previous = parser.current;
             return;
         }
 
