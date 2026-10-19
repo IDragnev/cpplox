@@ -1,0 +1,56 @@
+fun less(a, b) { return a < b; }
+fun greater(a, b) { return a > b; }
+
+fun isSorted(xs, before) {
+    for (var i = 1; i < len(xs); i = i + 1) {
+        if (before(xs[i], xs[i - 1])) { return false; }
+    }
+    return true;
+}
+
+// sort reorders in place and returns nil.
+var xs = [3, 1, 2];
+assert(sort(xs, less) == nil);
+assert(listEquals(xs, [1, 2, 3]));
+sort(xs, greater);
+assert(listEquals(xs, [3, 2, 1]));
+
+var empty = [];
+sort(empty, less);
+assert(len(empty) == 0);
+var one = [1];
+sort(one, less);
+assert(listEquals(one, [1]));
+
+// A larger list in scrambled order. 37 and 100 share no factor, so this holds
+// each of 0 to 99 exactly once, and sorting must give back exactly 0 to 99.
+var n = 100;
+var many = makeList(n, 0);
+for (var i = 0; i < n; i = i + 1) {
+    many[i] = i * 37 - floor(i * 37 / n) * n;
+}
+sort(many, less);
+for (var i = 0; i < n; i = i + 1) {
+    assert(many[i] == i);
+}
+
+// Stable: elements that compare equal keep their original order.
+class Item {
+    init(key, order) {
+        this.key = key;
+        this.order = order;
+    }
+}
+fun byKey(a, b) { return a.key < b.key; }
+
+var items = makeList(n, nil);
+for (var i = 0; i < n; i = i + 1) {
+    items[i] = Item(i - floor(i / 3) * 3, i);
+}
+sort(items, byKey);
+assert(isSorted(items, byKey));
+for (var i = 1; i < n; i = i + 1) {
+    if (items[i].key == items[i - 1].key) {
+        assert(items[i].order > items[i - 1].order);
+    }
+}

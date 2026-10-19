@@ -1,6 +1,7 @@
 #include "doctest/doctest.h"
 #include "cpplox/compiler/Compiler.hpp"
 #include "cpplox/vm/VM.hpp"
+#include "cpplox/prelude/Prelude.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 #include "cpplox/diagnostics/Diagnostic.hpp"
 
@@ -19,6 +20,11 @@ cpplox::InterpretResult runAndCollect(const char* src) {
     cpplox::DiagnosticEngine engine(&ignore);
     cpplox::Compiler compiler;
     cpplox::VM vm;
+
+    auto prelude = compiler.compile(cpplox::PRELUDE_SOURCE, &engine, cpplox::PRELUDE_NAME);
+    REQUIRE(prelude.function != nullptr);
+    REQUIRE(vm.interpret(prelude.function, std::move(prelude.gcObjects)).code
+            == InterpretResultCode::OK);
 
     auto compiled = compiler.compile(src, &engine);
     REQUIRE(compiled.function != nullptr);
@@ -560,4 +566,97 @@ second([1]);)");
     CHECK(r.error.frames[0].line == 2);
     CHECK(r.error.frames[1].functionName == String("script"));
     CHECK(r.error.frames[1].line == 4);
+}
+
+void checkPreludeError(const char* function, const char* args, const char* error) {
+    const std::string src = std::string(function) + "(" + args + ");";
+    CAPTURE(src);
+    const auto r = runAndCollect(src.c_str());
+    REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(r.error.msg == String(std::string(function) + ": " + error));
+}
+
+TEST_CASE("prelude functions reject a non-list") {
+    checkPreludeError("contains", "1, 1", "expects a list, got number");
+    checkPreludeError("slice", "\"ab\", 0, 1", "expects a list, got string");
+    checkPreludeError("copy", "nil", "expects a list, got nil");
+    checkPreludeError("insertAt", "true, 0, 1", "expects a list, got bool");
+    checkPreludeError("removeAt", "1, 0", "expects a list, got number");
+    checkPreludeError("removeValue", "1, 0", "expects a list, got number");
+    checkPreludeError("sort", "1, nil", "expects a list, got number");
+}
+
+TEST_CASE("prelude functions reject a non-whole index") {
+    checkPreludeError("slice", "[1], 0.5, 1", "low must be a whole number");
+    checkPreludeError("slice", "[1], 0, \"1\"", "high must be a whole number");
+    checkPreludeError("insertAt", "[1], 1.5, 0", "index must be a whole number");
+    checkPreludeError("insertAt", "[1], nil, 0", "index must be a whole number");
+    checkPreludeError("removeAt", "[1], \"0\"", "index must be a whole number");
+}
+
+TEST_CASE("slice out of range") {
+    const auto negative = runAndCollect("slice([1, 2], -1, 1);");
+    const auto reversed = runAndCollect("slice([1, 2], 2, 1);");
+    const auto pastEnd = runAndCollect("slice([1, 2], 0, 3);");
+
+    REQUIRE(negative.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(reversed.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(pastEnd.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(negative.error.msg == String("slice: low must be >= 0"));
+    CHECK(reversed.error.msg == String("slice: low must be <= high"));
+    CHECK(pastEnd.error.msg == String("slice: high must be <= len"));
+}
+
+TEST_CASE("sort with a bad comparator") {
+    const auto notFunction = runAndCollect("sort([2, 1], 1);");
+    const auto notBool = runAndCollect("fun cmp(a, b) { return a - b; }\nsort([2, 1], cmp);");
+    const auto resizes = runAndCollect(R"(var xs = [2, 1];
+fun cmp(a, b) {
+    push(xs, 0);
+    return a < b;
+}
+sort(xs, cmp);)");
+
+    REQUIRE(notFunction.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(notBool.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(resizes.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(notFunction.error.msg == String("sort: comparator must be a function, got number"));
+    CHECK(notBool.error.msg == String("sort: comparator must return true or false"));
+    CHECK(resizes.error.msg == String("sort: comparator changed the length of the list"));
+}
+
+TEST_CASE("prelude error reports prelude frames above the script's") {
+    const auto r = runAndCollect(R"(fun firstTwo(xs) {
+    return slice(xs, 0, 2);
+}
+firstTwo([1]);)");
+
+    REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
+    REQUIRE(r.error.frames.getCount() == 3);
+    CHECK(r.error.frames[0].functionName == String("slice"));
+    CHECK(r.error.frames[0].source == String(cpplox::PRELUDE_NAME));
+    CHECK(r.error.frames[1].functionName == String("firstTwo"));
+    CHECK(r.error.frames[1].source == String(""));
+    CHECK(r.error.frames[1].line == 2);
+    CHECK(r.error.frames[2].functionName == String("script"));
+    CHECK(r.error.frames[2].source == String(""));
+    CHECK(r.error.frames[2].line == 4);
+}
+
+TEST_CASE("comparator error inside sort reports the comparator's frame") {
+    const auto r = runAndCollect(R"(fun cmp(a, b) {
+    return a.key < b.key;
+}
+sort([1, 2], cmp);)");
+
+    REQUIRE(r.code == InterpretResultCode::RUNTIME_ERROR);
+    CHECK(r.error.msg == String("Only instances have properties."));
+    REQUIRE(r.error.frames.getCount() >= 3);
+    CHECK(r.error.frames[0].functionName == String("cmp"));
+    CHECK(r.error.frames[0].source == String(""));
+    CHECK(r.error.frames[0].line == 2);
+    CHECK(r.error.frames[1].source == String(cpplox::PRELUDE_NAME));
+    const auto& script = r.error.frames[r.error.frames.getCount() - 1];
+    CHECK(script.functionName == String("script"));
+    CHECK(script.line == 4);
 }

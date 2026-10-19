@@ -1,7 +1,9 @@
 #include "cpplox/log/Log.hpp"
 #include "cpplox/core/StringFormatter.hpp"
+#include "cpplox/core/Vector.hpp"
 #include "cpplox/compiler/Compiler.hpp"
 #include "cpplox/vm/VM.hpp"
+#include "cpplox/prelude/Prelude.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 
 #include <cstdlib>
@@ -45,27 +47,49 @@ private:
 void printRuntimeError(const cpplox::RuntimeError& err, bool reportLines) {
     const std::size_t TRACE_HEAD_FRAMES = 10;
 
-    const auto printFrame = [reportLines](const cpplox::StackFrame& frame) {
-        if (reportLines) {
+    const auto fromScript = [](const cpplox::StackFrame& frame) {
+        return frame.source.size() == 0;
+    };
+
+    // Users can't see the prelude, so each run of prelude frames is shown as the
+    // prelude function they called, without a line.
+    cpplox::Vector<const cpplox::StackFrame*> frames;
+    const std::size_t frameCount = err.frames.getCount();
+    for (std::size_t i = 0; i < frameCount;) {
+        if (!fromScript(err.frames[i])) {
+            while (i + 1 < frameCount && !fromScript(err.frames[i + 1])) {
+                ++i;
+            }
+        }
+        frames.insertBack(&err.frames[i]);
+        ++i;
+    }
+
+    const auto printFrame = [reportLines, &fromScript](const cpplox::StackFrame& frame) {
+        if (reportLines && fromScript(frame)) {
             cpplox::error("\n[line {}] in {}", frame.line, frame.functionName);
-        } else {
+        } else if (reportLines) {
+            cpplox::error("\n[{}] in {}", frame.source, frame.functionName);
+        } else if (fromScript(frame)) {
             cpplox::error("\nin {}", frame.functionName);
+        } else {
+            cpplox::error("\nin {} ({})", frame.functionName, frame.source);
         }
     };
 
     cpplox::error("Runtime error: {}", err.msg);
 
-    const std::size_t count = err.frames.getCount();
+    const std::size_t count = frames.getCount();
     const bool elide = count > TRACE_HEAD_FRAMES + 2;
     const std::size_t shown = elide ? TRACE_HEAD_FRAMES : count;
 
     for (std::size_t i = 0; i < shown; ++i) {
-        printFrame(err.frames[i]);
+        printFrame(*frames[i]);
     }
 
     if (elide) {
         cpplox::error("\n... {} frames omitted", count - shown - 1);
-        printFrame(err.frames[count - 1]);
+        printFrame(*frames[count - 1]);
     }
 
     cpplox::errorln("");
@@ -89,6 +113,7 @@ InterpretResult interpret(std::string_view source,
                           DiagnosticEngine& e,
                           VM& vm,
                           Compiler& c);
+bool loadPrelude(DiagnosticEngine& e, VM& vm, Compiler& c);
 void repl(DiagnosticEngine& e, VM& vm, Compiler& c);
 bool readFile(const char* filename, std::string& result);
 
@@ -124,6 +149,11 @@ int main(int argc, const char* argv[]) {
         .forceLongInstructions = hasEnvVar("CPPLOX_FORCE_LONG_OPS"),
     });
     VM vm;
+
+    if (loadPrelude(diagnostics, vm, compiler) == false) {
+        cpplox::errorln("Internal error: the prelude failed to load.");
+        return 70;
+    }
 
     if (replMode) {
         repl(diagnostics, vm, compiler);
@@ -197,6 +227,21 @@ void repl(DiagnosticEngine& e, VM& vm, Compiler& compiler) {
             cpplox::errorln("Input error. Non-ascii charater found.");
         }
     }
+}
+
+bool loadPrelude(DiagnosticEngine& e, VM& vm, Compiler& compiler) {
+    const auto compiled = compiler.compile(cpplox::PRELUDE_SOURCE, &e, cpplox::PRELUDE_NAME);
+    if (compiled.error) {
+        return false;
+    }
+
+    const auto r = vm.interpret(compiled.function, compiled.gcObjects);
+    if (r.code == InterpretResultCode::RUNTIME_ERROR) {
+        printRuntimeError(r.error, true);
+        return false;
+    }
+
+    return true;
 }
 
 InterpretResult interpret(std::string_view source,

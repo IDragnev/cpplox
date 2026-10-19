@@ -1,0 +1,5 @@
+// Wiring check: a runtime error raised inside the prelude is reported at the
+// line of the script that called into it. All other prelude errors are tested
+// structurally in tests/integration/RuntimeErrors.cpp.
+var xs = [1, 2];
+slice(xs, 0, 3); // expect runtime error: slice: high must be <= len

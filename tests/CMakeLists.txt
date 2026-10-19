@@ -36,7 +36,7 @@ add_executable(integration_test
   integration/CompileErrors.cpp
   integration/RuntimeErrors.cpp
 )
-target_link_libraries(integration_test compiler vm doctest)
+target_link_libraries(integration_test compiler vm prelude doctest)
 target_compile_options(integration_test
  PRIVATE ${CPPLOX_TARGET_WARNING_FLAGS}
 )

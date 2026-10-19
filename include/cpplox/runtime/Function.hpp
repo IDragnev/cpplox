@@ -9,11 +9,12 @@ namespace cpplox {
     public:
         static constexpr ObjectType TYPE = ObjectType::FUNCTION;
 
-        explicit Function(const String& name);
+        Function(const String& name, const String& source);
 
         void trace(gc::Visitor& v) override;
 
         const String name;
+        const String source;
         unsigned arity = 0;
         unsigned upvaluesCount = 0;
         Chunk chunk;

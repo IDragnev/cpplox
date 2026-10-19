@@ -1,0 +1,15 @@
+// contains finds any value with ==, including nil and values of mixed types.
+var xs = [1, "a", nil, true];
+assert(contains(xs, 1));
+assert(contains(xs, "a"));
+assert(contains(xs, nil));
+assert(contains(xs, true));
+assert(contains(xs, 2) == false);
+assert(contains(xs, "1") == false);
+assert(contains([], nil) == false);
+
+// A list element matches only that same list, not one with equal contents.
+var row = [1, 2];
+var grid = [row];
+assert(contains(grid, row));
+assert(contains(grid, [1, 2]) == false);

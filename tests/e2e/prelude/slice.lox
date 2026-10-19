@@ -1,0 +1,22 @@
+// slice copies the elements from low up to but not including high.
+var xs = [1, 2, 3, 4];
+assert(listEquals(slice(xs, 1, 3), [2, 3]));
+assert(listEquals(slice(xs, 0, 4), [1, 2, 3, 4]));
+
+// low == high gives an empty list, at either end too.
+assert(len(slice(xs, 2, 2)) == 0);
+assert(len(slice(xs, 0, 0)) == 0);
+assert(len(slice(xs, 4, 4)) == 0);
+assert(len(slice([], 0, 0)) == 0);
+
+// The result is a new list: changing it leaves the original alone.
+var whole = slice(xs, 0, 4);
+assert(whole != xs);
+whole[0] = 9;
+push(whole, 5);
+assert(listEquals(xs, [1, 2, 3, 4]));
+
+// The copy is shallow: a list element is shared, not copied.
+var inner = [1];
+var outer = slice([inner, 2], 0, 1);
+assert(outer[0] == inner);

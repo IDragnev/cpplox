@@ -96,7 +96,7 @@ namespace cpplox {
 
     CompileResult Compiler::replExpression(std::string_view src,
                                            DiagnosticEngine* engine) {
-        bool initOk = init(src, engine);
+        bool initOk = init(src, engine, {});
         if (initOk) {
             advance();
             namedVariable(Token{
@@ -121,8 +121,10 @@ namespace cpplox {
         return result;
     }
 
-    CompileResult Compiler::compile(std::string_view src, DiagnosticEngine* diag) {
-        bool initOk = init(src, diag);
+    CompileResult Compiler::compile(std::string_view src,
+                                    DiagnosticEngine* diag,
+                                    std::string_view name) {
+        bool initOk = init(src, diag, name);
         if (initOk) {
             advance();
             while (peek(TokenType::EOF_TOKEN) == false) {
@@ -143,15 +145,18 @@ namespace cpplox {
         return result;
     }
 
-    bool Compiler::init(std::string_view compileSource, DiagnosticEngine* engine) {
+    bool Compiler::init(std::string_view compileSource,
+                        DiagnosticEngine* engine,
+                        std::string_view name) {
         if (compileSource.data() == nullptr) {
             return false;
         }
 
         diagnostics = engine;
         scanner = Scanner(compileSource, engine);
+        sourceName = name;
 
-        Function* scriptFun = makeObject<Function>("<script>");
+        Function* scriptFun = makeObject<Function>("<script>", sourceName);
         if (scriptFun != nullptr) {
             initFrame(frame, scriptFun, FunctionType::SCRIPT, nullptr);
             return true;
@@ -194,6 +199,7 @@ namespace cpplox {
     void Compiler::cleanUp() {
         diagnostics = nullptr;
         scanner = Scanner("", nullptr);
+        sourceName = {};
         parser = Parser{};
         frame = Frame{};
 
@@ -490,7 +496,7 @@ namespace cpplox {
     }
 
     void Compiler::function(FunctionType type, const Token& name) {
-        auto* fun = makeObject<Function>(name.lexeme);
+        auto* fun = makeObject<Function>(name.lexeme, sourceName);
         if (fun == nullptr) {
             return;
         }

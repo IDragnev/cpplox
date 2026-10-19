@@ -96,7 +96,8 @@ REPL_EXPECT_FORMS = (
     EXPECT_COMPILE_ERR,
 )
 
-# The first frame under a runtime error is where it happened.
+# The first script frame under a runtime error is where it happened. Prelude
+# frames print as "[prelude] in <fn>" and are skipped.
 TRACE_FRAME = re.compile(r"^\[line (\d+)\]", re.M)
 REPORTED_ERROR = re.compile(r"^(Compile|Runtime) error")
 

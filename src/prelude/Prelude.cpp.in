@@ -1,0 +1,5 @@
+#include "cpplox/prelude/Prelude.hpp"
+
+namespace cpplox {
+    const std::string_view PRELUDE_SOURCE = R"lox(@PRELUDE_SOURCE@)lox";
+} // namespace cpplox

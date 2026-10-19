@@ -909,6 +909,7 @@ namespace cpplox {
                                      : String("script");
                 error.frames.insertBack(StackFrame{
                     .functionName = std::move(name),
+                    .source = frame.closure->function->source,
                     .line = line,
                 });
             }

@@ -62,11 +62,15 @@ namespace cpplox {
 
         void setOptions(const CompileOptions& opts);
 
-        CompileResult compile(std::string_view src, DiagnosticEngine* engine);
+        CompileResult compile(std::string_view src,
+                              DiagnosticEngine* engine,
+                              std::string_view sourceName = {});
         CompileResult replExpression(std::string_view src, DiagnosticEngine* engine);
 
     private:
-        bool init(std::string_view source, DiagnosticEngine* engine);
+        bool init(std::string_view source,
+                  DiagnosticEngine* engine,
+                  std::string_view name);
         void initFrame(Frame& frame, Function* f, FunctionType t, Frame* parent);
         CompileResult prepareResult(bool hadError);
         void cleanUp();
@@ -187,5 +191,6 @@ namespace cpplox {
         Object* gcObjects = nullptr;
         DiagnosticEngine* diagnostics = nullptr;
         CompileOptions options;
+        std::string_view sourceName;
     };
 } // namespace cpplox

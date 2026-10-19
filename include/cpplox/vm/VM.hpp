@@ -18,6 +18,7 @@ namespace cpplox {
 
     struct StackFrame {
         String functionName;
+        String source;
         unsigned line = 0;
     };
 

@@ -1,0 +1,151 @@
+fun contains(xs, v) { 
+    assert(type(xs) == "list", "contains: expects a list, got " + type(xs));
+
+    for (var i = 0; i < len(xs); i = i + 1) {
+        if (xs[i] == v) { return true; }
+    }
+    return false;
+}
+
+fun slice(xs, low, high) {
+    assert(type(xs) == "list", "slice: expects a list, got " + type(xs));
+    assert(type(low) == "number" and floor(low) == low, "slice: low must be a whole number");
+    assert(type(high) == "number" and floor(high) == high, "slice: high must be a whole number");
+
+    var l = len(xs);
+    assert(low >= 0, "slice: low must be >= 0");
+    assert(low <= high, "slice: low must be <= high");
+    assert(high <= l, "slice: high must be <= len");
+
+    var size = high - low;
+    var res = makeList(size, 0);
+    var i = 0;
+    while (low < high) {
+        res[i] = xs[low];
+        i = i + 1;
+        low = low + 1;
+    }
+     
+    return res;
+}
+
+fun copy(xs) {
+    assert(type(xs) == "list", "copy: expects a list, got " + type(xs));
+
+    var l = len(xs);
+    var ys = makeList(l, nil);
+    for (var i = 0; i < l; i = i + 1) {
+        ys[i] = xs[i];
+    }
+
+    return ys;
+}
+
+fun insertAt(xs, i, v) {
+    assert(type(xs) == "list", "insertAt: expects a list, got " + type(xs));
+    assert(type(i) == "number" and floor(i) == i, "insertAt: index must be a whole number");
+
+    var l = len(xs);
+    if (i >= l) {
+        push(xs, v);
+        return;
+    }
+
+    if (i < 0) {
+        i = 0;
+    }
+    push(xs, nil);
+    for (var j = l; j > i; j = j - 1) {
+        xs[j] = xs[j - 1];
+    }
+    xs[i] = v;
+}
+
+fun removeAt(xs, i) {
+    assert(type(xs) == "list", "removeAt: expects a list, got " + type(xs));
+    assert(type(i) == "number" and floor(i) == i, "removeAt: index must be a whole number");
+
+    var l = len(xs);
+    if (i < 0 or i >= l) {
+        return false;
+    }
+
+    for (; i < l - 1; i = i + 1) {
+        xs[i] = xs[i + 1];
+    }
+    pop(xs);
+    return true;
+}
+
+fun removeValue(xs, v) {
+    assert(type(xs) == "list", "removeValue: expects a list, got " + type(xs));
+
+    var l = len(xs);
+    for (var i = 0; i < l; i = i + 1) {
+        if (xs[i] == v) {
+            return removeAt(xs, i);
+        }
+    }
+    return false;
+}
+
+fun sort(xs, before) {
+    assert(type(xs) == "list", "sort: expects a list, got " + type(xs));
+    assert(type(before) == "function" or type(before) == "native function",
+           "sort: comparator must be a function, got " + type(before));
+
+    var n = len(xs);
+    var buffer = makeList(n, nil);
+    var insertionLimit = 16;
+
+    fun comesBefore(a, b) {
+        var result = before(a, b);
+        assert(type(result) == "bool", "sort: comparator must return true or false");
+        assert(len(xs) == n, "sort: comparator changed the length of the list");
+        return result;
+    }
+
+    fun insertionSort(low, high) {
+        for (var i = low + 1; i < high; i = i + 1) {
+            var current = xs[i];
+            var j = i - 1;
+            while (j >= low and comesBefore(current, xs[j])) {
+                xs[j + 1] = xs[j];
+                j = j - 1;
+            }
+            xs[j + 1] = current;
+        }
+    }
+
+    fun merge(low, mid, high) {
+        for (var i = low; i < high; i = i + 1) {
+            buffer[i] = xs[i];
+        }
+
+        var left = low;
+        var right = mid;
+        for (var k = low; k < high; k = k + 1) {
+            if (left < mid and (right >= high or comesBefore(buffer[right], buffer[left]) == false)) {
+                xs[k] = buffer[left];
+                left = left + 1;
+            } else {
+                xs[k] = buffer[right];
+                right = right + 1;
+            }
+        }
+    }
+
+    fun mergeSort(low, high) {
+        if (high - low <= insertionLimit) {
+            insertionSort(low, high);
+            return;
+        }
+
+        var mid = low + floor((high - low) / 2);
+        mergeSort(low, mid);
+        mergeSort(mid, high);
+        merge(low, mid, high);
+    }
+
+    mergeSort(0, n);
+}

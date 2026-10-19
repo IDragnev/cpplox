@@ -1,0 +1,18 @@
+// removeValue removes only the first element == v.
+var xs = [1, 2, 1, nil];
+assert(removeValue(xs, 1));
+assert(listEquals(xs, [2, 1, nil]));
+assert(removeValue(xs, nil));
+assert(listEquals(xs, [2, 1]));
+
+// No match returns false and leaves the list unchanged.
+assert(removeValue(xs, "1") == false);
+assert(removeValue([], nil) == false);
+assert(listEquals(xs, [2, 1]));
+
+// A list element matches only that same list, not one with equal contents.
+var row = [1];
+var grid = [[1], row];
+assert(removeValue(grid, row));
+assert(len(grid) == 1);
+assert(grid[0] != row);

@@ -2,9 +2,10 @@
 #include "cpplox/core/Algorithm.hpp"
 
 namespace cpplox {
-    Function::Function(const String& name)
+    Function::Function(const String& name, const String& source)
         : Object(Function::TYPE)
         , name(name)
+        , source(source)
     {}
 
     void Function::trace(gc::Visitor& v) {

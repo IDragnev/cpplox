@@ -1,0 +1,18 @@
+// copy makes a new list with the same elements.
+var xs = [1, nil, "a"];
+var ys = copy(xs);
+assert(ys != xs);
+assert(listEquals(ys, xs));
+assert(len(copy([])) == 0);
+
+// Changing the copy leaves the original alone.
+ys[0] = 9;
+push(ys, 4);
+assert(listEquals(xs, [1, nil, "a"]));
+
+// The copy is shallow: a list element is shared, not copied.
+var inner = [1];
+var zs = copy([inner]);
+assert(zs[0] == inner);
+push(inner, 2);
+assert(len(zs[0]) == 2);

@@ -1,0 +1,17 @@
+// removeAt removes the element at the index and shifts later elements left.
+var xs = [1, 2, 3, 4];
+assert(removeAt(xs, 1));
+assert(listEquals(xs, [1, 3, 4]));
+assert(removeAt(xs, 2));
+assert(listEquals(xs, [1, 3]));
+assert(removeAt(xs, 0));
+assert(listEquals(xs, [3]));
+
+// An out-of-range index returns false and leaves the list unchanged.
+assert(removeAt(xs, 1) == false);
+assert(removeAt(xs, -1) == false);
+assert(listEquals(xs, [3]));
+
+assert(removeAt(xs, 0));
+assert(len(xs) == 0);
+assert(removeAt(xs, 0) == false);

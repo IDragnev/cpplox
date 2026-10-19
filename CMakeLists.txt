@@ -72,6 +72,7 @@ add_subdirectory(src/bytecode)
 add_subdirectory(src/runtime)
 add_subdirectory(src/vm)
 add_subdirectory(src/compiler)
+add_subdirectory(src/prelude)
 add_subdirectory(app)
 
 if(BUILD_TESTING)

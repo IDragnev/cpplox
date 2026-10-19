@@ -1,0 +1,21 @@
+// insertAt puts the value at the index and shifts later elements right.
+var xs = [1, 3];
+insertAt(xs, 1, 2);
+assert(listEquals(xs, [1, 2, 3]));
+insertAt(xs, 0, 0);
+assert(listEquals(xs, [0, 1, 2, 3]));
+
+// Inserting at len appends.
+insertAt(xs, 4, 4);
+assert(listEquals(xs, [0, 1, 2, 3, 4]));
+
+// Out-of-range indices are forgiven: past the end appends, negative inserts at the front.
+insertAt(xs, 100, 5);
+insertAt(xs, -3, -1);
+assert(listEquals(xs, [-1, 0, 1, 2, 3, 4, 5]));
+
+var empty = [];
+insertAt(empty, 0, "a");
+assert(listEquals(empty, ["a"]));
+
+assert(insertAt([], 0, 1) == nil);
