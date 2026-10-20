@@ -6,6 +6,36 @@ Notable changes to cpplox. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Lists: an ordered, growable, mutable sequence of values of any type, held by
+  reference like instances.
+  - Literals such as `[1, "two", nil]`, evaluated left to right, with at most
+    255 elements.
+  - Subscripts `xs[i]` and `xs[i] = v`, chaining with calls and property
+    access. An index must be a whole number in range; anything else is a
+    runtime error.
+  - `+` joins two lists into a new one, and `==` compares lists by identity.
+  - `print` and `str` write lists as `[1, "two", nil]`, and a list that
+    contains itself as `[...]` where it repeats.
+  - `type` answers `"list"`.
+- Native functions `len`, `push`, `pop`, `makeList`, `listEquals` and `floor`.
+- A prelude of list functions written in Lox and loaded before every script and
+  the REPL: `contains`, `insertAt`, `removeAt`, `removeValue`, `copy`, `slice`
+  and a stable `sort` that takes a comparison function.
+
+### Changed
+
+- `print` writes strings in double quotes, and so does the REPL's echo of a
+  bare expression: `print("hi")` now writes `"hi"`. `str` still returns a
+  string unchanged, but quotes the strings inside a list.
+
+### Fixed
+
+- A source that ended right after a prefix operator or an opening bracket, such
+  as `-` or `(`, crashed the interpreter instead of reporting "Expected
+  expression".
+
 ## [0.1.0] - 2026-09-12
 
 First public release.
