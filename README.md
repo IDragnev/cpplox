@@ -5,28 +5,30 @@
 An interpreter for the Lox programming language - a dynamically typed language with C-like syntax, from Robert Nystrom's [Crafting Interpreters](https://craftinginterpreters.com/). **cpplox** implements the book's bytecode interpreter and extends the language it defines, so the sections below describe **cpplox**'s version of Lox rather than the book's.
 
 ```
-class Greeter {
-    init(name) { this.name = name; }
-    greet() { print("Hello, " + this.name + "!"); }
-}
-
-fun repeat(times, action) {
-    for (var i = 0; i < times; i = i + 1) {
-        action();
+class Player {
+    init(name, score) {
+        this.name = name;
+        this.score = score;
     }
 }
 
-var start = clock();
+fun byScore(a, b) { return a.score > b.score; }
 
-var greeter = Greeter("world");
-repeat(2, greeter.greet);
-// Hello, world!
-// Hello, world!
+var players = [Player("Ann", 72), Player("Bob", 95)];
+push(players, Player("Cid", 88));
+sort(players, byScore);
 
-print(clock() - start); // the milliseconds the greetings took
+var names = [];
+for (var i = 0; i < len(players); i = i + 1) {
+    push(names, players[i].name);
+}
+print(names); // ["Bob", "Cid", "Ann"]
+
+var best = players[0];
+print(best.name + " leads with " + str(best.score)); // "Bob leads with 95"
 ```
 
-Comments start with `//` and run to the end of the line; there is no block comment form. Variable declarations, `return`, `break`, `continue` and expression statements end with a semicolon, while blocks, `if`, loops and function and class declarations do not. In the examples below, a trailing comment usually shows what the line prints.
+Comments start with `//` and run to the end of the line; there is no block comment form. Variable declarations, `return`, `break`, `continue` and expression statements end with a semicolon, while blocks, `if`, loops and function and class declarations do not. In the examples below, a trailing comment usually shows what the line prints. `print` writes strings in double quotes, so they appear quoted in those comments too.
 
 ## Getting started
 Prebuilt binaries for Windows, Linux and macOS are on the [releases page](https://github.com/IDragnev/cpplox/releases/latest). Each archive unpacks into a folder holding the interpreter and a short `INSTALL.txt` covering that platform's requirements; there is nothing to install. To build it from source instead, see [Build](#build).
@@ -38,7 +40,7 @@ cpplox --version
 cpplox --help
 ```
 - With a path, the script is loaded and executed.
-- With no argument the interpreter starts in [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) mode. To exit type *:q*. A bare expression is echoed, so `1 + 1` prints `2`; adding a semicolon makes it an ordinary statement, which prints nothing. End a line with `\` to continue input on the next line.
+- With no argument the interpreter starts in [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) mode. To exit type *:q*. A bare expression is echoed the way `print` writes it, so `1 + 1` prints `2` and `"hi"` prints `"hi"`; adding a semicolon makes it an ordinary statement, which prints nothing. End a line with `\` to continue input on the next line.
 
 A successful run exits with 0. Anything else follows the [sysexits](https://man.freebsd.org/cgi/man.cgi?query=sysexits) conventions: *64* for a usage error, *65* for a compile error, *70* for a runtime error, and *74* for a script file that cannot be read.
 
@@ -50,19 +52,40 @@ A successful run exits with 0. Anything else follows the [sysexits](https://man.
 - **functions** - Lox has [first-class functions](https://en.wikipedia.org/wiki/First-class_function). It supports passing functions as arguments to other functions, returning them as the values from other functions, and assigning them to variables.
 - **nil** - the **nil** type has a single value - *nil*. It represents the [null value](https://en.wikipedia.org/wiki/Nullable_type). It is the value of any uninitialized variable and the default return value of functions.
 - **classes** - user defined types with methods and dynamic fields. Inheritance is also supported.
+- **list** - an ordered, growable sequence of values of any type, written with brackets, as in *[1, "two", nil]*. Lists are held by reference, like instances. See [Lists](#lists).
 
 ### Built-in functions
 A few functions are built into the interpreter rather than written in Lox. They are defined as globals before a script runs, so they are always available, and the examples below use `print` freely:
 
 | Native | Arguments | Result |
 | --- | --- | --- |
-| `print(...)` | any number | Writes each argument to standard output, one per line. Returns *nil*. |
+| `print(...)` | any number | Writes each argument to standard output, one per line, with strings in quotes. Returns *nil*. |
 | `clock()` | none | Milliseconds since the interpreter started, always a whole number. |
-| `str(v)` | 1 | *v* converted to a string, the same text `print` writes. |
+| `str(v)` | 1 | *v* converted to a string, the same text `print` writes, except that a string comes back unchanged. |
 | `type(v)` | 1 | The name of *v*'s type, as a string. |
 | `assert(cond, msg)` | 1 or 2 | *nil* if *cond* is truthy. Otherwise stops the run with a runtime error. |
+| `floor(n)` | 1 | The largest whole number not greater than *n*. |
+| `len(xs)` | 1 | The number of elements in the list *xs*. |
+| `push(xs, v)` | 2 | Appends *v* to *xs*. Returns *nil*. |
+| `pop(xs)` | 1 | Removes and returns the last element of *xs*. |
+| `makeList(n, v)` | 2 | A new list of *n* elements, each *v*. |
+| `listEquals(a, b)` | 2 | Whether two lists have equal contents. |
 
 [Native functions](#native-functions) covers each of them in detail.
+
+A few more functions are written in Lox itself, in a [prelude](#prelude) that is loaded before every script. They all work on lists:
+
+| Function | Result |
+| --- | --- |
+| `contains(xs, v)` | Whether any element of *xs* is `==` to *v*. |
+| `insertAt(xs, i, v)` | Inserts *v* at index *i*, shifting later elements right. Returns *nil*. |
+| `removeAt(xs, i)` | Removes the element at index *i*, shifting later elements left. Returns whether it removed one. |
+| `removeValue(xs, v)` | Removes the first element `==` to *v*. Returns whether it removed one. |
+| `copy(xs)` | A new list with the same elements. |
+| `slice(xs, low, high)` | A new list with the elements from index *low* up to but not including *high*. |
+| `sort(xs, before)` | Sorts *xs* in place, using the function *before* to order elements. Returns *nil*. |
+
+[List functions](#list-functions) covers them in detail.
 
 ### Variables
 Variables are declared with the *var* keyword. A variable declared without a value is *nil*:
@@ -79,8 +102,8 @@ Names must start with a letter or an underscore, can contain letters, digits, an
 ```
 var name = "lower";
 var Name = "upper";
-print(name); // lower
-print(Name); // upper
+print(name); // "lower"
+print(Name); // "upper"
 ```
 Assignment is an expression and is right-associative, so a value can be given to several variables at once:
 ```
@@ -97,15 +120,15 @@ A block written with `{ }` introduces a scope. A variable declared inside it sha
 var a = "outer";
 {
     var a = "inner";
-    print(a); // inner
+    print(a); // "inner"
 }
-print(a); // outer
+print(a); // "outer"
 ```
 Declaring the same name twice in one block is a compile error. Globals are the exception - redeclaring a global replaces it:
 ```
 var a = "1";
 var a = "2";
-print(a); // 2
+print(a); // "2"
 ```
 
 ### Operators
@@ -120,14 +143,15 @@ print(-3);      // -3
 ```
 There are no compound assignment or increment operators, so a variable is updated by assigning the result back to it, as in `i = i + 1`.
 
-`+` additionally joins two strings:
+`+` additionally joins two strings, or two lists into a new list:
 ```
-print("Hello, " + "world!"); // Hello, world!
+print("Hello, " + "world!"); // "Hello, world!"
+print([1, 2] + [3]);         // [1, 2, 3]
 ```
-There is no implicit conversion, so both operands have to be numbers or both have to be strings. Mixing them is a runtime error, and `str` is what turns a value into something a message can be built from:
+There is no implicit conversion, so both operands have to be numbers, both strings or both lists. Mixing them is a runtime error, and `str` is what turns a value into something a message can be built from:
 ```
 print("got " + 3);      // runtime error
-print("got " + str(3)); // got 3
+print("got " + str(3)); // "got 3"
 ```
 The other three operators only ever accept numbers:
 ```
@@ -162,21 +186,24 @@ print(0 == false);   // false
 print(nil == false); // false
 ```
 
+Strings compare by their characters, but lists and instances compare by identity: two of them are equal only if they are the same object. [Lists](#lists) shows how to compare the contents of two lists.
+
 #### Truthiness
-Every value counts as either truthy or falsey wherever a condition is expected. **nil** and **false** are falsey and everything else is truthy, including *0* and the empty string. Negating a value with `!` is the shortest way to see which one it is:
+Every value counts as either truthy or falsey wherever a condition is expected. **nil** and **false** are falsey and everything else is truthy, including *0*, the empty string and the empty list. Negating a value with `!` is the shortest way to see which one it is:
 ```
 print(!nil);   // true, so nil is falsey
 print(!false); // true
 
 print(!0);     // false, so 0 is truthy
 print(!"");    // false
+print(![]);    // false
 ```
 Being truthy is not the same as being equal to *true*, which is why `0 == false` above is false.
 
 #### Logical operators
 Unlike `!`, which always produces a bool, the keywords *and* and *or* evaluate to one of their operands. `or` stops at the first truthy operand and `and` at the first falsey one; when nothing stops them, the result is the last operand, whether or not it qualifies:
 ```
-print(nil or "fallback"); // fallback
+print(nil or "fallback"); // "fallback"
 print(1 or 2);            // 1
 print(nil or false);      // false, the last operand, and falsey
 
@@ -196,14 +223,15 @@ print(true or boom()); // true, and boom was never called
 #### Precedence
 From tightest to loosest binding:
 
-1. `!` and unary `-`
-2. `*` and `/`
-3. `+` and `-`
-4. `<`, `>`, `<=` and `>=`
-5. `==` and `!=`
-6. `and`
-7. `or`
-8. `=`
+1. calls `()`, property access `.` and subscripts `[]`
+2. `!` and unary `-`
+3. `*` and `/`
+4. `+` and `-`
+5. `<`, `>`, `<=` and `>=`
+6. `==` and `!=`
+7. `and`
+8. `or`
+9. `=`
 
 Parentheses override the grouping:
 ```
@@ -333,7 +361,7 @@ class Greeter {
 }
 
 var g = Greeter();
-g.greet();      // hello
+g.greet();      // "hello"
 
 print(Greeter); // <class Greeter>
 print(g);       // <Greeter instance>
@@ -346,8 +374,8 @@ class Box {
 
 var b = Box();
 b.item = "hat";
-b.show();      // hat
-print(b.item); // hat
+b.show();      // "hat"
+print(b.item); // "hat"
 ```
 A method named `init` is the constructor, and it receives the arguments passed to the class. Inside any method, `this` is the instance the method was called on, and it reaches that instance's other fields and methods:
 ```
@@ -357,7 +385,7 @@ class Person {
 }
 
 var jane = Person("Jane");
-jane.greet(); // I am Jane
+jane.greet(); // "I am Jane"
 ```
 A class without an `init` takes no arguments and starts its instances with no fields, the way `Greeter` and `Box` above do.
 
@@ -367,9 +395,9 @@ var p = Person; // the class from above, held in a variable
 var jane = p("Jane");
 var bill = p("Bill");
 
-bill.greet();            // I am Bill
+bill.greet();            // "I am Bill"
 bill.greet = jane.greet; // a field holding Jane's bound method
-bill.greet();            // I am Jane
+bill.greet();            // "I am Jane"
 ```
 A class inherits from another one with `<`, which gives it every method of the superclass. Declaring a method that already exists overrides it, and `super` reaches the version that was overridden:
 ```
@@ -387,8 +415,141 @@ class B < A {
 class C < B { } // inherits B's f, including its super call
 
 C().f();
-// B
-// A
+// "B"
+// "A"
+```
+
+### Lists
+A list is an ordered sequence of values, which can be of any type, lists included. It is written as comma-separated expressions in brackets:
+```
+var empty = [];
+var mixed = [1, "two", nil, true, [3, 4]];
+print(mixed); // [1, "two", nil, true, [3, 4]]
+```
+The elements are evaluated left to right, and every evaluation of a literal creates a new list. There is no trailing comma, so `[1, 2,]` is a compile error. A literal holds at most 255 elements, a limit that lists built with `push` or `makeList` do not have.
+
+`nil` is an ordinary element, so `len([1, nil, 3])` is *3*.
+
+#### Indexing
+`xs[i]` reads an element and `xs[i] = v` replaces one. Indices start at 0:
+```
+var xs = ["a", "b", "c"];
+print(xs[0]); // "a"
+xs[1] = "B";
+print(xs);    // ["a", "B", "c"]
+```
+An index must be a whole number in range, and each way of getting it wrong is its own runtime error. There are no negative indices, so `xs[-1]` is an error rather than the last element:
+```
+print(xs[3]);   // runtime error, out of range
+print(xs[-1]);  // runtime error, out of range
+print(xs[1.5]); // runtime error, not a whole number
+print(xs["0"]); // runtime error, not a number
+```
+Since there is only one number type, `xs[1.0]` is the same as `xs[1]`. Division can produce a fraction, so index arithmetic goes through `floor`:
+```
+print(xs[floor(len(xs) / 2)]); // "B"
+```
+A subscript chains with calls and property access in any order, as in `grid[0][1]`, `this.items[0] = v` or `makeList(3, 0)[0]`. Only lists can be indexed, so `"abc"[0]` and indexing an instance are runtime errors.
+
+Assigning past the end is an out-of-range error like reading there, so a list never grows by assignment. It grows and shrinks through functions such as `push` and `pop`:
+```
+var stack = [];
+push(stack, 1);
+push(stack, 2);
+print(pop(stack)); // 2
+print(len(stack)); // 1
+```
+`makeList` creates a list of a given length, whose slots can then be assigned:
+```
+var grid = makeList(3, nil);
+grid[2] = "last";
+print(grid); // [nil, nil, "last"]
+```
+
+#### References
+A list is held by reference, like an instance. Assigning it to another variable, passing it to a function or storing it in a field shares the same list:
+```
+var a = [1, 2];
+var b = a;
+push(b, 3);
+print(a); // [1, 2, 3]
+```
+Nothing else shares. Every operation that produces a list - `+`, `copy` and `slice` - creates a new one. Those copies are shallow, so an element that is itself a list or an instance is shared between the old list and the new one:
+```
+var inner = [1];
+var outer = copy([inner]);
+outer[0][0] = 99;
+print(inner); // [99]
+```
+For the same reason, `makeList(2, [])` holds the same list in both slots, since its second argument is evaluated once.
+
+#### Equality and truthiness
+`==` compares lists by identity, as it does instances, and `listEquals` compares their contents. It compares elements that are lists recursively, and everything else with `==`:
+```
+var a = [1, [2, "x"]];
+print(a == a);                       // true
+print(a == [1, [2, "x"]]);           // false, a different list
+print(listEquals(a, [1, [2, "x"]])); // true
+```
+Every list is truthy, the empty one included, so emptiness is tested with `len(xs) == 0`.
+
+#### Printing
+`print` writes a list as its elements in brackets, each one the way `print` would write it, so strings inside a list are quoted. `str` gives the same text. A list that contains itself is written as `[...]` where it repeats:
+```
+print(str(["a", 1])); // "["a", 1]"
+
+var xs = [1];
+push(xs, xs);
+print(xs); // [1, [...]]
+```
+
+#### Iterating
+A list is iterated with an index:
+```
+var xs = [10, 20, 30];
+for (var i = 0; i < len(xs); i = i + 1) {
+    print(xs[i]);
+}
+```
+The condition reads `len(xs)` on every pass, so changing the length inside the loop is allowed, but rarely what the code means: removing an element skips the one after it, and pushing can keep the loop running forever. To remove elements while iterating, walk backwards:
+```
+for (var i = len(xs) - 1; i >= 0; i = i - 1) {
+    if (xs[i] > 15) { removeAt(xs, i); }
+}
+print(xs); // [10]
+```
+
+#### List functions
+`len`, `push`, `pop`, `makeList` and `listEquals` are [natives](#native-functions). They raise a runtime error when given something other than a list, and `pop` raises one on an empty list. `makeList(n, v)` needs a whole, non-negative *n*.
+
+The rest are written in Lox, in the [prelude](#prelude). Each one checks its arguments before touching the list, so a failed call never leaves a list half-changed.
+
+`contains` and `removeValue` look for an element with `==`, so for an element that is a list they look for *that* list, not one with the same contents:
+```
+var row = [1, 2];
+var grid = [row];
+print(contains(grid, row));    // true
+print(contains(grid, [1, 2])); // false, a different list
+```
+`insertAt` and `removeAt` forgive an index that is out of range, but not one that is not a whole number. `insertAt` inserts at the front for a negative index and appends for one past the end, and `removeAt` returns *false* and leaves the list alone:
+```
+var xs = [1, 3];
+insertAt(xs, 1, 2);
+insertAt(xs, 100, 4);
+print(xs);              // [1, 2, 3, 4]
+print(removeAt(xs, 0)); // true
+print(removeAt(xs, 9)); // false
+print(xs);              // [2, 3, 4]
+```
+`slice` is strict instead: it needs `0 <= low <= high <= len(xs)`, and `low == high` gives an empty list.
+
+`sort(xs, before)` calls `before(a, b)` to ask whether *a* should come before *b*, the same question `<` answers. It must return *true* or *false*. The sort is stable, so elements where neither comes before the other keep their original order. There are no anonymous functions, so the comparison is a named one:
+```
+fun shorter(a, b) { return len(a) < len(b); }
+
+var rows = [[1, 2, 3], [4], [5, 6], [7]];
+sort(rows, shorter);
+print(rows); // [[4], [7], [5, 6], [1, 2, 3]]
 ```
 
 ### Native functions
@@ -402,33 +563,47 @@ print(assert); // <native fun assert:1-2>
 ```
 `print` writes one line per argument. Calling it with none still writes a single blank line:
 ```
-print("hello"); // hello
+print("hello"); // "hello"
 print(1, true, nil);
 // 1
 // true
 // nil
 print();        // an empty line
 ```
+Strings are written in double quotes, so `print(1)` and `print("1")` can be told apart, which matters most for the elements of a list. The quotes are for reading rather than for pasting back: string literals have no escape sequences, so a string holding a quote or a newline is written as it is.
 A number is written with as many digits as it takes to read back as the same value, and switches to exponent notation for very large and very small ones. Both forms are literals, so output can be pasted back into a program:
 ```
 print(1 / 3);              // 0.3333333333333333
 print(10000000000000000);  // 1e+16
 print(0.00001);            // 1e-05
 ```
-`clock` is meant for measuring how long a piece of code takes, by subtracting two readings, the way the example at the top of this file does.
 
-`str` renders a value the way `print` does, but hands it back instead of writing it. Since `+` only joins two strings or two numbers, it is what lets a value be built into a message:
+`clock` is meant for measuring how long a piece of code takes, by subtracting two readings:
+```
+var start = clock();
+// the code being measured
+print(clock() - start); // the milliseconds it took
+```
+
+`str` renders a value the way `print` does, but hands it back instead of writing it. Since `+` only joins two values of the same type, it is what lets a value be built into a message:
 ```
 var n = 3;
-print("got " + str(n)); // got 3
-print(str(nil) + str(true)); // niltrue
+print("got " + str(n));      // "got 3"
+print(str(nil) + str(true)); // "niltrue"
+print("got " + str([1, 2])); // "got [1, 2]"
 ```
-Strings come back unchanged, without the quotes a Lox literal would need. That makes `str` unable to tell a number from its own rendering, which is what `type` is for:
+A string comes back unchanged, without the quotes `print` adds, so that it can be joined into a message as it is. Strings inside a list keep their quotes, as shown in [Lists](#printing). That makes `str` unable to tell a number from its own rendering, which is what `type` is for:
 ```
-print(type(1));      // number
-print(type(str(1))); // string
+print(type(1));      // "number"
+print(type(str(1))); // "string"
 ```
-Its answers are *nil*, *bool*, *number*, *string*, *function*, *native function*, *class* and *instance*.
+Its answers are *nil*, *bool*, *number*, *string*, *list*, *function*, *native function*, *class* and *instance*.
+
+`floor` rounds a number down to a whole one, which is mostly needed for [list indices](#indexing):
+```
+print(floor(2.7));  // 2
+print(floor(-1.5)); // -2
+```
 
 `assert` checks a condition and does nothing when it holds, so it reads as a statement about the code around it. When the condition is falsey the run stops with a runtime error, reporting the second argument as the message if there is one and a generic message otherwise:
 ```
@@ -451,8 +626,18 @@ var print = 10;
 print(1); // runtime error
 ```
 
+### Prelude
+The [list functions](#list-functions) that are not natives - `contains`, `insertAt`, `removeAt`, `removeValue`, `copy`, `slice` and `sort` - are ordinary Lox functions. They live in a short Lox file that is built into the interpreter and run before every script and before the REPL starts. Being written in Lox, they print like any other function and `type` calls them functions:
+```
+print(contains);       // <fun contains:2>
+print(type(contains)); // "function"
+```
+They are globals, so a script can shadow them the same way it shadows a native.
+
+The prelude looks natives up by name when it runs, so shadowing a native such as `len` also breaks every prelude function that uses it.
+
 ## How it works
-cpplox is a bytecode interpreter rather than a tree-walking one. A single-pass compiler emits bytecode straight from the token stream, with no AST in between, and a stack-based VM executes it. Runtime objects are freed by a mark-and-sweep collector. The `-diag` presets in [Build](#build) expose all three, turning on an instruction-by-instruction trace, a GC log, and a collection on every allocation.
+cpplox is a bytecode interpreter rather than a tree-walking one. A single-pass compiler emits bytecode straight from the token stream, with no AST in between, and a stack-based VM executes it. Runtime objects are freed by a mark-and-sweep collector. The `-diag` presets in [Build](#build) expose all three, turning on an instruction-by-instruction trace, a GC log, and a collection on every allocation. The [prelude](#prelude) is embedded in the binary as Lox source at build time and compiled at startup like any other script.
 
 ## Build
 The supported toolchains are described in `CMakePresets.json`, which requires **CMake 3.25** or newer. One command configures, builds and runs the tests:
