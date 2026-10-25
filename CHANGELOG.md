@@ -6,6 +6,8 @@ Notable changes to cpplox. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-25
+
 ### Added
 
 - Lists: an ordered, growable, mutable sequence of values of any type, held by
@@ -61,5 +63,6 @@ First public release.
   recovers from errors.
 - `cpplox --version` and `cpplox --help`.
 
-[Unreleased]: https://github.com/IDragnev/cpplox/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/IDragnev/cpplox/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/IDragnev/cpplox/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/IDragnev/cpplox/releases/tag/v0.1.0
