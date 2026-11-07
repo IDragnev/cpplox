@@ -14,5 +14,13 @@ namespace cpplox {
         return isObjectOfType(v, ObjectType::LIST);
     }
 
+    inline bool isString(const Value& v) {
+        return isObjectOfType(v, ObjectType::STRING);
+    }
+
     std::string_view typeName(const Value& v);
+
+    // Strings are not interned yet, so they are compared by content. Other
+    // objects are compared by identity.
+    bool valuesEqual(const Value& a, const Value& b);
 } // namespace cpplox
