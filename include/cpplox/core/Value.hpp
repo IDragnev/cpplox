@@ -1,16 +1,12 @@
 #pragma once
 
-#include <string_view>
-
 namespace cpplox {
     class Object;
-    class String;
 
     enum class ValueType {
         BOOL,
         NIL,
         NUMBER,
-        STRING,
         OBJECT,
     };
 
@@ -25,19 +21,17 @@ namespace cpplox {
             : type(ValueType::NUMBER)
             , as{.number = d}
         {}
-        explicit Value(String&& s);
-        explicit Value(std::string_view s);
         explicit Value(Object* obj)
             : type(ValueType::OBJECT)
             , as{.object = obj}
         {}
 
-        Value(const Value& other) { copy(other); }
-        Value(Value&& other) noexcept { move(std::move(other)); }
-        ~Value() { destroy(); }
+        Value(const Value&) = default;
+        Value(Value&&) noexcept = default;
+        ~Value() = default;
 
-        Value& operator=(const Value& other);
-        Value& operator=(Value&& other) noexcept;
+        Value& operator=(const Value&) = default;
+        Value& operator=(Value&&) noexcept = default;
 
         static Value nil() { return Value(); }
 
@@ -46,13 +40,10 @@ namespace cpplox {
         bool isNil() const { return holdsType(ValueType::NIL); }
         bool isBoolean() const { return holdsType(ValueType::BOOL); }
         bool isNumber() const { return holdsType(ValueType::NUMBER); }
-        bool isString() const { return holdsType(ValueType::STRING); }
         bool isObject() const { return holdsType(ValueType::OBJECT); }
 
         bool asBoolean() const { return as.boolean; }
         double asNumber() const { return as.number; }
-        const String& asString() const { return *(as.string); }
-        String& asString() { return *(as.string); }
         Object* asObject() { return as.object; }
         const Object* asObject() const { return as.object; }
 
@@ -64,16 +55,10 @@ namespace cpplox {
         }
 
     private:
-        void copy(const Value& other);
-        void move(Value&& other);
-        void destroy();
-
-    private:
         ValueType type = ValueType::NIL;
         union {
             bool boolean;
             double number;
-            String* string;
             Object* object;
         } as;
     };
