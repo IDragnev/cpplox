@@ -1,13 +1,14 @@
 #pragma once
 
-#include "cpplox/core/String.hpp"
 #include "cpplox/core/Value.hpp"
 #include "cpplox/core/Vector.hpp"
 
 namespace cpplox {
+    class RuntimeStr;
+
     class ValueMap {
         struct Entry {
-            String key;
+            RuntimeStr* key = nullptr;
             Value value;
             bool isEmpty = true;
         };
@@ -20,10 +21,10 @@ namespace cpplox {
         ValueMap& operator=(ValueMap&& src) noexcept;
         ValueMap& operator=(const ValueMap& src);
 
-        void insert(String key, Value v);
-        bool remove(const String& key, Value& v);
-        bool find(const String& key, Value& v) const;
-        bool contains(const String& key) const;
+        void insert(RuntimeStr* key, Value v);
+        bool remove(const RuntimeStr* key, Value& v);
+        bool find(const RuntimeStr* key, Value& v) const;
+        bool contains(const RuntimeStr* key) const;
 
         bool isEmpty() const;
         void clear();
@@ -33,12 +34,12 @@ namespace cpplox {
         void swap(ValueMap& other);
 
         template <typename F>
-        void forEachValue(const F& f);
+        void forEach(const F& f);
 
     private:
         ValueMap(std::size_t tableSize);
 
-        std::size_t findSlot(const String& key) const;
+        std::size_t findSlot(const RuntimeStr* key) const;
         void growIfFillingUp();
 
         static void insertEntries(const Vector<Entry>& table, ValueMap& map);
@@ -53,12 +54,12 @@ namespace cpplox {
     }
 
     template <typename F>
-    void ValueMap::forEachValue(const F& f) {
+    void ValueMap::forEach(const F& f) {
         const std::size_t size = table.getCount();
         for (std::size_t i = 0; i < size; ++i) {
             Entry& e = table[i];
             if (e.isEmpty == false) {
-                f(e.value);
+                f(e.key, e.value);
             }
         }
     }

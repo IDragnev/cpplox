@@ -1,4 +1,5 @@
-#include "cpplox/core/ValueMap.hpp"
+#include "cpplox/runtime/ValueMap.hpp"
+#include "cpplox/runtime/RuntimeStr.hpp"
 
 #include <cmath>
 
@@ -51,13 +52,17 @@ namespace cpplox {
         return *this;
     }
 
-    void ValueMap::insert(String key, Value v) {
+    void ValueMap::insert(RuntimeStr* key, Value v) {
+        if (key == nullptr) {
+            return;
+        }
+
         growIfFillingUp();
 
         std::size_t slot = findSlot(key);
         Entry& entry = table[slot];
-        entry.key = std::move(key);
-        entry.value = std::move(v);
+        entry.key = key;
+        entry.value = v;
 
         if (entry.isEmpty) {
             entry.isEmpty = false;
@@ -65,8 +70,8 @@ namespace cpplox {
         }
     }
 
-    bool ValueMap::find(const String& key, Value& v) const {
-        if (isEmpty()) {
+    bool ValueMap::find(const RuntimeStr* key, Value& v) const {
+        if (key == nullptr || isEmpty()) {
             return false;
         }
 
@@ -80,8 +85,8 @@ namespace cpplox {
         }
     }
 
-    bool ValueMap::contains(const String& key) const {
-        if (isEmpty()) {
+    bool ValueMap::contains(const RuntimeStr* key) const {
+        if (key == nullptr || isEmpty()) {
             return false;
         }
 
@@ -97,8 +102,8 @@ namespace cpplox {
         *this = ValueMap();
     }
 
-    bool ValueMap::remove(const String& key, Value& v) {
-        if (isEmpty()) {
+    bool ValueMap::remove(const RuntimeStr* key, Value& v) {
+        if (key == nullptr || isEmpty()) {
             return false;
         }
 
@@ -108,36 +113,37 @@ namespace cpplox {
             return false;
         }
 
-        entry.isEmpty = true;
-        entry.key = String{};
-        v = std::move(entry.value);
+        v = entry.value;
+        entry = Entry{};
+        --count;
 
         Vector<Entry> entries;
         std::size_t tableSize = table.getCount();
-        slot = slot + 1 % tableSize;
+        slot = (slot + 1) % tableSize;
         for (;;) {
             Entry& e = table[slot];
             if (e.isEmpty) {
                 break;
             }
 
-            entries.insertBack(std::move(e));
-            e.isEmpty = true;
+            entries.insertBack(e);
+            e = Entry{};
+            --count;
 
-            slot = slot + 1 % tableSize;
+            slot = (slot + 1) % tableSize;
         }
         insertEntries(entries, *this);
 
         return true;
     }
 
-    std::size_t ValueMap::findSlot(const String& key) const {
+    std::size_t ValueMap::findSlot(const RuntimeStr* key) const {
         std::size_t tableSize = table.getCount();
-        std::size_t slot = key.hashValue() % tableSize;
+        std::size_t slot = key->str.hashValue() % tableSize;
 
         for (;;) {
             const Entry& entry = table[slot];
-            if (entry.isEmpty || entry.key == key) {
+            if (entry.isEmpty || entry.key == key || entry.key->str == key->str) {
                 return slot;
             }
 

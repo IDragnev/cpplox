@@ -18,6 +18,8 @@ set(CPPLOX_RUNTIME_SOURCE
   ${RUNTIME_HEADERS_DIR}/ObjectFormatter.hpp
   ${RUNTIME_HEADERS_DIR}/Display.hpp
   ${RUNTIME_HEADERS_DIR}/Reflect.hpp
+  ${RUNTIME_HEADERS_DIR}/RuntimeStr.hpp
+  ${RUNTIME_HEADERS_DIR}/ValueMap.hpp
 
   Function.cpp
   Closure.cpp
@@ -33,6 +35,8 @@ set(CPPLOX_RUNTIME_SOURCE
   Reflect.cpp
   Memory.cpp
   Heap.cpp
+  RuntimeStr.cpp
+  ValueMap.cpp
 )
 
 add_library(
