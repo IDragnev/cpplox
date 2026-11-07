@@ -1,7 +1,7 @@
 #pragma once
 
 #include "cpplox/runtime/Object.hpp"
-#include "cpplox/core/String.hpp"
+#include "cpplox/runtime/RuntimeStr.hpp"
 #include "cpplox/core/Value.hpp"
 
 #include <span>
@@ -43,17 +43,15 @@ namespace cpplox {
     public:
         static constexpr ObjectType TYPE = ObjectType::NATIVE_FUNCTION;
 
-        NativeFunction(const String& name, Arity arity);
+        NativeFunction(RuntimeStr* name, Arity arity);
 
         void trace(gc::Visitor& v) override;
 
-        // Returns false on failure. A failing native may leave a string in
-        // result, which the VM reports as the runtime error message.
-        virtual bool call(NativeContext& ctx,
-                          std::span<Value> args,
-                          Value& result) = 0;
+        // On failure, report through ctx (error() or a failed allocation); the
+        // VM then discards the returned value.
+        virtual Value call(NativeContext& ctx, std::span<Value> args) = 0;
 
-        const String name;
+        RuntimeStr* const name = nullptr;
         const Arity arity;
 
     protected:

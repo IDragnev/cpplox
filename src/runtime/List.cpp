@@ -35,7 +35,7 @@ namespace cpplox {
                         return false;
                     }
                 }
-                else if (lVal != rVal) {
+                else if (valuesEqual(lVal, rVal) == false) {
                     return false;
                 }
             }

@@ -20,92 +20,79 @@ namespace cpplox {
         const Clk::time_point programStart = Clk::now();
     } // namespace
 
-    bool Clock::call(NativeContext&, std::span<Value>, Value& result) {
+    Value Clock::call(NativeContext&, std::span<Value>) {
         const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
             Clk::now() - programStart);
         // Whole milliseconds, widened to a double only because that is the
         // single number type cpplox has.
-        result = Value(static_cast<double>(elapsed.count()));
-
-        return true;
+        return Value(static_cast<double>(elapsed.count()));
     }
 
-    bool Print::call(NativeContext&, std::span<Value> args, Value&) {
+    Value Print::call(NativeContext&, std::span<Value> args) {
         if (args.empty()) {
             println("");
-            return true;
+            return Value::nil();
         }
 
         for (const Value& v : args) {
             println("{}", display(v));
         }
 
-        return true;
+        return Value::nil();
     }
 
-    bool Str::call(NativeContext&, std::span<Value> args, Value& result) {
-        result = Value(str(args[0]));
-
-        return true;
+    Value Str::call(NativeContext& ctx, std::span<Value> args) {
+        return Value(ctx.newString(str(args[0])));
     }
 
-    bool Type::call(NativeContext&, std::span<Value> args, Value& result) {
-        result = Value(typeName(args[0]));
-
-        return true;
+    Value Type::call(NativeContext& ctx, std::span<Value> args) {
+        return Value(ctx.newString(typeName(args[0])));
     }
 
-    bool Assert::call(NativeContext&, std::span<Value> args, Value& result) {
+    Value Assert::call(NativeContext& ctx, std::span<Value> args) {
         if (args[0].isFalsey() == false) {
-            return true;
+            return Value::nil();
         }
 
         if (args.size() == 2) {
-            result = Value(str(args[1]));
-        } else {
-            result = Value(String("Assertion failed."));
+            return ctx.error("{}", str(args[1]));
         }
 
-        return false;
+        return ctx.error("Assertion failed.");
     }
 
-    bool Push::call(NativeContext& ctx, std::span<Value> args, Value& result) {
+    Value Push::call(NativeContext& ctx, std::span<Value> args) {
         const Value& list = args[0];
         if (isList(list) == false) {
-            result = Value(String(fmt::format("push() expects a list, got {}.",
-                                              typeName(list))));
-            return false;
+            return ctx.error("push() expects a list, got {}.", typeName(list));
         }
 
         List* listObj = args[0].asObject()->as<List>();
         listObj->values.insertBack((args[1]));
         ctx.resized(listObj);
 
-        return true;
+        return Value::nil();
     }
 
-    bool Pop::call(NativeContext& ctx, std::span<Value> args, Value& result) {
+    Value Pop::call(NativeContext& ctx, std::span<Value> args) {
         Value& list = args[0];
         if (isList(list) == false) {
-            result = Value(String(fmt::format("pop() expects a list, got {}.",
-                                              typeName(list))));
-            return false;
+            return ctx.error("pop() expects a list, got {}.", typeName(list));
         }
 
         List* listObj = list.asObject()->as<List>();
         if (listObj->values.isEmpty()) {
-            result = Value(String("Cannot pop from an empty list."));
-            return false;
+            return ctx.error("Cannot pop from an empty list.");
         }
-        
-        result = listObj->values.back();
+
+        const Value result = listObj->values.back();
         listObj->values.removeBack();
         ctx.resized(listObj);
 
-        return true;
+        return result;
     }
 
-    bool MakeList::call(NativeContext& ctx, std::span<Value> args, Value& result) {
+    Value MakeList::call(NativeContext& ctx, std::span<Value> args) {
         // Objects are capped at PTRDIFF_MAX bytes, so no allocation can hold
         // more values. Rejecting larger counts also keeps the cast defined.
         constexpr std::size_t MAX_ALLOCATABLE_COUNT =
@@ -113,76 +100,61 @@ namespace cpplox {
             / sizeof(Value);
 
         if (args[0].isNumber() == false) {
-            result = Value(String(fmt::format(
-                "makeList() count must be a number, got {}.", typeName(args[0]))));
-            return false;
+            return ctx.error("makeList() count must be a number, got {}.",
+                             typeName(args[0]));
         }
 
         const double count = args[0].asNumber();
         if (std::trunc(count) != count) {
-            result = Value(String(fmt::format(
-                "makeList() count must be a whole number, got {}.", count)));
-            return false;
+            return ctx.error("makeList() count must be a whole number, got {}.",
+                             count);
         }
         if (count < 0) {
-            result = Value(String(fmt::format(
-                "makeList() count must not be negative, got {}.", count)));
-            return false;
+            return ctx.error("makeList() count must not be negative, got {}.",
+                             count);
         }
         if (count > static_cast<double>(MAX_ALLOCATABLE_COUNT)) {
-            result = Value(String("Out of memory."));
-            return false;
+            return ctx.outOfMemory();
         }
 
         List* listObj = ctx.newList(static_cast<std::size_t>(count));
         if (listObj == nullptr) {
-            result = Value(String("Out of memory."));
-            return false;
+            return Value::nil();
         }
 
         forEach(listObj->values, [&args](Value& v) { v = args[1]; });
-        result = Value(listObj);
 
-        return true;
+        return Value(listObj);
     }
 
-    bool Len::call(NativeContext&, std::span<Value> args, Value& result) {
+    Value Len::call(NativeContext& ctx, std::span<Value> args) {
         Value& list = args[0];
         if (isList(list) == false) {
-            result = Value(String(fmt::format("len() expects a list, got {}.",
-                                              typeName(list))));
-            return false;
+            return ctx.error("len() expects a list, got {}.", typeName(list));
         }
 
         List* listObj = list.asObject()->as<List>();
-        result = Value(static_cast<double>(listObj->values.getCount()));
 
-        return true;
+        return Value(static_cast<double>(listObj->values.getCount()));
     }
 
-    bool ListEquals::call(NativeContext&, std::span<Value> args, Value& result) {
+    Value ListEquals::call(NativeContext& ctx, std::span<Value> args) {
         if (isList(args[0]) == false || isList(args[1]) == false) {
-            result = Value(String("listEquals() expects two lists."));
-            return false;
+            return ctx.error("listEquals() expects two lists.");
         }
 
         const List* list1 = args[0].asObject()->as<List>();
         const List* list2 = args[1].asObject()->as<List>();
 
-        result = Value(structurallyEqual(list1, list2));
-        
-        return true;
+        return Value(structurallyEqual(list1, list2));
     }
 
-    bool Floor::call(NativeContext&, std::span<Value> args, Value& result) {
+    Value Floor::call(NativeContext& ctx, std::span<Value> args) {
         if (args[0].isNumber() == false) {
-            result = Value(String(fmt::format("floor() expects a number, got {}.",
-                                              typeName(args[0]))));
-            return false;
+            return ctx.error("floor() expects a number, got {}.",
+                             typeName(args[0]));
         }
 
-        result = Value(std::floor(args[0].asNumber()));
-
-        return true;
+        return Value(std::floor(args[0].asNumber()));
     }
 } // namespace cpplox

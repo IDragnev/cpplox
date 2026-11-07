@@ -5,78 +5,100 @@
 namespace cpplox {
     class Clock : public NativeFunction {
     public:
-        Clock() : NativeFunction("clock", Arity::exactly(0)) {}
+        explicit Clock(RuntimeStr* name)
+            : NativeFunction(name, Arity::exactly(0))
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 
     class Print : public NativeFunction {
     public:
-        Print() : NativeFunction("print", Arity::any()) {}
+        explicit Print(RuntimeStr* name)
+            : NativeFunction(name, Arity::any())
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 
     class Str : public NativeFunction {
     public:
-        Str() : NativeFunction("str", Arity::exactly(1)) {}
+        explicit Str(RuntimeStr* name)
+            : NativeFunction(name, Arity::exactly(1))
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 
     class Type : public NativeFunction {
     public:
-        Type() : NativeFunction("type", Arity::exactly(1)) {}
+        explicit Type(RuntimeStr* name)
+            : NativeFunction(name, Arity::exactly(1))
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 
     class Assert : public NativeFunction {
     public:
-        Assert() : NativeFunction("assert", Arity::between(1, 2)) {}
+        explicit Assert(RuntimeStr* name)
+            : NativeFunction(name, Arity::between(1, 2))
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 
     class Push : public NativeFunction {
     public:
-        Push() : NativeFunction("push", Arity::exactly(2)) {}
+        explicit Push(RuntimeStr* name)
+            : NativeFunction(name, Arity::exactly(2))
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 
     class Pop : public NativeFunction {
     public:
-        Pop() : NativeFunction("pop", Arity::exactly(1)) {}
+        explicit Pop(RuntimeStr* name)
+            : NativeFunction(name, Arity::exactly(1))
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 
     class MakeList : public NativeFunction {
     public:
-        MakeList() : NativeFunction("makeList", Arity::exactly(2)) {}
+        explicit MakeList(RuntimeStr* name)
+            : NativeFunction(name, Arity::exactly(2))
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 
     class Len : public NativeFunction {
     public:
-        Len() : NativeFunction("len", Arity::exactly(1)) {}
+        explicit Len(RuntimeStr* name)
+            : NativeFunction(name, Arity::exactly(1))
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 
     class ListEquals : public NativeFunction {
     public:
-        ListEquals() : NativeFunction("listEquals", Arity::exactly(2)) {}
+        explicit ListEquals(RuntimeStr* name)
+            : NativeFunction(name, Arity::exactly(2))
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 
     class Floor : public NativeFunction {
     public:
-        Floor() : NativeFunction("floor", Arity::exactly(1)) {}
+        explicit Floor(RuntimeStr* name)
+            : NativeFunction(name, Arity::exactly(1))
+        {}
 
-        bool call(NativeContext& ctx, std::span<Value> args, Value& result) override;
+        Value call(NativeContext& ctx, std::span<Value> args) override;
     };
 }
