@@ -20,6 +20,12 @@ namespace cpplox {
         source.updateHash();
     }
 
+// GCC 15 at -O3 emits a false -Wstringop-overflow for the copy below: it can't
+// prove string.size() < PTRDIFF_MAX, even though new[] would throw first.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
     String::String(std::string_view string) {
         if (string.size() > 0) {
             len = string.size();
@@ -29,6 +35,9 @@ namespace cpplox {
         }
         updateHash();
     }
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
     String& String::operator=(const String& rhs) {
         if (this != &rhs) {
