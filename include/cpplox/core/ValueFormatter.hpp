@@ -1,24 +1,12 @@
 #pragma once
 
 #include "cpplox/core/Value.hpp"
-#include "cpplox/core/StringFormatter.hpp"
 #include <fmt/format.h>
 
 template <>
 struct fmt::formatter<cpplox::Value> {
-    bool debug = false;
-
     constexpr auto parse(fmt::format_parse_context& ctx) {
-        auto it = ctx.begin();
-        if (it != ctx.end() && *it == '?') {
-            debug = true;
-            ++it;
-        }
-        if (it != ctx.end() && *it != '}') {
-            throw fmt::format_error("invalid format spec for Value");
-        }
-
-        return it;
+        return ctx.begin();
     }
 
     template <typename FormatContext>
@@ -32,10 +20,6 @@ struct fmt::formatter<cpplox::Value> {
             } break;
             case cpplox::ValueType::NUMBER: {
                 return fmt::format_to(ctx.out(), "{}", v.asNumber());
-            } break;
-            case cpplox::ValueType::STRING: {
-                return debug ? fmt::format_to(ctx.out(), "{:?}", v.asString())
-                             : fmt::format_to(ctx.out(), "{}", v.asString());
             } break;
             case cpplox::ValueType::OBJECT: {
                 return fmt::format_to(ctx.out(),

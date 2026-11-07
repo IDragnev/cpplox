@@ -42,8 +42,8 @@ namespace cpplox {
         void appendDisplay(std::string& out,
                            const Value& v,
                            Vector<const List*>& active) {
-            if (v.isString()) {
-                const String& s = v.asString();
+            if (isString(v)) {
+                const String& s = v.asObject()->as<RuntimeStr>()->str;
                 out += '"';
                 out.append(s.c_str(), s.size());
                 out += '"';
@@ -67,8 +67,8 @@ namespace cpplox {
     }
 
     String str(const Value& v) {
-        if (v.isString()) {
-            return v.asString();
+        if (isString(v)) {
+            return v.asObject()->as<RuntimeStr>()->str;
         }
 
         return display(v);

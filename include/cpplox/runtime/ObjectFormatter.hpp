@@ -8,6 +8,7 @@
 #include "cpplox/runtime/BoundMethod.hpp"
 #include "cpplox/runtime/NativeFunction.hpp"
 #include "cpplox/runtime/List.hpp"
+#include "cpplox/runtime/RuntimeStr.hpp"
 #include "cpplox/core/StringFormatter.hpp"
 
 #include <fmt/format.h>
@@ -21,41 +22,45 @@ struct fmt::formatter<cpplox::Object> : fmt::formatter<std::string_view> {
         std::string text;
 
         switch (obj.type()) {
+            case cpplox::ObjectType::STRING: {
+                const cpplox::String& s = obj.as<cpplox::RuntimeStr>()->str;
+                return fmt::formatter<std::string_view>::format(s.view(), ctx);
+            } break;
             case cpplox::ObjectType::FUNCTION: {
                 const auto* fun = obj.as<cpplox::Function>();
-                text = fmt::format("<fun {}:{}>", fun->name, fun->arity);
+                text = fmt::format("<fun {}:{}>", fun->name->str, fun->arity);
             } break;
             case cpplox::ObjectType::CLOSURE: {
                 const auto* closure = obj.as<cpplox::Closure>();
                 text = fmt::format("<fun {}:{}>",
-                                   closure->function->name,
+                                   closure->function->name->str,
                                    closure->function->arity);
             } break;
             case cpplox::ObjectType::BOUND_METHOD: {
                 const auto* method = obj.as<cpplox::BoundMethod>();
                 text = fmt::format("<fun {}:{}>",
-                                   method->method->function->name,
+                                   method->method->function->name->str,
                                    method->method->function->arity);
             } break;
             case cpplox::ObjectType::CLASS: {
                 const auto* classObj = obj.as<cpplox::Class>();
-                text = fmt::format("<class {}>", classObj->name);
+                text = fmt::format("<class {}>", classObj->name->str);
             } break;
             case cpplox::ObjectType::INSTANCE: {
                 const auto* instance = obj.as<cpplox::Instance>();
-                text = fmt::format("<{} instance>", instance->klass->name);
+                text = fmt::format("<{} instance>", instance->klass->name->str);
             } break;
             case cpplox::ObjectType::NATIVE_FUNCTION: {
                 const auto* fun = obj.as<cpplox::NativeFunction>();
                 if (fun->arity.isAny()) {
-                    text = fmt::format("<native fun {}:*>", fun->name);
+                    text = fmt::format("<native fun {}:*>", fun->name->str);
                 } else if (fun->arity.isExact()) {
                     text = fmt::format("<native fun {}:{}>",
-                                       fun->name,
+                                       fun->name->str,
                                        fun->arity.exact());
                 } else {
                     text = fmt::format("<native fun {}:{}-{}>",
-                                       fun->name,
+                                       fun->name->str,
                                        fun->arity.min(),
                                        fun->arity.max());
                 }
