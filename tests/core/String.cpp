@@ -16,13 +16,6 @@ TEST_CASE("String() is empty") {
     CHECK(areEqual(s.c_str(), ""));
 }
 
-TEST_CASE("String(nullptr) is empty") {
-    String s{nullptr};
-
-    CHECK(s.size() == 0);
-    CHECK(areEqual(s.c_str(), ""));
-}
-
 TEST_CASE("String("") is empty") {
     String s{""};
 
@@ -30,15 +23,7 @@ TEST_CASE("String("") is empty") {
     CHECK(areEqual(s.c_str(), ""));
 }
 
-TEST_CASE("String(c) is \"c\"") {
-    String s{'c'};
-
-    CHECK(s.size() == 1);
-    CHECK(s.capacity() > s.size());
-    CHECK(areEqual(s.c_str(), "c"));
-}
-
-TEST_CASE("String(const char*)") {
+TEST_CASE("String from a string literal") {
     String s{"c"};
 
     CHECK(s.size() == 1);
@@ -60,12 +45,10 @@ TEST_CASE("String(string_view)") {
 TEST_CASE("Empty strings have equal hash values") {
     String a;
     String b("");
-    String c{nullptr};
-    String d(std::string_view(""));
+    String c(std::string_view{});
 
     CHECK(a.hashValue() == b.hashValue());
     CHECK(b.hashValue() == c.hashValue());
-    CHECK(c.hashValue() == d.hashValue());
 }
 
 TEST_CASE("Non-empty equal strings have equal hash values") {
@@ -235,6 +218,35 @@ TEST_CASE("append") {
     CHECK(areEqual(str.c_str(), "123"));
 
     CHECK(str.hashValue() == String("123").hashValue());
+}
+
+TEST_CASE("sum") {
+    const String s = String::sum(std::string_view("ab"), std::string_view("cde"));
+    CHECK(s.size() == 5);
+    CHECK(s.capacity() >= 5);
+    CHECK(areEqual(s.c_str(), "abcde"));
+    CHECK(s.hashValue() == String("abcde").hashValue());
+}
+
+TEST_CASE("sum with empty operands") {
+    const std::string_view ab("ab");
+    const std::string_view none;
+
+    CHECK(areEqual(String::sum(none, ab).c_str(), "ab"));
+    CHECK(areEqual(String::sum(ab, none).c_str(), "ab"));
+
+    const String empty = String::sum(none, none);
+    CHECK(empty.size() == 0);
+    CHECK(areEqual(empty.c_str(), ""));
+    CHECK(empty.hashValue() == String().hashValue());
+}
+
+TEST_CASE("Copy keeps embedded null characters") {
+    const String s(std::string_view("a\0b", 3));
+    const String copy(s);
+
+    CHECK(copy.size() == 3);
+    CHECK(copy.view() == std::string_view("a\0b", 3));
 }
 
 TEST_CASE("reserve") {

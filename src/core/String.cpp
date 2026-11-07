@@ -6,15 +6,7 @@
 namespace cpplox {
     String::String() { updateHash(); }
 
-    String::String(char c)
-        : content{new char[2]{c, '\0'}}
-        , len(1)
-        , cap(2)
-    {
-        updateHash();
-    }
-
-    String::String(const String& other) : String(other.content) {}
+    String::String(const String& other) : String(other.view()) {}
 
     String::String(String&& source) noexcept
         : content{source.content}
@@ -26,16 +18,6 @@ namespace cpplox {
         source.len = 0;
         source.cap = 0;
         source.updateHash();
-    }
-
-    String::String(const char* string) {
-        if (string != nullptr) {
-            len = std::strlen(string);
-            cap = len + 1;
-            content = new char[cap] {};
-            std::copy_n(string, len, content);
-        }
-        updateHash();
     }
 
     String::String(std::string_view string) {
@@ -74,6 +56,23 @@ namespace cpplox {
 
     String::~String() {
         delete[] content;
+    }
+
+    String String::sum(std::string_view lhs, std::string_view rhs) {
+        String result;
+
+        const std::size_t total = lhs.size() + rhs.size();
+        if (total == 0) {
+            return result;
+        }
+
+        result.reserve(total + 1);
+        std::copy_n(lhs.data(), lhs.size(), result.content);
+        std::copy_n(rhs.data(), rhs.size(), result.content + lhs.size());
+        result.len = total;
+        result.updateHash();
+
+        return result;
     }
 
     void String::append(const char* string, std::size_t sourceLen) {
@@ -123,6 +122,10 @@ namespace cpplox {
         return (content != nullptr) ? content : "";
     }
 
+    std::string_view String::view() const {
+        return std::string_view{c_str(), len};
+    }
+
     std::size_t String::size() const {
         return len;
     }
@@ -153,13 +156,6 @@ namespace cpplox {
         return *this;
     }
 
-    String& String::operator+=(char c) {
-        char buffer[]{c, '\0'};
-        append(buffer, 2);
-
-        return *this;
-    }
-
     bool operator==(const String& lhs, const String& rhs) {
         return lhs.size() == rhs.size() &&
                lhs.hashValue() == rhs.hashValue() &&
@@ -171,23 +167,6 @@ namespace cpplox {
     }
 
     String operator+(const String& lhs, const String& rhs) {
-        auto result = lhs;
-        result += rhs;
-
-        return result;
-    }
-
-    String operator+(char lhs, const String& rhs) {
-        auto result = String{lhs};
-        result += rhs;
-
-        return result;
-    }
-
-    String operator+(const String& lhs, char rhs) {
-        auto result = lhs;
-        result += rhs;
-
-        return result;
+        return String::sum(lhs.view(), rhs.view());
     }
 } // namespace cpplox
