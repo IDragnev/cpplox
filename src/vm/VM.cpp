@@ -5,6 +5,7 @@
 #include "cpplox/runtime/Object.hpp"
 #include "cpplox/runtime/Function.hpp"
 #include "cpplox/runtime/Closure.hpp"
+#include "cpplox/runtime/RuntimeStr.hpp"
 #include "cpplox/runtime/Upvalue.hpp"
 #include "cpplox/runtime/Class.hpp"
 #include "cpplox/runtime/Instance.hpp"
@@ -34,6 +35,7 @@ namespace cpplox {
     } // namespace
 
     VM::VM() : heap(FIRST_GC_AT_BYTES) {
+        classInitKey = makeObject<RuntimeStr>("init");
         defineNatives();
     }
 
@@ -83,34 +85,40 @@ namespace cpplox {
     }
 
     void VM::defineNatives() {
-        defineNative<Print>();
-        defineNative<Clock>();
-        defineNative<Str>();
-        defineNative<Type>();
-        defineNative<Assert>();
-        defineNative<Push>();
-        defineNative<Pop>();
-        defineNative<MakeList>();
-        defineNative<Len>();
-        defineNative<ListEquals>();
-        defineNative<Floor>();
+        defineNative<Print>("print");
+        defineNative<Clock>("clock");
+        defineNative<Str>("str");
+        defineNative<Type>("type");
+        defineNative<Assert>("assert");
+        defineNative<Push>("push");
+        defineNative<Pop>("pop");
+        defineNative<MakeList>("makeList");
+        defineNative<Len>("len");
+        defineNative<ListEquals>("listEquals");
+        defineNative<Floor>("floor");
     }
 
     template <typename T>
-    bool VM::defineNative() {
+    bool VM::defineNative(const char* name) {
         static_assert(std::is_base_of_v<NativeFunction, T>,
                       "Natives must derive from NativeFunction");
         static_assert(sizeof(T) == sizeof(NativeFunction),
                       "Natives must not add data members - the GC accounts "
                       "for them with sizeof(NativeFunction)");
 
-        // Insert into the globals right away - they are the only root keeping
-        // the native alive when the next allocation triggers a collection.
-        T* native = makeObject<T>();
+        RuntimeStr* nameStr = makeObject<RuntimeStr>(name);
+        if (nameStr == nullptr) {
+            return false;
+        }
+        // Rooted on the stack until both are in the globals - allocating the
+        // native may collect.
+        stack.push(Value(nameStr));
+        T* native = makeObject<T>(nameStr);
+        stack.pop();
         if (native == nullptr) {
             return false;
         }
-        globals.insert(native->name, Value(native));
+        globals.insert(nameStr, Value(native));
 
         return true;
     }
@@ -174,10 +182,21 @@ namespace cpplox {
                         stack.pop();
                         stack.push(Value(result));
                     }
-                    else if (stack.peek().isString() && stack.peekN(1).isString()) {
-                        Value b = stack.pop();
-                        Value& a = stack.peek();
-                        a.asString() += b.asString();
+                    else if (isString(stack.peek()) && isString(stack.peekN(1))) {
+                        const Value& b = stack.peek();
+                        const Value& a = stack.peekN(1);
+                        const RuntimeStr* aStr = a.asObject()->as<RuntimeStr>();
+                        const RuntimeStr* bStr = b.asObject()->as<RuntimeStr>();
+
+                        RuntimeStr* cStr =
+                            makeObject<RuntimeStr>(String::sum(aStr->str.view(), bStr->str.view()));
+                        if (cStr != nullptr) {
+                            stack.popN(2);
+                            stack.push(Value(cStr));
+                        }
+                        else {
+                            return InterpretResultCode::RUNTIME_ERROR;
+                        }
                     }
                     else if (stack.peek().isNumber() && stack.peekN(1).isNumber()) {
                         double b = stack.pop().asNumber();
@@ -214,12 +233,12 @@ namespace cpplox {
                 case OpCode::EQUAL: {
                     Value b = stack.pop();
                     Value a = stack.pop();
-                    stack.push(Value(a == b));
+                    stack.push(Value(valuesEqual(a, b)));
                 } break;
                 case OpCode::NOT_EQUAL: {
                     Value b = stack.pop();
                     Value a = stack.pop();
-                    stack.push(Value(a != b));
+                    stack.push(Value(valuesEqual(a, b) == false));
                 } break;
                 case OpCode::NEGATE: {
                     if (stack.peek().isNumber()) {
@@ -263,8 +282,8 @@ namespace cpplox {
                     Value name = opCode == OpCode::DEFINE_GLOBAL
                                      ? readConstant()
                                      : readConstant16();
-                    if (name.isString()) {
-                        globals.insert(name.asString(), stack.peek());
+                    if (isString(name)) {
+                        globals.insert(name.asObject()->as<RuntimeStr>(), stack.peek());
                         stack.pop();
                     } else {
                         runtimeError("Internal error.");
@@ -276,13 +295,14 @@ namespace cpplox {
                     Value name = opCode == OpCode::READ_GLOBAL
                                      ? readConstant()
                                      : readConstant16();
-                    if (name.isString()) {
+                    if (isString(name)) {
+                        const RuntimeStr* const nameStr = name.asObject()->as<RuntimeStr>();
                         Value value;
-                        bool exists = globals.find(name.asString(), value);
+                        bool exists = globals.find(nameStr, value);
                         if (exists) {
                             stack.push(value);
                         } else {
-                            runtimeError("Undefined variable '{}'.", name);
+                            runtimeError("Undefined variable '{}'.", nameStr->str);
                             return InterpretResultCode::RUNTIME_ERROR;
                         }
                     } else {
@@ -295,12 +315,13 @@ namespace cpplox {
                     Value name = opCode == OpCode::SET_GLOBAL
                                      ? readConstant()
                                      : readConstant16();
-                    if (name.isString()) {
-                        bool exists = globals.contains(name.asString());
+                    if (isString(name)) {
+                        RuntimeStr* const nameStr = name.asObject()->as<RuntimeStr>();
+                        bool exists = globals.contains(nameStr);
                         if (exists) {
-                            globals.insert(name.asString(), stack.peek());
+                            globals.insert(nameStr, stack.peek());
                         } else {
-                            runtimeError("Undefined variable '{}'.", name);
+                            runtimeError("Undefined variable '{}'.", nameStr->str);
                             return InterpretResultCode::RUNTIME_ERROR;
                         }
                     } else {
@@ -412,8 +433,8 @@ namespace cpplox {
                     Value name = opCode == OpCode::MAKE_CLASS
                                     ? readConstant()
                                     : readConstant16();
-                    if (name.isString()) {
-                        Class* classObj = makeObject<Class>(name.asString());
+                    if (isString(name)) {
+                        Class* classObj = makeObject<Class>(name.asObject()->as<RuntimeStr>());
                         if (classObj != nullptr) {
                             stack.push(Value(classObj));
                         }
@@ -427,8 +448,8 @@ namespace cpplox {
                     Value name = opCode == OpCode::METHOD
                                     ? readConstant()
                                     : readConstant16();
-                    if (name.isString()) {
-                        defineMethod(name.asString());
+                    if (isString(name)) {
+                        defineMethod(name.asObject()->as<RuntimeStr>());
                     }
                 } break;
                 case OpCode::GET_PROPERTY:
@@ -444,16 +465,16 @@ namespace cpplox {
                         return InterpretResultCode::RUNTIME_ERROR;
                     }
 
-                    if (name.isString()) {
+                    if (isString(name)) {
                         Instance* inst = instance.asObject()->as<Instance>();
                         if (inst != nullptr) {
                             Value property;
-                            if (inst->fields.find(name.asString(), property)) {
+                            if (inst->fields.find(name.asObject()->as<RuntimeStr>(), property)) {
                                 stack.pop(); // instance
                                 stack.push(property);
                             } else {
                                 const bool bound =
-                                    bindMethod(inst->klass, name.asString());
+                                    bindMethod(inst->klass, name.asObject()->as<RuntimeStr>());
                                 if (bound == false) {
                                     return InterpretResultCode::RUNTIME_ERROR;
                                 }
@@ -474,10 +495,10 @@ namespace cpplox {
                     Value name = opCode == OpCode::SET_PROPERTY
                                      ? readConstant()
                                      : readConstant16();
-                    if (name.isString()) {
+                    if (isString(name)) {
                         Instance* inst = instance.asObject()->as<Instance>();
                         if (inst != nullptr) {
-                            inst->fields.insert(name.asString(), stack.peek());
+                            inst->fields.insert(name.asObject()->as<RuntimeStr>(), stack.peek());
                             heap.resized(inst);
                             Value val = stack.pop();
                             stack.pop();
@@ -491,8 +512,8 @@ namespace cpplox {
                                      ? readConstant()
                                      : readConstant16();
                     const auto argc = readByte();
-                    if (name.isString()) {
-                        if (invoke(name.asString(), argc) == false) {
+                    if (isString(name)) {
+                        if (invoke(name.asObject()->as<RuntimeStr>(), argc) == false) {
                             return InterpretResultCode::RUNTIME_ERROR;
                         }
                         frame = &frames.back();
@@ -523,7 +544,7 @@ namespace cpplox {
                     Value superclass = stack.pop();
                     Class* super = superclass.asObject()->as<Class>();
                     if (super != nullptr) {
-                        const bool bound = bindMethod(super, name.asString());
+                        const bool bound = bindMethod(super, name.asObject()->as<RuntimeStr>());
                         if (bound == false) {
                             return InterpretResultCode::RUNTIME_ERROR;
                         }
@@ -535,11 +556,11 @@ namespace cpplox {
                                      ? readConstant()
                                      : readConstant16();
                     const std::uint8_t argc = readByte();
-                    if (name.isString()) {
+                    if (isString(name)) {
                         Value super = stack.pop();
                         Class* superClass = super.asObject()->as<Class>();
                         if (superClass != nullptr) {
-                            bool ok = invokeFromClass(superClass, name.asString(), argc);
+                            bool ok = invokeFromClass(superClass, name.asObject()->as<RuntimeStr>(), argc);
                             if (ok == false) {
                                 return InterpretResultCode::RUNTIME_ERROR;
                             }
@@ -597,7 +618,7 @@ namespace cpplox {
         }
     }
 
-    bool VM::invoke(const String& name, std::uint8_t argc) {
+    bool VM::invoke(const RuntimeStr* name, std::uint8_t argc) {
         Value instance = stack.peekN(argc);
         if (instance.isObject()) {
             Instance* inst = instance.asObject()->as<Instance>();
@@ -617,13 +638,13 @@ namespace cpplox {
     }
 
     bool
-    VM::invokeFromClass(Class* klass, const String& methodName, std::uint8_t argc) {
+    VM::invokeFromClass(Class* klass, const RuntimeStr* methodName, std::uint8_t argc) {
         Value method;
         if (klass->methods.find(methodName, method)) {
             return call(method.asObject()->as<Closure>(), argc);
         }
 
-        runtimeError("Undefined property '{}'.", methodName);
+        runtimeError("Undefined property '{}'.", methodName->str);
         return false;
     }
 
@@ -704,7 +725,7 @@ namespace cpplox {
 #ifdef CPPLOX_DEBUG_TRACE_EXECUTION
         Disassembler disassembler;
         disassembler.disassembleChunk(f->function->chunk,
-                                      f->function->name.c_str());
+                                      f->function->name->str.c_str());
 #endif
 
         return true;
@@ -726,20 +747,16 @@ namespace cpplox {
             return false;
         }
 
-        Value result;
         const std::span<Value> args(stack.data() + (stack.size() - argc), argc);
         NativeContext ctx(heap);
-        if (f->call(ctx, args, result) == false) {
-            if (result.isString()) {
-                runtimeError("{}", result.asString());
-            } else {
-                runtimeError("Error in native function '{}'.", f->name);
-            }
+        const Value result = f->call(ctx, args);
+        if (ctx.hasFailed()) {
+            runtimeError("{}", ctx.getMessage());
             return false;
         }
 
         stack.popN(static_cast<std::size_t>(argc) + 1);
-        stack.push(std::move(result));
+        stack.push(result);
 
         return true;
     }
@@ -789,7 +806,7 @@ namespace cpplox {
         }
     }
 
-    void VM::defineMethod(const String& name) {
+    void VM::defineMethod(RuntimeStr* name) {
         Value& method = stack.peek();
         Value& classObj = stack.peekN(1);
 
@@ -804,11 +821,11 @@ namespace cpplox {
         stack.pop();
     }
 
-    bool VM::bindMethod(Class* klass, const String& name) {
+    bool VM::bindMethod(Class* klass, const RuntimeStr* name) {
         Value method;
         bool found = klass->methods.find(name, method);
         if (found == false) {
-            runtimeError("Undefined property '{}'.", name);
+            runtimeError("Undefined property '{}'.", name->str);
             return false;
         }
 
@@ -905,11 +922,11 @@ namespace cpplox {
             std::size_t instruction = frame.ip - chunk.code.data() - 1;
             if (instruction <= chunk.lines.getCount()) {
                 unsigned line = chunk.lines[instruction];
-                String name = i != 1 ? frame.closure->function->name
+                String name = i != 1 ? frame.closure->function->name->str
                                      : String("script");
                 error.frames.insertBack(StackFrame{
                     .functionName = std::move(name),
-                    .source = frame.closure->function->source,
+                    .source = frame.closure->function->source->str,
                     .line = line,
                 });
             }
@@ -940,6 +957,10 @@ namespace cpplox {
     }
 
     void VM::traceGCRoots() {
+        if (classInitKey != nullptr) {
+            heap.traceRoot(classInitKey);
+        }
+
         const std::size_t stackSize = stack.size();
         for (std::size_t i = 0; i < stackSize; ++i) {
             Value& v = stack.at(i);
@@ -948,7 +969,8 @@ namespace cpplox {
             }
         }
 
-        globals.forEachValue([this](Value& v) {
+        globals.forEach([this](RuntimeStr* key, Value& v) {
+            heap.traceRoot(key);
             if (v.isObject()) {
                 heap.traceRoot(v.asObject());
             }

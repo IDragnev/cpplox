@@ -1,10 +1,10 @@
 #pragma once
 
 #include "cpplox/core/ValueStack.hpp"
-#include "cpplox/core/ValueMap.hpp"
 #include "cpplox/core/Vector.hpp"
 #include "cpplox/core/String.hpp"
 #include "cpplox/runtime/Heap.hpp"
+#include "cpplox/runtime/ValueMap.hpp"
 
 #include <cstdint>
 
@@ -15,6 +15,7 @@ namespace cpplox {
     class Upvalue;
     class Class;
     class NativeFunction;
+    class RuntimeStr;
 
     struct StackFrame {
         String functionName;
@@ -62,7 +63,7 @@ namespace cpplox {
         InterpretResultCode run();
         void defineNatives();
         template <typename T>
-        bool defineNative();
+        bool defineNative(const char* name);
         template <typename T, typename... Args>
         T* makeObject(Args&&... args);
         void runGC();
@@ -73,13 +74,13 @@ namespace cpplox {
         bool divide();
         bool validateSubscript(const Value& target, const Value& index);
 
-        bool invoke(const String& name, std::uint8_t argc);
-        bool invokeFromClass(Class* klass, const String& method, std::uint8_t argc);
+        bool invoke(const RuntimeStr* name, std::uint8_t argc);
+        bool invokeFromClass(Class* klass, const RuntimeStr* method, std::uint8_t argc);
         bool callValue(Value& v, std::uint8_t argc);
         bool call(Closure* f, std::uint8_t argc);
         bool callNative(NativeFunction* f, std::uint8_t argc);
-        void defineMethod(const String& name);
-        bool bindMethod(Class* klass, const String& name);
+        void defineMethod(RuntimeStr* name);
+        bool bindMethod(Class* klass, const RuntimeStr* name);
 
         Upvalue* captureUpvalue(std::size_t offset);
         void closeUpvalues(std::size_t offset);
@@ -96,6 +97,6 @@ namespace cpplox {
         Vector<CallFrame> frames;
         Upvalue* openUpvalues = nullptr;
         RuntimeError error;
-        String classInitKey = "init";
+        RuntimeStr* classInitKey = nullptr;
     };
 } // namespace cpplox
