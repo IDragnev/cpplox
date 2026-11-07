@@ -6,6 +6,7 @@
 
 namespace cpplox {
     enum class ObjectType {
+        STRING,
         FUNCTION,
         CLOSURE,
         UPVALUE,

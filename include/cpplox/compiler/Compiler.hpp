@@ -10,9 +10,9 @@
 namespace cpplox {
     class Function;
     class Object;
+    class RuntimeStr;
     class DiagnosticEngine;
     enum class OpCode;
-    class String;
 
     struct CompileResult {
         bool error = false;
@@ -51,6 +51,11 @@ namespace cpplox {
             bool operator==(const Upvalue& v) const {
                 return index == v.index && isLocal == v.isLocal;
             }
+        };
+
+        struct NameConstant {
+            std::size_t constIdx = 0;
+            RuntimeStr* name = nullptr;
         };
 
     public:
@@ -100,9 +105,8 @@ namespace cpplox {
         void compileError(const Token& t, std::string_view fmt, Args&&... args);
         bool processError();
 
-        bool makeConstant(Value value,
-                          bool searchExisting,
-                          std::size_t& idx);
+        bool makeConstant(Value value, std::size_t& idx);
+        NameConstant identifierConstant(std::string_view name);
         void emitReturn();
         void emitConstant(Value value);
         void emitClosure(Function* fun, const Frame& closureFrame);
@@ -123,9 +127,9 @@ namespace cpplox {
         void classDeclaration();
         void method();
         void funDeclaration();
-        void function(FunctionType type, const Token& name);
+        void function(FunctionType type, RuntimeStr* name);
         void varDeclaration();
-        void parseVariable(std::size_t& idx, std::string_view msg);
+        NameConstant parseVariable(std::string_view msg);
         void declareVariable(const Token& t);
         void defineVariable(std::size_t idx);
         void statement();
@@ -191,6 +195,6 @@ namespace cpplox {
         Object* gcObjects = nullptr;
         DiagnosticEngine* diagnostics = nullptr;
         CompileOptions options;
-        std::string_view sourceName;
+        RuntimeStr* sourceName = nullptr;
     };
 } // namespace cpplox

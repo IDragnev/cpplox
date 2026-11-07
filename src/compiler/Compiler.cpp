@@ -6,6 +6,7 @@
 #include "cpplox/runtime/Memory.hpp"
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 #include "cpplox/core/Algorithm.hpp"
+#include "cpplox/runtime/RuntimeStr.hpp"
 
 #include <limits>
 #include <cstdlib>
@@ -154,9 +155,13 @@ namespace cpplox {
 
         diagnostics = engine;
         scanner = Scanner(compileSource, engine);
-        sourceName = name;
+        sourceName = makeObject<RuntimeStr>(name);
+        RuntimeStr* scriptName = makeObject<RuntimeStr>(std::string_view("<script>"));
+        if (sourceName == nullptr || scriptName == nullptr) {
+            return false;
+        }
 
-        Function* scriptFun = makeObject<Function>("<script>", sourceName);
+        Function* scriptFun = makeObject<Function>(scriptName, sourceName);
         if (scriptFun != nullptr) {
             initFrame(frame, scriptFun, FunctionType::SCRIPT, nullptr);
             return true;
@@ -199,7 +204,7 @@ namespace cpplox {
     void Compiler::cleanUp() {
         diagnostics = nullptr;
         scanner = Scanner("", nullptr);
-        sourceName = {};
+        sourceName = nullptr;
         parser = Parser{};
         frame = Frame{};
 
@@ -419,11 +424,14 @@ namespace cpplox {
         consumeTokenErr(TokenType::IDENTIFIER, "Expected class name");
         const Token className = parser.previous;
 
-        std::size_t idx = 0;
-        makeConstant(Value(String(className.lexeme)), true, idx);
+        const NameConstant constant = identifierConstant(className.lexeme);
+        if (constant.name == nullptr) {
+            return;
+        }
+
         declareVariable(className);
-        emitIntegerInstruction(OpCode::MAKE_CLASS, OpCode::MAKE_CLASS_16, idx);
-        defineVariable(idx);
+        emitIntegerInstruction(OpCode::MAKE_CLASS, OpCode::MAKE_CLASS_16, constant.constIdx);
+        defineVariable(constant.constIdx);
 
         auto oldClass = enclosingClass;
         enclosingClass.null = false;
@@ -467,22 +475,21 @@ namespace cpplox {
     void Compiler::method() {
         consumeTokenErr(TokenType::IDENTIFIER, "Expected method name");
 
-        std::size_t idx = 0;
-        makeConstant(Value(String(parser.previous.lexeme)),
-                         true,
-                         idx);
+        const NameConstant constant = identifierConstant(parser.previous.lexeme);
+        if (constant.name == nullptr) {
+            return;
+        }
 
         const auto type = parser.previous.lexeme == "init"
                               ? FunctionType::INITIALIZER
                               : FunctionType::METHOD;
-        function(type, parser.previous);
+        function(type, constant.name);
 
-        emitIntegerInstruction(OpCode::METHOD, OpCode::METHOD_16, idx);
+        emitIntegerInstruction(OpCode::METHOD, OpCode::METHOD_16, constant.constIdx);
     }
 
     void Compiler::funDeclaration() {
-        std::size_t idx = 0;
-        parseVariable(idx, "Expected function name");
+        const NameConstant var = parseVariable("Expected function name");
 
         if (inLocalScope()) {
             // functions can refer to themselves in their bodies
@@ -491,12 +498,19 @@ namespace cpplox {
             }
         }
 
-        function(FunctionType::FUNCTION, parser.previous);
-        defineVariable(idx);
+        RuntimeStr* name = var.name != nullptr
+                               ? var.name
+                               : makeObject<RuntimeStr>(parser.previous.lexeme);
+        function(FunctionType::FUNCTION, name);
+        defineVariable(var.constIdx);
     }
 
-    void Compiler::function(FunctionType type, const Token& name) {
-        auto* fun = makeObject<Function>(name.lexeme, sourceName);
+    void Compiler::function(FunctionType type, RuntimeStr* name) {
+        if (name == nullptr) {
+            return;
+        }
+
+        auto* fun = makeObject<Function>(name, sourceName);
         if (fun == nullptr) {
             return;
         }
@@ -522,9 +536,8 @@ namespace cpplox {
                     break;
                 }
 
-                std::size_t idx = 0;
-                parseVariable(idx, "Expected parameter name");
-                defineVariable(idx);
+                const NameConstant param = parseVariable("Expected parameter name");
+                defineVariable(param.constIdx);
             } while (match(TokenType::COMMA));
         }
         consumeTokenErr(TokenType::RIGHT_PAREN,
@@ -544,8 +557,7 @@ namespace cpplox {
     }
 
     void Compiler::varDeclaration() {
-        std::size_t idx = 0;
-        parseVariable(idx, "Expected variable name");
+        const NameConstant var = parseVariable("Expected variable name");
 
         if (match(TokenType::EQUAL)) {
             expression();
@@ -556,19 +568,18 @@ namespace cpplox {
         consumeTokenErr(TokenType::SEMICOLON,
                         "Expected ';' after variable declaration");
 
-        defineVariable(idx);
+        defineVariable(var.constIdx);
     }
 
-    void Compiler::parseVariable(std::size_t& idx, std::string_view msg) {
+    Compiler::NameConstant Compiler::parseVariable(std::string_view msg) {
         consumeTokenErr(TokenType::IDENTIFIER, msg);
 
         if (inLocalScope()) {
             declareVariable(parser.previous);
-        } else {
-            makeConstant(Value(String(parser.previous.lexeme)),
-                         true,
-                         idx);
+            return NameConstant{};
         }
+
+        return identifierConstant(parser.previous.lexeme);
     }
 
     void Compiler::declareVariable(const Token& name) {
@@ -982,7 +993,8 @@ namespace cpplox {
         if (local == false) {
             upvalue = resolveUpvalue(frame, t, idx);
             if (upvalue == false) {
-                makeConstant(Value(String(t.lexeme)), true, idx);
+                const NameConstant constant = identifierConstant(t.lexeme);
+                idx = constant.constIdx;
             }
         }
 
@@ -1056,7 +1068,10 @@ namespace cpplox {
         v.remove_prefix(1);
         v.remove_suffix(1);
 
-        emitConstant(Value(v));
+        RuntimeStr* str = makeObject<RuntimeStr>(v);
+        if (str != nullptr) {
+            emitConstant(Value(str));
+        }
     }
 
     void Compiler::list(bool) {
@@ -1111,8 +1126,8 @@ namespace cpplox {
         consumeTokenErr(TokenType::IDENTIFIER,
                         "Expected property name after '.'");
 
-        std::size_t idx = 0;
-        makeConstant(Value(String(parser.previous.lexeme)), true, idx);
+        const NameConstant constant = identifierConstant(parser.previous.lexeme);
+        const std::size_t idx = constant.constIdx;
 
         if (canAssign && match(TokenType::EQUAL)) {
             expression();
@@ -1150,8 +1165,8 @@ namespace cpplox {
         consumeTokenErr(TokenType::DOT, "Expected '.' after 'super'");
         consumeTokenErr(TokenType::IDENTIFIER, "Expected superclass method name");
 
-        std::size_t idx = 0;
-        makeConstant(Value(String(parser.previous.lexeme)), true, idx);
+        const NameConstant constant = identifierConstant(parser.previous.lexeme);
+        const std::size_t idx = constant.constIdx;
 
         namedVariable(Token{.lexeme = "this"}, false);
         if (match(TokenType::LEFT_PAREN)) {
@@ -1224,24 +1239,8 @@ namespace cpplox {
         return realError;
     }
 
-    bool Compiler::makeConstant(Value value,
-                                bool searchExisting,
-                                std::size_t& idx) {
-        bool found = false;
-        if (searchExisting) {
-            const Vector<Value>& constants = frame.function->chunk.constants;
-            const std::size_t size = constants.getCount();
-            for (std::size_t i = 0; i < size; ++i) {
-                if (constants[i] == value) {
-                    idx = i;
-                    found = true;
-                    break;
-                }
-            }
-        }
-        if (found == false) {
-            idx = addConstant(frame.function->chunk, std::move(value));
-        }
+    bool Compiler::makeConstant(Value value, std::size_t& idx) {
+        idx = addConstant(frame.function->chunk, std::move(value));
 
         bool success = true;
         if (fitsTwoBytes(idx) == false) {
@@ -1252,9 +1251,35 @@ namespace cpplox {
         return success;
     }
 
+    Compiler::NameConstant Compiler::identifierConstant(std::string_view name) {
+        NameConstant constant;
+
+        Vector<Value>& constants = frame.function->chunk.constants;
+        const std::size_t size = constants.getCount();
+        for (std::size_t i = 0; i < size; ++i) {
+            if (constants[i].isObject() == false) {
+                continue;
+            }
+
+            RuntimeStr* str = constants[i].asObject()->as<RuntimeStr>();
+            if (str != nullptr && str->str.view() == name) {
+                constant.constIdx = i;
+                constant.name = str;
+                return constant;
+            }
+        }
+
+        constant.name = makeObject<RuntimeStr>(name);
+        if (constant.name != nullptr) {
+            makeConstant(Value(constant.name), constant.constIdx);
+        }
+
+        return constant;
+    }
+
     void Compiler::emitClosure(Function* fun, const Frame& closureFrame) {
         std::size_t idx = 0;
-        bool ok = makeConstant(Value(fun), false, idx);
+        bool ok = makeConstant(Value(fun), idx);
         if (ok) {
             emitIntegerInstruction(OpCode::MAKE_CLOSURE,
                                    OpCode::MAKE_CLOSURE_16,
@@ -1279,7 +1304,7 @@ namespace cpplox {
 
     void Compiler::emitConstant(Value value) {
         std::size_t i = 0;
-        bool ok = makeConstant(std::move(value), false, i);
+        bool ok = makeConstant(value, i);
         if (ok) {
             emitIntegerInstruction(OpCode::CONSTANT,
                                    OpCode::CONSTANT_16,
