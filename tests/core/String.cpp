@@ -246,7 +246,7 @@ TEST_CASE("Copy keeps embedded null characters") {
     const String copy(s);
 
     CHECK(copy.size() == 3);
-    CHECK(copy.view() == std::string_view("a\0b", 3));
+    CHECK(std::memcmp(copy.view().data(), s.view().data(), 3) == 0);
 }
 
 TEST_CASE("reserve") {

@@ -3,6 +3,7 @@
 #include "cpplox/diagnostics/DiagnosticEngine.hpp"
 #include "cpplox/diagnostics/Diagnostic.hpp"
 
+#include <cstring>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -26,11 +27,15 @@ std::vector<cpplox::Diagnostic> compileAndCollect(std::string_view src) {
     return std::move(collector.diagnostics);
 }
 
+bool matchMessage(const cpplox::Diagnostic& d, const char* expected) {
+    return std::strcmp(d.msg.c_str(), expected) == 0;
+}
+
 TEST_CASE("break outside loop") {
     const auto diags = compileAndCollect("break;");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't use 'break' outside of loop");
+    CHECK(matchMessage(diags[0], "Can't use 'break' outside of loop"));
     CHECK(diags[0].line == 1);
 }
 
@@ -38,7 +43,7 @@ TEST_CASE("continue outside loop") {
     const auto diags = compileAndCollect("continue;");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't use 'continue' outside of loop");
+    CHECK(matchMessage(diags[0], "Can't use 'continue' outside of loop"));
     CHECK(diags[0].line == 1);
 }
 
@@ -50,7 +55,7 @@ TEST_CASE("break resets across function boundary") {
 })");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't use 'break' outside of loop");
+    CHECK(matchMessage(diags[0], "Can't use 'break' outside of loop"));
     CHECK(diags[0].line == 3);
 }
 
@@ -58,7 +63,7 @@ TEST_CASE("this outside class") {
     const auto diags = compileAndCollect("var x = this;");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't use 'this' outside of class");
+    CHECK(matchMessage(diags[0], "Can't use 'this' outside of class"));
     CHECK(diags[0].line == 1);
 }
 
@@ -66,7 +71,7 @@ TEST_CASE("super outside class") {
     const auto diags = compileAndCollect("super.method();");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't use 'super' outside of a class");
+    CHECK(matchMessage(diags[0], "Can't use 'super' outside of a class"));
     CHECK(diags[0].line == 1);
 }
 
@@ -78,7 +83,7 @@ TEST_CASE("super in class with no superclass") {
 })");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't use 'super' in a class with no superclass");
+    CHECK(matchMessage(diags[0], "Can't use 'super' in a class with no superclass"));
     CHECK(diags[0].line == 3);
 }
 
@@ -86,7 +91,7 @@ TEST_CASE("class inherits from itself") {
     const auto diags = compileAndCollect("class A < A {}");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "A class can't inherit from itself");
+    CHECK(matchMessage(diags[0], "A class can't inherit from itself"));
     CHECK(diags[0].line == 1);
 }
 
@@ -94,7 +99,7 @@ TEST_CASE("return from top-level") {
     const auto diags = compileAndCollect("return;");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't return from top-level code");
+    CHECK(matchMessage(diags[0], "Can't return from top-level code"));
     CHECK(diags[0].line == 1);
 }
 
@@ -106,7 +111,7 @@ TEST_CASE("return value from initializer") {
 })");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't return a value from an initializer");
+    CHECK(matchMessage(diags[0], "Can't return a value from an initializer"));
     CHECK(diags[0].line == 3);
 }
 
@@ -117,7 +122,7 @@ TEST_CASE("duplicate variable in same scope") {
 })");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Variable with name 'a' already exists in this scope");
+    CHECK(matchMessage(diags[0], "Variable with name 'a' already exists in this scope"));
     CHECK(diags[0].line == 3);
 }
 
@@ -127,7 +132,7 @@ TEST_CASE("read local in own initializer") {
 })");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't read a local variable in its initializer");
+    CHECK(matchMessage(diags[0], "Can't read a local variable in its initializer"));
     CHECK(diags[0].line == 2);
 }
 
@@ -135,7 +140,7 @@ TEST_CASE("invalid assignment target") {
     const auto diags = compileAndCollect("1 + 2 = 3;");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Invalid assignment target");
+    CHECK(matchMessage(diags[0], "Invalid assignment target"));
     CHECK(diags[0].line == 1);
 }
 
@@ -143,7 +148,7 @@ TEST_CASE("expected expression") {
     const auto diags = compileAndCollect("var x = ;");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Expected expression");
+    CHECK(matchMessage(diags[0], "Expected expression"));
     CHECK(diags[0].line == 1);
 }
 
@@ -151,7 +156,7 @@ TEST_CASE("expected expression at end of input") {
     const auto diags = compileAndCollect("var a =");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Expected expression");
+    CHECK(matchMessage(diags[0], "Expected expression"));
     CHECK(diags[0].line == 1);
 }
 
@@ -161,7 +166,7 @@ TEST_CASE("prefix operator at end of input") {
         const auto diags = compileAndCollect(src);
 
         REQUIRE(diags.size() >= 1);
-        CHECK(diags[0].msg.view() == "Expected expression");
+        CHECK(matchMessage(diags[0], "Expected expression"));
         CHECK(diags[0].line == 1);
     }
 }
@@ -176,18 +181,18 @@ TEST_CASE("number literal with a dot on one side only") {
     const auto leading = compileAndCollect("var a = .5;");
 
     REQUIRE(trailing.size() == 1);
-    CHECK(trailing[0].msg.view() == "Expected property name after '.'");
+    CHECK(matchMessage(trailing[0], "Expected property name after '.'"));
     CHECK(trailing[0].line == 1);
 
     REQUIRE(trailingFraction.size() == 1);
-    CHECK(trailingFraction[0].msg.view() == "Expected property name after '.'");
+    CHECK(matchMessage(trailingFraction[0], "Expected property name after '.'"));
 
     REQUIRE(leading.size() == 1);
-    CHECK(leading[0].msg.view() == "Expected expression");
+    CHECK(matchMessage(leading[0], "Expected expression"));
 
     const auto afterExponent = compileAndCollect("var a = 2.5e2.5;");
     REQUIRE(afterExponent.size() == 1);
-    CHECK(afterExponent[0].msg.view() == "Expected property name after '.'");
+    CHECK(matchMessage(afterExponent[0], "Expected property name after '.'"));
 
     CHECK(compileAndCollect("var a = 1.0;").empty());
     CHECK(compileAndCollect("var a = 2.5e2;").empty());
@@ -197,7 +202,7 @@ TEST_CASE("number literal too large") {
     const auto diags = compileAndCollect("var a = 1e400;");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Number is too large");
+    CHECK(matchMessage(diags[0], "Number is too large"));
     CHECK(diags[0].line == 1);
 
     // The largest double is just under 1.8e308, so this one still fits.
@@ -218,7 +223,7 @@ TEST_CASE("parameters limit") {
     const auto diags = compileAndCollect(src);
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't have more than 255 parameters");
+    CHECK(matchMessage(diags[0], "Can't have more than 255 parameters"));
     CHECK(diags[0].line == 1);
 }
 
@@ -233,7 +238,7 @@ TEST_CASE("arguments limit") {
     const auto diags = compileAndCollect(src);
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't have more than 255 arguments");
+    CHECK(matchMessage(diags[0], "Can't have more than 255 arguments"));
     CHECK(diags[0].line == 1);
 }
 
@@ -248,7 +253,7 @@ TEST_CASE("list literal limit") {
     const auto diags = compileAndCollect(src);
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Can't have more than 255 elements in a list literal");
+    CHECK(matchMessage(diags[0], "Can't have more than 255 elements in a list literal"));
     CHECK(diags[0].line == 1);
 
     std::string ok = "[";
@@ -270,7 +275,7 @@ TEST_CASE("constants limit") {
     const auto diags = compileAndCollect(src);
 
     REQUIRE(diags.size() >= 1);
-    CHECK(diags[0].msg.view() == "Constants limits reached");
+    CHECK(matchMessage(diags[0], "Constants limits reached"));
 }
 
 TEST_CASE("upvalues limit") {
@@ -288,7 +293,7 @@ TEST_CASE("upvalues limit") {
     const auto diags = compileAndCollect(src);
 
     REQUIRE(diags.size() >= 1);
-    CHECK(diags[0].msg.view() == "Can't have more than 255 captures in a closure");
+    CHECK(matchMessage(diags[0], "Can't have more than 255 captures in a closure"));
 }
 
 TEST_CASE("locals limit" * doctest::skip()) {
@@ -301,8 +306,8 @@ TEST_CASE("locals limit" * doctest::skip()) {
     const auto diags = compileAndCollect(src);
 
     REQUIRE(diags.size() >= 1);
-    CHECK(diags[0].msg.view() ==
-          "Can't have more than 65536 local variables in a function");
+    CHECK(matchMessage(diags[0],
+                        "Can't have more than 65536 local variables in a function"));
 }
 
 TEST_CASE("multi-diagnostic recovery") {
@@ -312,13 +317,13 @@ break;
 continue;)");
 
     REQUIRE(diags.size() == 4);
-    CHECK(diags[0].msg.view() == "Expected expression");
+    CHECK(matchMessage(diags[0], "Expected expression"));
     CHECK(diags[0].line == 1);
-    CHECK(diags[1].msg.view() == "Can't use 'break' outside of loop");
+    CHECK(matchMessage(diags[1], "Can't use 'break' outside of loop"));
     CHECK(diags[1].line == 2);
-    CHECK(diags[2].msg.view() == "Expected expression");
+    CHECK(matchMessage(diags[2], "Expected expression"));
     CHECK(diags[2].line == 3);
-    CHECK(diags[3].msg.view() == "Can't use 'continue' outside of loop");
+    CHECK(matchMessage(diags[3], "Can't use 'continue' outside of loop"));
     CHECK(diags[3].line == 4);
 }
 
@@ -334,7 +339,7 @@ TEST_CASE("trailing comma in list") {
     const auto diags = compileAndCollect("[1, 2, 3,]");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Expected expression");
+    CHECK(matchMessage(diags[0], "Expected expression"));
     CHECK(diags[0].line == 1);
 }
 
@@ -342,7 +347,7 @@ TEST_CASE("unterminated list") {
     const auto diags = compileAndCollect("[1, 2, 3");
 
     REQUIRE(diags.size() == 1);
-    CHECK(diags[0].msg.view() == "Expected ']' after list elements");
+    CHECK(matchMessage(diags[0], "Expected ']' after list elements"));
     CHECK(diags[0].line == 1);
 }
 
@@ -351,10 +356,10 @@ TEST_CASE("invalid assignment target - subscript") {
     const auto unary = compileAndCollect("-xs[0] = 5;");
 
     REQUIRE(binary.size() == 1);
-    CHECK(binary[0].msg.view() == "Invalid assignment target");
+    CHECK(matchMessage(binary[0], "Invalid assignment target"));
     CHECK(binary[0].line == 1);
     REQUIRE(unary.size() == 1);
-    CHECK(unary[0].msg.view() == "Invalid assignment target");
+    CHECK(matchMessage(unary[0], "Invalid assignment target"));
     CHECK(unary[0].line == 1);
 }
 
