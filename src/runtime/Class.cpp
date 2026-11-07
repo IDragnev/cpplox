@@ -1,13 +1,16 @@
 #include "cpplox/runtime/Class.hpp"
 
 namespace cpplox {
-    Class::Class(const String& name)
+    Class::Class(RuntimeStr* name)
         : Object(Class::TYPE)
         , name(name)
     {}
 
     void Class::trace(gc::Visitor& v) {
-        methods.forEachValue([&v](Value& val) {
+        v.visit(name);
+
+        methods.forEach([&v](RuntimeStr* key, Value& val) {
+            v.visit(key);
             if (val.isObject()) {
                 v.visit(val.asObject());
             }

@@ -10,7 +10,8 @@ namespace cpplox {
     void Instance::trace(gc::Visitor& v) {
         v.visit(klass);
 
-        fields.forEachValue([&v](Value& val) {
+        fields.forEach([&v](RuntimeStr* key, Value& val) {
+            v.visit(key);
             if (val.isObject()) {
                 v.visit(val.asObject());
             }

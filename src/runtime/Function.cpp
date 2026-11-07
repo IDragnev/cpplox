@@ -2,13 +2,16 @@
 #include "cpplox/core/Algorithm.hpp"
 
 namespace cpplox {
-    Function::Function(const String& name, const String& source)
+    Function::Function(RuntimeStr* name, RuntimeStr* source)
         : Object(Function::TYPE)
         , name(name)
         , source(source)
     {}
 
     void Function::trace(gc::Visitor& v) {
+        v.visit(name);
+        v.visit(source);
+        
         forEach(chunk.constants, [&v](Value& val) {
             if (val.isObject()) {
                 v.visit(val.asObject());

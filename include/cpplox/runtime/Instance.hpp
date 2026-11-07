@@ -1,7 +1,7 @@
 #pragma once
 
 #include "cpplox/runtime/Object.hpp"
-#include "cpplox/core/ValueMap.hpp"
+#include "cpplox/runtime/ValueMap.hpp"
 
 namespace cpplox {
     class Class;
