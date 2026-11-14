@@ -6,6 +6,12 @@ Notable changes to cpplox. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Strings are now runtime objects managed by the garbage collector, like
+  functions, classes, instances and lists, instead of having manual memory
+  management.
+
 ## [0.2.0] - 2026-10-25
 
 ### Added
