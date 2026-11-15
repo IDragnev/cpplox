@@ -119,7 +119,7 @@ namespace cpplox {
 
         Vector<Entry> entries;
         std::size_t tableSize = table.getCount();
-        slot = (slot + 1) % tableSize;
+        slot = (slot + 1) & (tableSize - 1);
         for (;;) {
             Entry& e = table[slot];
             if (e.isEmpty) {
@@ -130,7 +130,7 @@ namespace cpplox {
             e = Entry{};
             --count;
 
-            slot = (slot + 1) % tableSize;
+            slot = (slot + 1) & (tableSize - 1);
         }
         insertEntries(entries, *this);
 
@@ -139,7 +139,7 @@ namespace cpplox {
 
     std::size_t ValueMap::findSlot(const RuntimeStr* key) const {
         std::size_t tableSize = table.getCount();
-        std::size_t slot = key->str.hashValue() % tableSize;
+        std::size_t slot = key->str.hashValue() & (tableSize - 1);
 
         for (;;) {
             const Entry& entry = table[slot];
@@ -147,7 +147,7 @@ namespace cpplox {
                 return slot;
             }
 
-            slot = (slot + 1) % tableSize;
+            slot = (slot + 1) & (tableSize - 1);
         }
     }
 
